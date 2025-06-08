@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { MessageCircle, Shield, Pause } from 'lucide-react';
-import { clsx } from 'clsx';
-import type { AIEmployee } from '../types';
+import { useState } from "react";
+import { MessageCircle, Shield, Pause } from "lucide-react";
+import { clsx } from "clsx";
+import { useNavigate } from "react-router-dom";
+import type { AIEmployee } from "../types";
 
 interface AIEmployeeCardProps {
   employee: AIEmployee;
@@ -10,45 +11,47 @@ interface AIEmployeeCardProps {
   onDeactivate: (employee: AIEmployee) => void;
 }
 
-export function AIEmployeeCard({ 
-  employee, 
-  onChat, 
-  onPermissions, 
-  onDeactivate 
+export function AIEmployeeCard({
+  employee,
+  onChat,
+  onPermissions,
+  onDeactivate,
 }: AIEmployeeCardProps) {
   const [showActions, setShowActions] = useState(false);
+  const navigate = useNavigate();
 
-  const getStatusColor = (status: AIEmployee['status']) => {
+  const getStatusColor = (status: AIEmployee["status"]) => {
     switch (status) {
-      case 'idle':
-        return 'bg-success-500';
-      case 'running':
-        return 'bg-blue-500';
-      case 'error':
-        return 'bg-red-500';
+      case "idle":
+        return "bg-success-500";
+      case "running":
+        return "bg-blue-500";
+      case "error":
+        return "bg-red-500";
       default:
-        return 'bg-gray-400';
+        return "bg-gray-400";
     }
   };
 
-  const getStatusText = (status: AIEmployee['status']) => {
+  const getStatusText = (status: AIEmployee["status"]) => {
     switch (status) {
-      case 'idle':
-        return 'Idle';
-      case 'running':
-        return 'Running';
-      case 'error':
-        return 'Error';
+      case "idle":
+        return "Idle";
+      case "running":
+        return "Running";
+      case "error":
+        return "Error";
       default:
-        return 'Unknown';
+        return "Unknown";
     }
   };
 
   return (
-    <div 
-      className="bg-white rounded-card p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow relative group"
+    <div
+      className="bg-white rounded-card p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow relative group cursor-pointer"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
+      onClick={() => navigate(`/employee/${employee.id}`)}
     >
       {/* Main content */}
       <div className="flex items-start space-x-4">
@@ -56,11 +59,15 @@ export function AIEmployeeCard({
         <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
           <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
             <span className="text-white text-xs font-medium">
-              {employee.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              {employee.name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()}
             </span>
           </div>
         </div>
-        
+
         {/* Details */}
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-medium text-gray-900 truncate">
@@ -70,23 +77,29 @@ export function AIEmployeeCard({
           <p className="text-xs text-gray-500 mb-3">
             Last run: {employee.lastRun}
           </p>
-          
+
           {/* Status pill */}
           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100">
-            <div className={clsx(
-              'w-2 h-2 rounded-full mr-2',
-              getStatusColor(employee.status)
-            )} />
+            <div
+              className={clsx(
+                "w-2 h-2 rounded-full mr-2",
+                getStatusColor(employee.status),
+              )}
+            />
             {getStatusText(employee.status)}
           </span>
         </div>
       </div>
 
       {/* Quick actions - show on hover */}
-      <div className={clsx(
-        'absolute top-4 right-4 flex space-x-2 transition-all duration-200',
-        showActions ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
-      )}>
+      <div
+        className={clsx(
+          "absolute top-4 right-4 flex space-x-2 transition-all duration-200",
+          showActions
+            ? "opacity-100 scale-100"
+            : "opacity-0 scale-95 pointer-events-none",
+        )}
+      >
         <button
           onClick={() => onChat(employee)}
           className="p-2 bg-white rounded-button shadow-md hover:bg-gray-50 border border-gray-200 transition-colors"
@@ -111,4 +124,4 @@ export function AIEmployeeCard({
       </div>
     </div>
   );
-} 
+}

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
-import { KPICard } from '../components/KPICard';
-import { AIEmployeeCard } from '../components/AIEmployeeCard';
-import { fetchKPIData, fetchAIEmployees } from '../api/stubs';
-import type { KPIData, AIEmployee } from '../types';
+import { useState, useEffect } from "react";
+import { Plus } from "lucide-react";
+import { KPICard } from "../components/KPICard";
+import { AIEmployeeCard } from "../components/AIEmployeeCard";
+import { fetchKPIData, fetchAIEmployees } from "../api/stubs";
+import type { KPIData, AIEmployee } from "../types";
 
 export function Dashboard() {
   const [kpiData, setKpiData] = useState<KPIData | null>(null);
@@ -15,12 +15,12 @@ export function Dashboard() {
       try {
         const [kpiResult, employeesResult] = await Promise.all([
           fetchKPIData(),
-          fetchAIEmployees()
+          fetchAIEmployees(),
         ]);
         setKpiData(kpiResult);
         setEmployees(employeesResult);
       } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        console.error("Error loading dashboard data:", error);
       } finally {
         setLoading(false);
       }
@@ -30,23 +30,23 @@ export function Dashboard() {
   }, []);
 
   const handleChat = (employee: AIEmployee) => {
-    console.log('Opening chat with:', employee.name);
+    console.log("Opening chat with:", employee.name);
     // TODO: Implement chat functionality
   };
 
   const handlePermissions = (employee: AIEmployee) => {
-    console.log('Opening permissions for:', employee.name);
+    console.log("Opening permissions for:", employee.name);
     // TODO: Implement permissions functionality
   };
 
   const handleDeactivate = (employee: AIEmployee) => {
-    console.log('Deactivating:', employee.name);
+    console.log("Deactivating:", employee.name);
     // TODO: Implement deactivate functionality
   };
 
   const handleHireEmployee = () => {
-    console.log('Opening hire wizard');
-    // TODO: Navigate to hire wizard
+    // This will be handled by the top nav button now
+    console.log("Hire button clicked - wizard should open from top nav");
   };
 
   if (loading) {
@@ -69,24 +69,21 @@ export function Dashboard() {
       {/* KPI Cards */}
       {kpiData && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
-          <KPICard
-            title="Humans"
-            value={kpiData.humans}
-          />
+          <KPICard title="Humans" value={kpiData.humans} />
           <KPICard
             title="AI Employees"
             value={kpiData.aiEmployees}
             badge={{
               text: `+${kpiData.aiEmployeesChange} today`,
-              type: 'success'
+              type: "success",
             }}
           />
           <KPICard
             title="Tasks awaiting approval"
             value={kpiData.pendingApprovals}
             badge={{
-              text: 'Review needed',
-              type: 'warning'
+              text: "Review needed",
+              type: "warning",
             }}
           />
           <KPICard
@@ -126,4 +123,4 @@ export function Dashboard() {
       </div>
     </div>
   );
-} 
+}

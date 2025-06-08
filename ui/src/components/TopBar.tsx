@@ -1,5 +1,5 @@
-import React from 'react';
-import { Search, Bell } from 'lucide-react';
+import { Search } from "lucide-react";
+import ErrorInbox from "./ErrorInbox";
 
 export function TopBar() {
   return (
@@ -9,11 +9,14 @@ export function TopBar() {
         <div className="flex items-center">
           <h1 className="text-xl font-semibold text-gray-900">Clancy</h1>
         </div>
-        
+
         {/* Search field */}
         <div className="flex-1 max-w-md mx-8">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={20}
+            />
             <input
               type="text"
               placeholder="Find people or AI employees..."
@@ -21,15 +24,12 @@ export function TopBar() {
             />
           </div>
         </div>
-        
+
         {/* Right side - notifications and profile */}
         <div className="flex items-center space-x-4">
-          {/* Notifications */}
-          <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-button transition-colors">
-            <Bell size={20} />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-          </button>
-          
+          {/* Error Inbox */}
+          <ErrorInbox />
+
           {/* Profile */}
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
@@ -41,4 +41,4 @@ export function TopBar() {
       </div>
     </header>
   );
-} 
+}
