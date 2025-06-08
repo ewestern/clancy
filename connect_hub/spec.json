@@ -1,0 +1,519 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "ConnectHub API",
+    "description": "Unified integration, token, and proxy layer for Clancy Digital-Employees",
+    "version": "0.1.0"
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {}
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "description": "Comprehensive health check with dependencies",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "anyOf": [
+                        { "type": "string", "enum": ["healthy"] },
+                        { "type": "string", "enum": ["unhealthy"] }
+                      ]
+                    },
+                    "timestamp": { "format": "date-time", "type": "string" },
+                    "version": { "type": "string" },
+                    "uptime": { "type": "number" },
+                    "dependencies": {
+                      "type": "object",
+                      "properties": {
+                        "database": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["connected"] },
+                            { "type": "string", "enum": ["disconnected"] }
+                          ]
+                        },
+                        "auth0": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["connected"] },
+                            { "type": "string", "enum": ["disconnected"] }
+                          ]
+                        }
+                      },
+                      "required": ["database", "auth0"]
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "timestamp",
+                    "version",
+                    "uptime",
+                    "dependencies"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "anyOf": [
+                        { "type": "string", "enum": ["healthy"] },
+                        { "type": "string", "enum": ["unhealthy"] }
+                      ]
+                    },
+                    "timestamp": { "format": "date-time", "type": "string" },
+                    "version": { "type": "string" },
+                    "uptime": { "type": "number" },
+                    "dependencies": {
+                      "type": "object",
+                      "properties": {
+                        "database": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["connected"] },
+                            { "type": "string", "enum": ["disconnected"] }
+                          ]
+                        },
+                        "auth0": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["connected"] },
+                            { "type": "string", "enum": ["disconnected"] }
+                          ]
+                        }
+                      },
+                      "required": ["database", "auth0"]
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "timestamp",
+                    "version",
+                    "uptime",
+                    "dependencies"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": ["Health"],
+        "description": "Kubernetes readiness probe",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "anyOf": [
+                        { "type": "string", "enum": ["healthy"] },
+                        { "type": "string", "enum": ["unhealthy"] }
+                      ]
+                    },
+                    "timestamp": { "format": "date-time", "type": "string" },
+                    "version": { "type": "string" },
+                    "uptime": { "type": "number" },
+                    "dependencies": {
+                      "type": "object",
+                      "properties": {
+                        "database": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["connected"] },
+                            { "type": "string", "enum": ["disconnected"] }
+                          ]
+                        },
+                        "auth0": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["connected"] },
+                            { "type": "string", "enum": ["disconnected"] }
+                          ]
+                        }
+                      },
+                      "required": ["database", "auth0"]
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "timestamp",
+                    "version",
+                    "uptime",
+                    "dependencies"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "anyOf": [
+                        { "type": "string", "enum": ["healthy"] },
+                        { "type": "string", "enum": ["unhealthy"] }
+                      ]
+                    },
+                    "timestamp": { "format": "date-time", "type": "string" },
+                    "version": { "type": "string" },
+                    "uptime": { "type": "number" },
+                    "dependencies": {
+                      "type": "object",
+                      "properties": {
+                        "database": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["connected"] },
+                            { "type": "string", "enum": ["disconnected"] }
+                          ]
+                        },
+                        "auth0": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["connected"] },
+                            { "type": "string", "enum": ["disconnected"] }
+                          ]
+                        }
+                      },
+                      "required": ["database", "auth0"]
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "timestamp",
+                    "version",
+                    "uptime",
+                    "dependencies"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/live": {
+      "get": {
+        "tags": ["Health"],
+        "description": "Kubernetes liveness probe",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "anyOf": [
+                        { "type": "string", "enum": ["healthy"] },
+                        { "type": "string", "enum": ["unhealthy"] }
+                      ]
+                    },
+                    "timestamp": { "format": "date-time", "type": "string" },
+                    "version": { "type": "string" },
+                    "uptime": { "type": "number" },
+                    "dependencies": {
+                      "type": "object",
+                      "properties": {
+                        "database": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["connected"] },
+                            { "type": "string", "enum": ["disconnected"] }
+                          ]
+                        },
+                        "auth0": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["connected"] },
+                            { "type": "string", "enum": ["disconnected"] }
+                          ]
+                        }
+                      },
+                      "required": ["database", "auth0"]
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "timestamp",
+                    "version",
+                    "uptime",
+                    "dependencies"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/info": {
+      "get": {
+        "tags": ["Health"],
+        "description": "Service information",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "anyOf": [
+                        { "type": "string", "enum": ["healthy"] },
+                        { "type": "string", "enum": ["unhealthy"] }
+                      ]
+                    },
+                    "timestamp": { "format": "date-time", "type": "string" },
+                    "version": { "type": "string" },
+                    "uptime": { "type": "number" },
+                    "dependencies": {
+                      "type": "object",
+                      "properties": {
+                        "database": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["connected"] },
+                            { "type": "string", "enum": ["disconnected"] }
+                          ]
+                        },
+                        "auth0": {
+                          "anyOf": [
+                            { "type": "string", "enum": ["connected"] },
+                            { "type": "string", "enum": ["disconnected"] }
+                          ]
+                        }
+                      },
+                      "required": ["database", "auth0"]
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "timestamp",
+                    "version",
+                    "uptime",
+                    "dependencies"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/capabilities": {
+      "get": {
+        "tags": ["Capabilities"],
+        "description": "Returns the catalog of provider capabilities available to the platform.",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "description": "Provider slug, e.g. slack",
+                        "type": "string"
+                      },
+                      "displayName": { "type": "string" },
+                      "description": { "type": "string" },
+                      "icon": { "type": "string" },
+                      "docsUrl": { "format": "uri", "type": "string" },
+                      "kind": {
+                        "anyOf": [
+                          { "type": "string", "enum": ["internal"] },
+                          { "type": "string", "enum": ["external"] }
+                        ]
+                      },
+                      "auth": {
+                        "anyOf": [
+                          { "type": "string", "enum": ["none"] },
+                          { "type": "string", "enum": ["oauth2"] },
+                          { "type": "string", "enum": ["api_key"] },
+                          { "type": "string", "enum": ["basic"] }
+                        ]
+                      },
+                      "requiredScopes": {
+                        "type": "array",
+                        "items": { "type": "string" }
+                      },
+                      "capabilities": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "description": "Capability identifier, e.g. chat.post",
+                              "type": "string"
+                            },
+                            "displayName": { "type": "string" },
+                            "description": { "type": "string" },
+                            "paramsSchema": {},
+                            "resultSchema": {},
+                            "promptVersions": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "version": {
+                                    "description": "Prompt version tag (semver or date)",
+                                    "type": "string"
+                                  },
+                                  "modelHint": { "type": "string" },
+                                  "system": { "type": "string" },
+                                  "user": { "type": "string" },
+                                  "fewShot": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "user": { "type": "string" },
+                                        "assistant": { "type": "string" }
+                                      },
+                                      "required": ["user", "assistant"]
+                                    }
+                                  }
+                                },
+                                "required": ["version", "system"]
+                              }
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "displayName",
+                            "description",
+                            "paramsSchema",
+                            "resultSchema",
+                            "promptVersions"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "displayName",
+                      "description",
+                      "icon",
+                      "kind",
+                      "auth",
+                      "requiredScopes",
+                      "capabilities"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/prompt/{provider}/{capability}/{version}": {
+      "get": {
+        "tags": ["Prompt"],
+        "description": "Retrieve a specific prompt version for a capability.",
+        "parameters": [
+          {
+            "schema": { "type": "string" },
+            "in": "path",
+            "name": "provider",
+            "required": true
+          },
+          {
+            "schema": { "type": "string" },
+            "in": "path",
+            "name": "capability",
+            "required": true
+          },
+          {
+            "schema": { "type": "string" },
+            "in": "path",
+            "name": "version",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "version": { "type": "string" },
+                    "modelHint": { "type": "string" },
+                    "system": { "type": "string" },
+                    "user": { "type": "string" },
+                    "fewShot": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "user": { "type": "string" },
+                          "assistant": { "type": "string" }
+                        },
+                        "required": ["user", "assistant"]
+                      }
+                    }
+                  },
+                  "required": ["version", "system"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "message": { "type": "string" } },
+                  "required": ["message"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    { "url": "http://localhost:3000", "description": "Development server" }
+  ],
+  "tags": [
+    { "name": "Health", "description": "Health check endpoints" },
+    { "name": "OAuth", "description": "OAuth flow endpoints" },
+    { "name": "Proxy", "description": "API proxy endpoints" },
+    { "name": "Catalog", "description": "Integration catalog endpoints" }
+  ],
+  "externalDocs": {
+    "url": "https://swagger.io",
+    "description": "Find more info here"
+  }
+}

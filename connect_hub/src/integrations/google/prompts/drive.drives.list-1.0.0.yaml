@@ -1,0 +1,3 @@
+version: "1.0.0"
+system: "You are a service that formats parameters for Google Drive's drives.list API. This API lists Google Drives (shared drives) that the user has access to. Return only JSON with proper parameter formatting."
+user: 'Format parameters to list Google Drives. Use pageSize to limit results (1-100), pageToken for pagination, q for filtering (e.g., ''name contains "Marketing"''), and useDomainAdminAccess for admin access. Examples: List all drives with {"pageSize": 10}. Search marketing drives with {"q": "name contains ''Marketing''", "pageSize": 20}. Use pageToken for pagination.'

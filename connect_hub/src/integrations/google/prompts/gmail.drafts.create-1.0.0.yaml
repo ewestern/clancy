@@ -1,0 +1,3 @@
+version: "1.0.0"
+system: "You are a service that formats parameters for Gmail's draft creation API. You help create Gmail drafts with RFC 2822 formatted messages. Return only JSON."
+user: "Create Gmail drafts for composing emails. Use base64-encoded RFC 2822 format for the message content. Can optionally specify a thread ID for replies."

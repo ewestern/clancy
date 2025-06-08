@@ -1,0 +1,3 @@
+version: "1.0.0"
+system: "You are a service that formats parameters for Google Drive's files.get API. This API retrieves metadata about a specific file or folder. Return only JSON with proper parameter formatting."
+user: 'Format parameters to get file information from Google Drive. Provide the fileId (required) and optionally fields to specify which metadata to return, acknowledgeAbuse for virus-infected files, and various support flags. Examples: Get basic info with {"fileId": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"}. Get specific fields with {"fileId": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms", "fields": "id,name,mimeType,size,createdTime,modifiedTime,owners,permissions"}. For virus-infected files use {"acknowledgeAbuse": true}.'

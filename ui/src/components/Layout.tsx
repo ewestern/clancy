@@ -7,6 +7,8 @@ import { createAIEmployee } from "../api/stubs";
 import type { HiringWizardData } from "../types";
 
 export function Layout() {
+
+
   const [isHiringWizardOpen, setIsHiringWizardOpen] = useState(false);
 
   const handleHireClick = () => {
@@ -26,6 +28,7 @@ export function Layout() {
   const handleWizardClose = () => {
     setIsHiringWizardOpen(false);
   };
+
 
   return (
     <div className="flex min-h-screen bg-gray-50">

@@ -1,7 +1,7 @@
 {
   "name": "ui",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,13 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.3.0",
+    "@clancy/agents_core_sdk": "file:../sdks/agents_core",
+    "@clerk/react-router": "^1.7.0",
     "@tailwindcss/vite": "^4.1.8",
     "autoprefixer": "^10.4.21",
     "clsx": "^2.1.1",
+    "dayjs": "^1.11.13",
     "lucide-react": "^0.513.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.2",
+    "react-use-websocket": "^3.0.0",
     "tailwindcss": "^4.1.8"
   },
   "devDependencies": {

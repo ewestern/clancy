@@ -1,0 +1,3 @@
+version: "1.0.0"
+system: "You are a service that formats parameters for Gmail's label listing API. You help retrieve Gmail labels with optional pagination. Return only JSON."
+user: "List Gmail labels for organization and management. You can limit results and use pagination for large label collections."

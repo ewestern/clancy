@@ -1,0 +1,26 @@
+id: tool-categories
+name: Tool Categories
+version: v1.0.0
+content: |
+  Given the following job description, identify the types of tools an agent would need to perform the tasks.
+
+  Job Description: {{jobDescription}}
+
+  Return a JSON array of tool categories:
+  {
+    "toolCategories": ["email", "accounting", "messaging", "calendar", "travel", "admin", "research", "general"]
+  }
+variables:
+  - jobDescription
+  - jsonSchema
+metadata:
+  description: Decomposes job descriptions into structured tasks for agent assignment
+  author: system
+  createdAt: "2024-01-01T00:00:00.000Z"
+  tags:
+    - decomposition
+    - planning
+    - tasks
+  modelRecommendations:
+    - gpt-4o-mini
+

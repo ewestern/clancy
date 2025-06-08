@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import ErrorInbox from "./ErrorInbox";
+import { UserButton } from "@clerk/clerk-react";
 
 export function TopBar() {
   return (
@@ -31,12 +32,7 @@ export function TopBar() {
           <ErrorInbox />
 
           {/* Profile */}
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">A</span>
-            </div>
-            <span className="text-sm font-medium text-gray-900">Alex</span>
-          </div>
+          <UserButton />
         </div>
       </div>
     </header>

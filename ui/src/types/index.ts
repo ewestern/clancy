@@ -8,7 +8,6 @@ export interface AIEmployee {
 }
 
 export interface KPIData {
-  humans: number;
   aiEmployees: number;
   aiEmployeesChange: number;
   pendingApprovals: number;
@@ -41,6 +40,45 @@ export interface WorkflowTask {
   frequency: string;
   runtime: string;
   subSteps: string[];
+}
+
+// Enhanced types for collaborative wizard
+export interface WorkflowUpdate {
+  id: string;
+  action: 'add' | 'modify' | 'remove';
+  description: string;
+  affectedSteps: string[];
+  timestamp: Date;
+}
+
+export interface ChatMessage {
+  id: string;
+  sender: 'user' | 'agent';
+  content: string;
+  timestamp: Date;
+  workflowUpdates?: WorkflowUpdate[];
+}
+
+export interface EnhancedWorkflow extends WorkflowTask {
+  connectionStatus: 'requires_connection' | 'partially_connected' | 'fully_connected';
+  requiredProviders: string[];
+  lastUpdated: Date;
+  changeHighlight?: boolean;
+}
+
+export interface ProviderCard {
+  id: string;
+  name: string;
+  logo: string;
+  category: string; // 'email', 'calendar', 'accounting', etc.
+  connectionStatus: 'disconnected' | 'connecting' | 'connected';
+  accountInfo?: {
+    email?: string;
+    accountName?: string;
+  };
+  requiredScopes: string[];
+  isExplicitlyMentioned: boolean;
+  capabilities: string[];
 }
 
 export interface Integration {
@@ -77,7 +115,6 @@ export interface NotificationSettings {
 
 export interface HiringWizardData {
   jobDescription: string;
-  detectedVerbs: string[];
   proposedWorkflow: WorkflowTask[];
   integrations: Integration[];
   notifications: NotificationSettings;
@@ -85,4 +122,32 @@ export interface HiringWizardData {
   slaHours: number;
   scheduleCron?: string;
   pinToDashboard: boolean;
+}
+
+// New collaborative wizard data structure
+export interface CollaborativeWizardData {
+  jobDescription: string;
+  chatHistory: ChatMessage[];
+  enhancedWorkflows: EnhancedWorkflow[];
+  availableProviders: ProviderCard[];
+  connectedProviders: ProviderCard[];
+  phase: 'job_description' | 'collaboration' | 'completion';
+  canComplete: boolean;
+  notifications: NotificationSettings;
+  requireApproval: boolean;
+  slaHours: number;
+  pinToDashboard: boolean;
+}
+
+// WebSocket message types for wizard collaboration
+export interface WizardWebSocketMessage {
+  type: 'workflow_update' | 'provider_connected' | 'chat_message' | 'completion_check' | 'job_analysis';
+  payload: {
+    workflowUpdates?: WorkflowUpdate[];
+    connectedProvider?: ProviderCard;
+    chatMessage?: ChatMessage;
+    availableProviders?: ProviderCard[];
+    enhancedWorkflows?: EnhancedWorkflow[];
+    canComplete?: boolean;
+  };
 }

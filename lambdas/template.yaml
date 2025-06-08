@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  clancy-lambdas
+
+  SAM Template for Clancy agent execution lambdas
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: nodejs22.x
+    Architectures:
+      - x86_64
+    Tracing: Active
+    LoggingConfig:
+      LogFormat: JSON
+    Environment:
+      Variables:
+        NODE_ENV: !Ref Environment
+        AGENTS_CORE_API_URL: !Ref AgentsCoreApiUrl
+        CONNECT_HUB_API_URL: !Ref ConnectHubApiUrl
+        KINESIS_STREAM_NAME: !Ref KinesisStreamName
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+  AgentsCoreApiUrl:
+    Type: String
+    Description: URL for the Agents Core API
+  ConnectHubApiUrl:
+    Type: String
+    Description: URL for the Connect Hub API
+  KinesisStreamName:
+    Type: String
+    Description: Name of the Kinesis stream for event publishing
+
+Resources:
+  # Agent Enrichment Lambda - EventBridge pipe enrichment step
+  AgentEnrichmentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/agent-enrichment/
+      Handler: handler.lambdaHandler
+      Description: Enriches events with agent metadata from agents_core
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - kinesis:PutRecord
+                - kinesis:PutRecords
+              Resource: !Sub "arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/${KinesisStreamName}"
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - handler.ts
+
+  # Graph Creator Executor Lambda - Handles graph creator workflows
+  GraphCreatorExecutorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/graph-creator-executor/
+      Handler: handler.lambdaHandler
+      Description: Executes graph creator agent workflows
+      Timeout: 300
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - kinesis:PutRecord
+                - kinesis:PutRecords
+              Resource: !Sub "arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/${KinesisStreamName}"
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Target: es2020
+        Sourcemap: true
+        EntryPoints:
+          - handler.ts
+
+  # Main Agent Executor Lambda - Handles all other agent executions
+  MainAgentExecutorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/main-agent-executor/
+      Handler: handler.lambdaHandler
+      Description: Executes general agent workflows
+      Timeout: 300
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - kinesis:PutRecord
+                - kinesis:PutRecords
+              Resource: !Sub "arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/${KinesisStreamName}"
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Target: es2020
+        Sourcemap: true
+        EntryPoints:
+          - handler.ts
+
+  ApplicationResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name:
+        Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
+      ResourceQuery:
+        Type: CLOUDFORMATION_STACK_1_0
+  ApplicationInsightsMonitoring:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      ResourceGroupName:
+        Ref: ApplicationResourceGroup
+      AutoConfigurationEnabled: 'true'
+Outputs:
+  # Agent Enrichment Function
+  AgentEnrichmentFunctionArn:
+    Description: Agent Enrichment Lambda Function ARN
+    Value: !GetAtt AgentEnrichmentFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-AgentEnrichmentFunctionArn"
+
+  # Graph Creator Executor Function
+  GraphCreatorExecutorFunctionArn:
+    Description: Graph Creator Executor Lambda Function ARN
+    Value: !GetAtt GraphCreatorExecutorFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-GraphCreatorExecutorFunctionArn"
+
+  # Main Agent Executor Function
+  MainAgentExecutorFunctionArn:
+    Description: Main Agent Executor Lambda Function ARN
+    Value: !GetAtt MainAgentExecutorFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-MainAgentExecutorFunctionArn"

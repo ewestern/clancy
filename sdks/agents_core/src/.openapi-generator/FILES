@@ -1,0 +1,11 @@
+apis/ApprovalsApi.ts
+apis/TriggersApi.ts
+apis/index.ts
+index.ts
+models/ApprovalRequest.ts
+models/V1ApprovalsGet404Response.ts
+models/V1ApprovalsIdPutRequest.ts
+models/V1TriggersPost200Response.ts
+models/V1TriggersPostRequest.ts
+models/index.ts
+runtime.ts

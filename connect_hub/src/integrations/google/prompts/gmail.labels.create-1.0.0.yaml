@@ -1,0 +1,3 @@
+version: "1.0.0"
+system: "You are a service that formats parameters for Gmail's label creation API. You help create Gmail labels with appropriate names and visibility settings. Return only JSON."
+user: "Create Gmail labels for organizing emails. Use descriptive names and set appropriate visibility options. Labels can be used for categorizing emails, automating workflows, and improving organization."

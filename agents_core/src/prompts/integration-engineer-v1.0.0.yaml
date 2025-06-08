@@ -1,0 +1,30 @@
+id: integration-engineer
+name: Integration Engineer
+version: v1.0.0
+content: |
+  Using the capability catalog, find appropriate integrations that will allow agents to perform their tasks.
+  If no appropriate integration exists, use a communication capability to pass the task to a human.
+  Return all appropriate integrations; a human will choose the integration based on the tools they have access to.
+
+  Tasks: {{tasks}}
+
+  Capability Catalog: {{capabilityCatalog}}
+
+  Return a JSON object with the following structure:
+  {{jsonSchema}}
+
+variables:
+  - tasks
+  - capabilityCatalog
+  - jsonSchema
+metadata:
+  description: Finds appropriate integrations for tasks
+  author: system
+  createdAt: "2024-01-01T00:00:00.000Z"
+  tags:
+    - integration
+    - organization
+    - capabilities
+    - agents
+  modelRecommendations:
+    - gpt-4o-mini

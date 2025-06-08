@@ -1,0 +1,43 @@
+id: job-decomposition
+name: Job Description Decomposition
+version: v1.1.0
+content: |
+  You are an expert project manager. 
+
+  Given the following job description:
+  1. Break down this job description into distinct, manageable tasks for AI agents.
+  2. For each task, rank suitable capabilities from the catalog. Output null if no suitable capabilities are found.
+  3. Flag any missing information the user must supply. (E.g., "Which email provider is the user using?")
+
+  Job Description: {{jobDescription}}
+
+  Return a JSON array:
+  {
+    "tasks": [
+      {
+        "taskDescription": "Specific, actionable task description",
+        "category": "calendar|travel|finance|communication|admin|research|general",
+        "priority": 1-5,
+        "dependencies": ["exact task descriptions this depends on"],
+        "estimatedComplexity": "simple|medium|complex",
+        "requiredCapabilities": ["specific capability names"],
+        "estimatedDuration": "estimated time in minutes",
+        "success_criteria": "how to measure if task is complete",
+        "missingInformation": "any missing information the user must supply"
+      }
+    ]
+  }
+variables:
+  - jobDescription
+  - capabilityCatalog
+metadata:
+  description: Enhanced decomposition with duration estimates and success criteria
+  author: system
+  createdAt: "2024-01-01T00:00:00.000Z"
+  tags:
+    - decomposition
+    - planning
+    - tasks
+    - enhanced
+  modelRecommendations:
+    - gpt-4

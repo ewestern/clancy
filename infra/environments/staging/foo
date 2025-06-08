@@ -1,0 +1,817 @@
+{
+  "version": 4,
+  "terraform_version": "1.10.4",
+  "serial": 94,
+  "lineage": "bdb53776-484e-4217-ec2e-dc108fe64c56",
+  "outputs": {},
+  "resources": [
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_event_api_destination",
+      "name": "agents_core",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"].aws",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:events:us-east-1:702853186114:api-destination/agents-core-staging/93c3eee4-2434-412e-8d26-125bb62d1ec1",
+            "connection_arn": "arn:aws:events:us-east-1:702853186114:connection/clancy-connection-staging/1e380da9-c938-469d-a973-1f6f55d34366",
+            "description": "Agents Core Staging",
+            "http_method": "POST",
+            "id": "agents-core-staging",
+            "invocation_endpoint": "https://7e8808c80e54.ngrok-free.app/*",
+            "invocation_rate_limit_per_second": 20,
+            "name": "agents-core-staging",
+            "region": "us-east-1"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_cloudwatch_event_connection.clancy_staging_connection",
+            "aws_cognito_user_pool.clancy_user_pool",
+            "aws_cognito_user_pool_client.clancy_user_pool_client"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_event_bus",
+      "name": "clancy_main_event_bus",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"].aws",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:events:us-east-1:702853186114:event-bus/clancy-main-staging",
+            "dead_letter_config": [],
+            "description": "",
+            "event_source_name": null,
+            "id": "clancy-main-staging",
+            "kms_key_identifier": "",
+            "name": "clancy-main-staging",
+            "region": "us-east-1",
+            "tags": {},
+            "tags_all": {}
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_event_connection",
+      "name": "clancy_staging_connection",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"].aws",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:events:us-east-1:702853186114:connection/clancy-connection-staging/1e380da9-c938-469d-a973-1f6f55d34366",
+            "auth_parameters": [
+              {
+                "api_key": [],
+                "basic": [],
+                "invocation_http_parameters": [],
+                "oauth": [
+                  {
+                    "authorization_endpoint": "https://clancy.auth.us-east-1.amazoncognito.com/oauth2/token",
+                    "client_parameters": [
+                      {
+                        "client_id": "550h8i9nt5ci3ms6v8rvgsu7i8",
+                        "client_secret": "1cf941jcovgm3c13pek92ujm6d9340s4e9up8gpunlf9koq6hqsr"
+                      }
+                    ],
+                    "http_method": "POST",
+                    "oauth_http_parameters": [
+                      {
+                        "body": [
+                          {
+                            "is_value_secret": false,
+                            "key": "scope",
+                            "value": "clancy-resource-server-staging/all"
+                          },
+                          {
+                            "is_value_secret": false,
+                            "key": "grant_type",
+                            "value": "client_credentials"
+                          }
+                        ],
+                        "header": [],
+                        "query_string": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "authorization_type": "OAUTH_CLIENT_CREDENTIALS",
+            "description": "Clancy Staging Connection",
+            "id": "clancy-connection-staging",
+            "invocation_connectivity_parameters": [],
+            "kms_key_identifier": "",
+            "name": "clancy-connection-staging",
+            "region": "us-east-1",
+            "secret_arn": "arn:aws:secretsmanager:us-east-1:702853186114:secret:events!connection/clancy-connection-staging/a53b162f-6e4e-49de-9362-effec13b7d3e-NGzKij"
+          },
+          "sensitive_attributes": [
+            [
+              {
+                "type": "get_attr",
+                "value": "auth_parameters"
+              },
+              {
+                "type": "index",
+                "value": {
+                  "value": 0,
+                  "type": "number"
+                }
+              },
+              {
+                "type": "get_attr",
+                "value": "oauth"
+              },
+              {
+                "type": "index",
+                "value": {
+                  "value": 0,
+                  "type": "number"
+                }
+              },
+              {
+                "type": "get_attr",
+                "value": "oauth_http_parameters"
+              },
+              {
+                "type": "index",
+                "value": {
+                  "value": 0,
+                  "type": "number"
+                }
+              },
+              {
+                "type": "get_attr",
+                "value": "body"
+              },
+              {
+                "type": "index",
+                "value": {
+                  "value": 0,
+                  "type": "number"
+                }
+              },
+              {
+                "type": "get_attr",
+                "value": "value"
+              }
+            ],
+            [
+              {
+                "type": "get_attr",
+                "value": "auth_parameters"
+              },
+              {
+                "type": "index",
+                "value": {
+                  "value": 0,
+                  "type": "number"
+                }
+              },
+              {
+                "type": "get_attr",
+                "value": "oauth"
+              },
+              {
+                "type": "index",
+                "value": {
+                  "value": 0,
+                  "type": "number"
+                }
+              },
+              {
+                "type": "get_attr",
+                "value": "oauth_http_parameters"
+              },
+              {
+                "type": "index",
+                "value": {
+                  "value": 0,
+                  "type": "number"
+                }
+              },
+              {
+                "type": "get_attr",
+                "value": "body"
+              },
+              {
+                "type": "index",
+                "value": {
+                  "value": 1,
+                  "type": "number"
+                }
+              },
+              {
+                "type": "get_attr",
+                "value": "value"
+              }
+            ],
+            [
+              {
+                "type": "get_attr",
+                "value": "auth_parameters"
+              },
+              {
+                "type": "index",
+                "value": {
+                  "value": 0,
+                  "type": "number"
+                }
+              },
+              {
+                "type": "get_attr",
+                "value": "oauth"
+              },
+              {
+                "type": "index",
+                "value": {
+                  "value": 0,
+                  "type": "number"
+                }
+              },
+              {
+                "type": "get_attr",
+                "value": "client_parameters"
+              },
+              {
+                "type": "index",
+                "value": {
+                  "value": 0,
+                  "type": "number"
+                }
+              },
+              {
+                "type": "get_attr",
+                "value": "client_secret"
+              }
+            ]
+          ],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_cognito_user_pool.clancy_user_pool",
+            "aws_cognito_user_pool_client.clancy_user_pool_client"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_event_rule",
+      "name": "human_approval_rule",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"].aws",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:events:us-east-1:702853186114:rule/clancy-main-staging/human-approval-rule",
+            "description": "Capture each human approval",
+            "event_bus_name": "clancy-main-staging",
+            "event_pattern": "{\"detail\":{\"type\":[\"request_approval\"]}}",
+            "force_destroy": false,
+            "id": "clancy-main-staging/human-approval-rule",
+            "is_enabled": true,
+            "name": "human-approval-rule",
+            "name_prefix": "",
+            "region": "us-east-1",
+            "role_arn": "",
+            "schedule_expression": "",
+            "state": "ENABLED",
+            "tags": {},
+            "tags_all": {}
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "aws_cloudwatch_event_bus.clancy_main_event_bus"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cloudwatch_event_target",
+      "name": "agents_core_target",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"].aws",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "appsync_target": [],
+            "arn": "arn:aws:events:us-east-1:702853186114:api-destination/agents-core-staging/93c3eee4-2434-412e-8d26-125bb62d1ec1",
+            "batch_target": [],
+            "dead_letter_config": [],
+            "ecs_target": [],
+            "event_bus_name": "clancy-main-staging",
+            "force_destroy": false,
+            "http_target": [
+              {
+                "header_parameters": {},
+                "path_parameter_values": [
+                  "v1/approvals"
+                ],
+                "query_string_parameters": {}
+              }
+            ],
+            "id": "clancy-main-staging-human-approval-rule-Idf7399a05-257c-4580-9d35-285c57ba4645",
+            "input": "",
+            "input_path": "$.detail.data",
+            "input_transformer": [],
+            "kinesis_target": [],
+            "redshift_target": [],
+            "region": "us-east-1",
+            "retry_policy": [],
+            "role_arn": "arn:aws:iam::702853186114:role/service-role/Amazon_EventBridge_Invoke_Api_Destination_336818126",
+            "rule": "human-approval-rule",
+            "run_command_targets": [],
+            "sagemaker_pipeline_target": [],
+            "sqs_target": [],
+            "target_id": "Idf7399a05-257c-4580-9d35-285c57ba4645"
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjEifQ==",
+          "dependencies": [
+            "aws_cloudwatch_event_api_destination.agents_core",
+            "aws_cloudwatch_event_bus.clancy_main_event_bus",
+            "aws_cloudwatch_event_connection.clancy_staging_connection",
+            "aws_cloudwatch_event_rule.human_approval_rule",
+            "aws_cognito_user_pool.clancy_user_pool",
+            "aws_cognito_user_pool_client.clancy_user_pool_client"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cognito_user_pool",
+      "name": "clancy_user_pool",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"].aws",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "account_recovery_setting": [
+              {
+                "recovery_mechanism": [
+                  {
+                    "name": "verified_email",
+                    "priority": 1
+                  },
+                  {
+                    "name": "verified_phone_number",
+                    "priority": 2
+                  }
+                ]
+              }
+            ],
+            "admin_create_user_config": [
+              {
+                "allow_admin_create_user_only": false,
+                "invite_message_template": []
+              }
+            ],
+            "alias_attributes": null,
+            "arn": "arn:aws:cognito-idp:us-east-1:702853186114:userpool/us-east-1_FIYg9CsiE",
+            "auto_verified_attributes": [],
+            "creation_date": "2025-07-13T15:17:26Z",
+            "custom_domain": "",
+            "deletion_protection": "INACTIVE",
+            "device_configuration": [],
+            "domain": "clancy",
+            "email_configuration": [
+              {
+                "configuration_set": "",
+                "email_sending_account": "COGNITO_DEFAULT",
+                "from_email_address": "",
+                "reply_to_email_address": "",
+                "source_arn": ""
+              }
+            ],
+            "email_mfa_configuration": [],
+            "email_verification_message": "",
+            "email_verification_subject": "",
+            "endpoint": "cognito-idp.us-east-1.amazonaws.com/us-east-1_FIYg9CsiE",
+            "estimated_number_of_users": 0,
+            "id": "us-east-1_FIYg9CsiE",
+            "lambda_config": [],
+            "last_modified_date": "2025-07-13T15:17:26Z",
+            "mfa_configuration": "OFF",
+            "name": "clancy-user-pool-staging",
+            "password_policy": [
+              {
+                "minimum_length": 8,
+                "password_history_size": 0,
+                "require_lowercase": true,
+                "require_numbers": true,
+                "require_symbols": true,
+                "require_uppercase": true,
+                "temporary_password_validity_days": 7
+              }
+            ],
+            "region": "us-east-1",
+            "schema": [],
+            "sign_in_policy": [
+              {
+                "allowed_first_auth_factors": [
+                  "PASSWORD"
+                ]
+              }
+            ],
+            "sms_authentication_message": "",
+            "sms_configuration": [],
+            "sms_verification_message": "",
+            "software_token_mfa_configuration": [],
+            "tags": {},
+            "tags_all": {},
+            "user_attribute_update_settings": [],
+            "user_pool_add_ons": [],
+            "user_pool_tier": "ESSENTIALS",
+            "username_attributes": [],
+            "username_configuration": [],
+            "verification_message_template": [
+              {
+                "default_email_option": "CONFIRM_WITH_CODE",
+                "email_message": "",
+                "email_message_by_link": "",
+                "email_subject": "",
+                "email_subject_by_link": "",
+                "sms_message": ""
+              }
+            ],
+            "web_authn_configuration": []
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cognito_user_pool_client",
+      "name": "clancy_user_pool_client",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"].aws",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "access_token_validity": 0,
+            "allowed_oauth_flows": [
+              "client_credentials"
+            ],
+            "allowed_oauth_flows_user_pool_client": true,
+            "allowed_oauth_scopes": [
+              "clancy-resource-server-staging/all"
+            ],
+            "analytics_configuration": [],
+            "auth_session_validity": 3,
+            "callback_urls": [],
+            "client_secret": "1cf941jcovgm3c13pek92ujm6d9340s4e9up8gpunlf9koq6hqsr",
+            "default_redirect_uri": "",
+            "enable_propagate_additional_user_context_data": false,
+            "enable_token_revocation": true,
+            "explicit_auth_flows": [],
+            "generate_secret": true,
+            "id": "550h8i9nt5ci3ms6v8rvgsu7i8",
+            "id_token_validity": 0,
+            "logout_urls": [],
+            "name": "clancy-user-pool-client-staging",
+            "prevent_user_existence_errors": "",
+            "read_attributes": [],
+            "refresh_token_rotation": [],
+            "refresh_token_validity": 30,
+            "region": "us-east-1",
+            "supported_identity_providers": [
+              "COGNITO"
+            ],
+            "token_validity_units": [],
+            "user_pool_id": "us-east-1_FIYg9CsiE",
+            "write_attributes": []
+          },
+          "sensitive_attributes": [
+            [
+              {
+                "type": "get_attr",
+                "value": "client_secret"
+              }
+            ]
+          ],
+          "dependencies": [
+            "aws_cognito_user_pool.clancy_user_pool"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_cognito_user_pool_domain",
+      "name": "main",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"].aws",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "aws_account_id": "702853186114",
+            "certificate_arn": "",
+            "cloudfront_distribution": "d3oia8etllorh5.cloudfront.net",
+            "cloudfront_distribution_arn": "d3oia8etllorh5.cloudfront.net",
+            "cloudfront_distribution_zone_id": "Z2FDTNDATAQYW2",
+            "domain": "clancy",
+            "id": "clancy",
+            "managed_login_version": 2,
+            "region": "us-east-1",
+            "s3_bucket": "aws-cognito-prod-iad-assets",
+            "user_pool_id": "us-east-1_FIYg9CsiE",
+            "version": "20250713162500"
+          },
+          "sensitive_attributes": [],
+          "private": "eyJzY2hlbWFfdmVyc2lvbiI6IjAifQ==",
+          "dependencies": [
+            "aws_cognito_user_pool.clancy_user_pool"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_kinesis_stream",
+      "name": "clancy_stream",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"].aws",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:kinesis:us-east-1:702853186114:stream/clancy-main-staging",
+            "encryption_type": "NONE",
+            "enforce_consumer_deletion": false,
+            "id": "arn:aws:kinesis:us-east-1:702853186114:stream/clancy-main-staging",
+            "kms_key_id": "",
+            "name": "clancy-main-staging",
+            "region": "us-east-1",
+            "retention_period": 24,
+            "shard_count": 0,
+            "shard_level_metrics": [],
+            "stream_mode_details": [
+              {
+                "stream_mode": "ON_DEMAND"
+              }
+            ],
+            "tags": {},
+            "tags_all": {},
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjozMDAwMDAwMDAwMDAsImRlbGV0ZSI6NzIwMDAwMDAwMDAwMCwidXBkYXRlIjo3MjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_pipes_pipe",
+      "name": "clancy_pipe",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"].aws",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:pipes:us-east-1:702853186114:pipe/clancy-main-staging",
+            "description": "Managed by Terraform",
+            "desired_state": "RUNNING",
+            "enrichment": "",
+            "enrichment_parameters": [],
+            "id": "clancy-main-staging",
+            "kms_key_identifier": "",
+            "log_configuration": [
+              {
+                "cloudwatch_logs_log_destination": [
+                  {
+                    "log_group_arn": "arn:aws:logs:us-east-1:702853186114:log-group:/aws/vendedlogs/pipes/clancy-main-staging"
+                  }
+                ],
+                "firehose_log_destination": [],
+                "include_execution_data": [],
+                "level": "ERROR",
+                "s3_log_destination": []
+              }
+            ],
+            "name": "clancy-main-staging",
+            "name_prefix": "",
+            "region": "us-east-1",
+            "role_arn": "arn:aws:iam::702853186114:role/service-role/Amazon_EventBridge_Pipe_clancy-main-staging_c4c6d4b8",
+            "source": "arn:aws:kinesis:us-east-1:702853186114:stream/clancy-main-staging",
+            "source_parameters": [
+              {
+                "activemq_broker_parameters": [],
+                "dynamodb_stream_parameters": [],
+                "filter_criteria": [],
+                "kinesis_stream_parameters": [
+                  {
+                    "batch_size": 1,
+                    "dead_letter_config": [],
+                    "maximum_batching_window_in_seconds": 0,
+                    "maximum_record_age_in_seconds": -1,
+                    "maximum_retry_attempts": -1,
+                    "on_partial_batch_item_failure": "",
+                    "parallelization_factor": 0,
+                    "starting_position": "LATEST",
+                    "starting_position_timestamp": ""
+                  }
+                ],
+                "managed_streaming_kafka_parameters": [],
+                "rabbitmq_broker_parameters": [],
+                "self_managed_kafka_parameters": [],
+                "sqs_queue_parameters": []
+              }
+            ],
+            "tags": {},
+            "tags_all": {},
+            "target": "arn:aws:events:us-east-1:702853186114:api-destination/agents-core-staging/93c3eee4-2434-412e-8d26-125bb62d1ec1",
+            "target_parameters": [
+              {
+                "batch_job_parameters": [],
+                "cloudwatch_logs_parameters": [],
+                "ecs_task_parameters": [],
+                "eventbridge_event_bus_parameters": [],
+                "http_parameters": [
+                  {
+                    "header_parameters": {},
+                    "path_parameter_values": [
+                      "$.detail.data"
+                    ],
+                    "query_string_parameters": {}
+                  }
+                ],
+                "input_template": "",
+                "kinesis_stream_parameters": [],
+                "lambda_function_parameters": [],
+                "redshift_data_parameters": [],
+                "sagemaker_pipeline_parameters": [],
+                "sqs_queue_parameters": [],
+                "step_function_state_machine_parameters": []
+              }
+            ],
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInVwZGF0ZSI6MTgwMDAwMDAwMDAwMH19",
+          "dependencies": [
+            "aws_cloudwatch_event_api_destination.agents_core",
+            "aws_cloudwatch_event_connection.clancy_staging_connection",
+            "aws_cognito_user_pool.clancy_user_pool",
+            "aws_cognito_user_pool_client.clancy_user_pool_client",
+            "aws_kinesis_stream.clancy_stream"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_schemas_registry",
+      "name": "clancy_schema_registry",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"].aws",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:schemas:us-east-1:702853186114:registry/clancy-schema-registry-staging",
+            "description": "Clancy schema registry",
+            "id": "clancy-schema-registry-staging",
+            "name": "clancy-schema-registry-staging",
+            "region": "us-east-1",
+            "tags": {},
+            "tags_all": {}
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_schemas_schema",
+      "name": "event_schema",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"].aws",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:schemas:us-east-1:702853186114:schema/clancy-schema-registry-staging/event_schema",
+            "content": "{\"components\":{\"schemas\":{\"Event\":{\"properties\":{\"data\":{\"type\":\"object\"},\"event_time\":{\"type\":\"number\"},\"type\":{\"type\":\"string\"}},\"type\":\"object\"}}},\"info\":{\"title\":\"Event\",\"version\":\"1.0.0\"},\"openapi\":\"3.0.0\",\"paths\":{}}",
+            "description": "The schema definition for event",
+            "id": "event_schema/clancy-schema-registry-staging",
+            "last_modified": "2025-07-13T19:56:45Z",
+            "name": "event_schema",
+            "region": "us-east-1",
+            "registry_name": "clancy-schema-registry-staging",
+            "tags": {},
+            "tags_all": {},
+            "type": "OpenApi3",
+            "version": "1",
+            "version_created_date": "2025-07-13T19:56:45Z"
+          },
+          "sensitive_attributes": [],
+          "private": "bnVsbA==",
+          "dependencies": [
+            "aws_schemas_registry.clancy_schema_registry"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "google_pubsub_subscription",
+      "name": "clancy_connect_hub_staging",
+      "provider": "provider[\"registry.terraform.io/hashicorp/google\"].google",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "ack_deadline_seconds": 10,
+            "bigquery_config": [],
+            "cloud_storage_config": [],
+            "dead_letter_policy": [],
+            "effective_labels": {
+              "goog-terraform-provisioned": "true"
+            },
+            "enable_exactly_once_delivery": false,
+            "enable_message_ordering": false,
+            "expiration_policy": [
+              {
+                "ttl": "2678400s"
+              }
+            ],
+            "filter": "",
+            "id": "projects/clancy-464816/subscriptions/clancy-connect-hub-staging-subscription",
+            "labels": {},
+            "message_retention_duration": "604800s",
+            "message_transforms": [],
+            "name": "clancy-connect-hub-staging-subscription",
+            "project": "clancy-464816",
+            "push_config": [
+              {
+                "attributes": {},
+                "no_wrapper": [],
+                "oidc_token": [],
+                "push_endpoint": "https://clancy-connect-hub-staging.onrender.com/webhook"
+              }
+            ],
+            "retain_acked_messages": false,
+            "retry_policy": [],
+            "terraform_labels": {
+              "goog-terraform-provisioned": "true"
+            },
+            "timeouts": null,
+            "topic": "projects/clancy-464816/topics/clancy-connect-hub-staging"
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxMjAwMDAwMDAwMDAwLCJkZWxldGUiOjEyMDAwMDAwMDAwMDAsInVwZGF0ZSI6MTIwMDAwMDAwMDAwMH19",
+          "dependencies": [
+            "google_pubsub_topic.clancy_connect_hub_staging"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "google_pubsub_topic",
+      "name": "clancy_connect_hub_staging",
+      "provider": "provider[\"registry.terraform.io/hashicorp/google\"].google",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "effective_labels": {
+              "goog-terraform-provisioned": "true"
+            },
+            "id": "projects/clancy-464816/topics/clancy-connect-hub-staging",
+            "ingestion_data_source_settings": [],
+            "kms_key_name": "",
+            "labels": {},
+            "message_retention_duration": "",
+            "message_storage_policy": [],
+            "message_transforms": [],
+            "name": "clancy-connect-hub-staging",
+            "project": "clancy-464816",
+            "schema_settings": [],
+            "terraform_labels": {
+              "goog-terraform-provisioned": "true"
+            },
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxMjAwMDAwMDAwMDAwLCJkZWxldGUiOjEyMDAwMDAwMDAwMDAsInVwZGF0ZSI6MTIwMDAwMDAwMDAwMH19"
+        }
+      ]
+    }
+  ],
+  "check_results": null
+}
+

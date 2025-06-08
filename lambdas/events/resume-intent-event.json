@@ -1,0 +1,25 @@
+{
+  "version": "0",
+  "id": "87654321-4321-4321-4321-210987654321",
+  "detail-type": "Agent Resume Request",
+  "source": "clancy.agents",
+  "account": "123456789012",
+  "time": "2024-01-15T10:35:00Z",
+  "region": "us-east-1",
+  "detail": {
+    "eventType": "resume_intent",
+    "runId": "run-12345678-1234-1234-1234-123456789012",
+    "agentId": "agent-email-processor",
+    "orgId": "org-12345678-1234-1234-1234-123456789012",
+    "hilResponse": {
+      "promptId": "approval-request-123",
+      "userResponses": {
+        "approved": true,
+        "comments": "Looks good, proceed with the response",
+        "priority": "high"
+      }
+    },
+    "timestamp": "2024-01-15T10:35:00Z",
+    "source": "hil-interface"
+  }
+} 

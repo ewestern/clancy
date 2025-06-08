@@ -1,0 +1,42 @@
+{
+  "version": "0",
+  "id": "graph-creator-12345678-1234-1234-1234-123456789012",
+  "detail-type": "Enriched Agent Execution Request",
+  "source": "clancy.agent-enrichment",
+  "account": "123456789012",
+  "time": "2024-01-15T11:00:00Z",
+  "region": "us-east-1",
+  "detail": {
+    "eventType": "run_intent",
+    "runId": "run-graph-12345678-1234-1234-1234-123456789012",
+    "agentId": "agent-graph-creator",
+    "orgId": "org-12345678-1234-1234-1234-123456789012",
+    "triggerType": "api",
+    "payload": {
+      "requirement": "Create a workflow for processing customer onboarding",
+      "capabilities": ["user_verification", "document_processing", "email_notification", "crm_integration"],
+      "complexity": "medium",
+      "nodeCount": 5,
+      "integrations": ["salesforce", "docusign", "sendgrid"]
+    },
+    "timestamp": "2024-01-15T11:00:00Z",
+    "source": "workflow-builder-ui",
+    "agentMetadata": {
+      "agentId": "agent-graph-creator",
+      "name": "Graph Creator Agent",
+      "description": "Creates workflow graphs based on business requirements",
+      "type": "workflow",
+      "capabilities": ["graph_creation", "workflow_design", "capability_mapping", "validation"],
+      "config": {
+        "maxNodes": 20,
+        "supportedIntegrations": ["salesforce", "slack", "google", "microsoft", "docusign"],
+        "complexityLevels": ["simple", "medium", "complex"],
+        "validationRules": {
+          "minNodes": 2,
+          "maxBranches": 10,
+          "requiredConnections": true
+        }
+      }
+    }
+  }
+} 

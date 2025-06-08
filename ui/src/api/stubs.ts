@@ -63,7 +63,6 @@ const mockAIEmployees: AIEmployee[] = [
 ];
 
 const mockKPIData: KPIData = {
-  humans: 36,
   aiEmployees: 7,
   aiEmployeesChange: 1,
   pendingApprovals: 3,
@@ -281,28 +280,28 @@ export const rejectRequest = async (
 };
 
 // Hiring Wizard API functions
-export const analyzeJobDescription = async (
-  jobDescription: string,
-): Promise<string[]> => {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
-  // Simulate LLM analysis of job description
-  console.log("Analyzing job description:", jobDescription);
-  const commonVerbs = [
-    "create",
-    "send",
-    "update",
-    "review",
-    "process",
-    "notify",
-    "schedule",
-    "track",
-    "analyze",
-    "generate",
-  ];
-  const detectedVerbs = commonVerbs.filter(() => Math.random() > 0.6);
-  return detectedVerbs.slice(0, 6);
-};
+//export const analyzeJobDescription = async (
+//  jobDescription: string,
+//): Promise<string[]> => {
+//  await new Promise((resolve) => setTimeout(resolve, 1000));
+//
+//  // Simulate LLM analysis of job description
+//  console.log("Analyzing job description:", jobDescription);
+//  const commonVerbs = [
+//    "create",
+//    "send",
+//    "update",
+//    "review",
+//    "process",
+//    "notify",
+//    "schedule",
+//    "track",
+//    "analyze",
+//    "generate",
+//  ];
+//  const detectedVerbs = commonVerbs.filter(() => Math.random() > 0.6);
+//  return detectedVerbs.slice(0, 6);
+//};
 
 export const generateWorkflow = async (
   jobDescription: string,

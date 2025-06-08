@@ -1,0 +1,151 @@
+name: Publish Merged SDK
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  publish-sdk:
+    if: github.event.pull_request.merged == true && contains(join(github.event.pull_request.labels.*.name, ','), 'sdk-update:')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # For creating tags and releases
+      packages: write # For publishing to GitHub Packages
+    outputs:
+      sdk_name: ${{ steps.extract-info.outputs.sdk_name }}
+      sdk_type: ${{ steps.extract-info.outputs.sdk_type }}
+      package_path: ${{ steps.extract-info.outputs.package_path }}
+      local_version: ${{ steps.read-version.outputs.local_version }}
+      node_version: '20'
+
+    steps:
+      - name: Extract SDK Info from PR Label
+        id: extract-info
+        run: |
+          PR_LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+          echo "PR Labels: $PR_LABELS"
+          SDK_NAME_FROM_LABEL=$(echo "$PR_LABELS" | grep -o 'sdk-update:[^,]*' | sed 's/sdk-update://')
+          
+          if [ -z "$SDK_NAME_FROM_LABEL" ]; then
+            echo "SDK update label not found or malformed."
+            exit 1
+          fi
+
+          echo "Extracted SDK Name from label: $SDK_NAME_FROM_LABEL"
+          SDK_BASE_NAME=$(echo "$SDK_NAME_FROM_LABEL" | sed -E 's/-(ts|kt)$//')
+          SDK_SUFFIX=$(echo "$SDK_NAME_FROM_LABEL" | grep -oE '(ts|kt)$')
+          
+          PACKAGE_PATH="./${SDK_BASE_NAME}-${SDK_SUFFIX}"
+          SDK_TYPE=""
+
+          if [ "$SDK_SUFFIX" == "ts" ]; then
+            SDK_TYPE="typescript"
+          elif [ "$SDK_SUFFIX" == "kt" ]; then
+            SDK_TYPE="kotlin"
+          else
+            echo "Error: SDK suffix could not be determined from label: $SDK_NAME_FROM_LABEL"
+            exit 1
+          fi
+          
+          echo "sdk_name=$SDK_NAME_FROM_LABEL" >> $GITHUB_OUTPUT
+          echo "sdk_type=$SDK_TYPE" >> $GITHUB_OUTPUT
+          echo "package_path=$PACKAGE_PATH" >> $GITHUB_OUTPUT
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Read Local Version from Merged Files
+        id: read-version
+        env:
+            SDK_TYPE_ENV: ${{ steps.extract-info.outputs.sdk_type }}
+            PACKAGE_PATH_ENV: ${{ steps.extract-info.outputs.package_path }}
+        run: |
+            LOCAL_VERSION_VALUE=""
+            VERSION_FILE_TS_PATH="${PACKAGE_PATH_ENV}/package.json"
+            VERSION_FILE_KT_PATH="${PACKAGE_PATH_ENV}/version.txt"
+
+            echo "Reading version for $SDK_TYPE_ENV SDK at $PACKAGE_PATH_ENV"
+            if [ "$SDK_TYPE_ENV" == "typescript" ]; then
+                if [ ! -f "$VERSION_FILE_TS_PATH" ]; then echo "Error: $VERSION_FILE_TS_PATH not found after checkout."; exit 1; fi
+                sudo apt-get update && sudo apt-get install -y jq
+                LOCAL_VERSION_VALUE=$(jq -r .version "$VERSION_FILE_TS_PATH")
+            elif [ "$SDK_TYPE_ENV" == "kotlin" ]; then
+                if [ ! -f "$VERSION_FILE_KT_PATH" ]; then echo "Error: $VERSION_FILE_KT_PATH not found after checkout."; exit 1; fi
+                LOCAL_VERSION_VALUE=$(cat "$VERSION_FILE_KT_PATH" | tr -d ' ')
+            fi
+            if [ -z "$LOCAL_VERSION_VALUE" ] || [ "$LOCAL_VERSION_VALUE" == "null" ]; then
+                 echo "Error: Could not read local version for $SDK_TYPE_ENV SDK from $PACKAGE_PATH_ENV."
+                 exit 1
+            fi
+            echo "Local version read: $LOCAL_VERSION_VALUE"
+            echo "local_version=$LOCAL_VERSION_VALUE" >> $GITHUB_OUTPUT
+
+    # --- TypeScript Publishing Steps ---    
+    # These steps should be conditional on the sdk_type
+
+      - name: Setup Node.js for TypeScript
+        if: steps.extract-info.outputs.sdk_type == 'typescript'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com/'
+          scope: '@${{ github.repository_owner }}'
+
+      - name: Install Dependencies & Build TypeScript SDK
+        if: steps.extract-info.outputs.sdk_type == 'typescript'
+        working-directory: ${{ steps.extract-info.outputs.package_path }}
+        run: |
+          npm install
+          npm run build
+
+      - name: Publish TypeScript SDK to GitHub Packages
+        if: steps.extract-info.outputs.sdk_type == 'typescript'
+        working-directory: ${{ steps.extract-info.outputs.package_path }}
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # --- Kotlin Publishing Steps ---    
+      - name: Set up JDK for Kotlin
+        if: steps.extract-info.outputs.sdk_type == 'kotlin'
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      
+      - name: Make Gradle wrapper executable for Kotlin
+        if: steps.extract-info.outputs.sdk_type == 'kotlin'
+        working-directory: ${{ steps.extract-info.outputs.package_path }}
+        run: chmod +x ./gradlew
+
+      - name: Build Kotlin SDK with Gradle
+        if: steps.extract-info.outputs.sdk_type == 'kotlin'
+        working-directory: ${{ steps.extract-info.outputs.package_path }}
+        run: ./gradlew build
+
+      - name: Publish Kotlin SDK to GitHub Packages
+        if: steps.extract-info.outputs.sdk_type == 'kotlin'
+        working-directory: ${{ steps.extract-info.outputs.package_path }}
+        run: ./gradlew publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # --- Common Tagging and Release Steps --- 
+      - name: Create Git Tag and GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SDK_NAME: ${{ steps.extract-info.outputs.sdk_name }}
+          RELEASE_VERSION: ${{ steps.read-version.outputs.local_version }}
+        run: |
+          TAG_NAME="$SDK_NAME@$RELEASE_VERSION"
+          echo "Creating tag: $TAG_NAME"
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
+          
+          echo "Creating GitHub Release for $TAG_NAME"
+          gh release create $TAG_NAME \
+            --title "Release $TAG_NAME" \
+            --notes "Published $SDK_NAME version $RELEASE_VERSION from merged PR #${{ github.event.pull_request.number }}" 

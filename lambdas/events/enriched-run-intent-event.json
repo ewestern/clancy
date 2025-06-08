@@ -1,0 +1,41 @@
+{
+  "version": "0",
+  "id": "enriched-12345678-1234-1234-1234-123456789012",
+  "detail-type": "Enriched Agent Execution Request",
+  "source": "clancy.agent-enrichment",
+  "account": "123456789012",
+  "time": "2024-01-15T10:30:05Z",
+  "region": "us-east-1",
+  "detail": {
+    "eventType": "run_intent",
+    "runId": "run-12345678-1234-1234-1234-123456789012",
+    "agentId": "agent-email-processor",
+    "orgId": "org-12345678-1234-1234-1234-123456789012",
+    "triggerType": "manual",
+    "payload": {
+      "email": {
+        "from": "customer@example.com",
+        "to": "support@company.com",
+        "subject": "Need help with pricing",
+        "body": "I'm interested in your enterprise plan. Can you provide pricing details?"
+      },
+      "priority": "normal",
+      "requestedActions": ["analyze_intent", "generate_response"]
+    },
+    "timestamp": "2024-01-15T10:30:00Z",
+    "source": "api-gateway",
+    "agentMetadata": {
+      "agentId": "agent-email-processor",
+      "name": "Email Processing Agent",
+      "description": "Processes incoming customer emails and generates appropriate responses",
+      "type": "digital_employee",
+      "capabilities": ["email_processing", "knowledge_retrieval", "response_generation"],
+      "config": {
+        "maxTokens": 4000,
+        "temperature": 0.7,
+        "responseStyle": "professional",
+        "knowledgeBase": "customer-support"
+      }
+    }
+  }
+} 

@@ -1,0 +1,197 @@
+name: Generate SDK and Create PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      sdk_name:
+        description: 'Select the SDK project to generate and update'
+        required: true
+        type: choice
+        options:
+          - agents_core
+          - events
+          - connect_hub
+      environment:
+        description: 'Select the environment to generate SDK from'
+        required: true
+        type: choice
+        default: 'production'
+        options:
+          - production
+          - staging
+
+defaults:
+  run:
+    working-directory: ./sdks/
+jobs:
+  generate-and-create-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract SDK Info
+        id: extract-sdk-info
+        run: |
+          SDK_NAME="${{ github.event.inputs.sdk_name }}"
+          SDK_SUFFIX=$(echo "$SDK_NAME" | grep -oE '(ts|kt)$')
+          SDK_BASE_NAME=$(echo "$SDK_NAME" | sed -E "s/-sdk-${SDK_SUFFIX}$//")
+          PACKAGE_PATH="./${SDK_NAME}"
+          if [ "$SDK_SUFFIX" == "ts" ]; then
+            SDK_TYPE="typescript"
+          else
+            SDK_TYPE="kotlin"
+          fi
+          ENVIRONMENT="${{ github.event.inputs.environment }}"
+          case "$SDK_BASE_NAME" in
+            accounts) OPENAPI_URL="https://accounts.${ENVIRONMENT}.ad-sprout.services/openapi.json";;
+            ads) OPENAPI_URL="https://ads.${ENVIRONMENT}.ad-sprout.services/openapi.json";;
+            cpm) OPENAPI_URL="https://cpm.${ENVIRONMENT}.ad-sprout.services/openapi.json";;
+            reports) OPENAPI_URL="https://reports.${ENVIRONMENT}.ad-sprout.services/openapi.json";;
+            *) echo "Unknown SDK base name $SDK_BASE_NAME"; exit 1;;
+          esac
+          echo "sdk_name=$SDK_NAME" >> $GITHUB_OUTPUT
+          echo "sdk_type=$SDK_TYPE" >> $GITHUB_OUTPUT
+          echo "sdk_base_name=$SDK_BASE_NAME" >> $GITHUB_OUTPUT
+          echo "openapi_url=$OPENAPI_URL" >> $GITHUB_OUTPUT
+          echo "package_path=$PACKAGE_PATH" >> $GITHUB_OUTPUT
+
+      - name: Install tools
+        run: |
+          sudo apt-get update && sudo apt-get install -y curl jq
+          wget https://github.com/mikefarah/yq/releases/download/v4.40.5/yq_linux_amd64 -O /usr/local/bin/yq
+          chmod +x /usr/local/bin/yq
+
+      - name: Download OpenAPI spec & extract version
+        id: get-version
+        run: |
+          curl -sL "${{ steps.extract-sdk-info.outputs.openapi_url }}" -o openapi_spec.json
+          API_VER=$(yq e -r '.info.version' openapi_spec.json)
+          echo "api_version=$API_VER" >> $GITHUB_OUTPUT
+
+      - name: Check current package version
+        id: version-check
+        run: |
+          API_VERSION="${{ steps.get-version.outputs.api_version }}"
+          CLEAN_API_VER=$(echo "$API_VERSION" | tr -d '"')
+          PKG_PATH="${{ steps.extract-sdk-info.outputs.package_path }}"
+          
+          if [ "${{ steps.extract-sdk-info.outputs.sdk_type }}" == "typescript" ]; then
+            if [ -f "$PKG_PATH/package.json" ]; then
+              CURRENT_VER=$(jq -r '.version' "$PKG_PATH/package.json")
+            else
+              CURRENT_VER="0.0.0"
+            fi
+          else
+            if [ -f "$PKG_PATH/version.txt" ]; then
+              CURRENT_VER=$(cat "$PKG_PATH/version.txt")
+            else
+              CURRENT_VER="0.0.0"
+            fi
+          fi
+          
+          echo "current_version=$CURRENT_VER" >> $GITHUB_OUTPUT
+          echo "api_version_clean=$CLEAN_API_VER" >> $GITHUB_OUTPUT
+          
+          if [ "$CURRENT_VER" = "$CLEAN_API_VER" ]; then
+            echo "versions_match=true" >> $GITHUB_OUTPUT
+            echo "Package version ($CURRENT_VER) matches API version ($CLEAN_API_VER). No update needed."
+          else
+            echo "versions_match=false" >> $GITHUB_OUTPUT
+            echo "Package version ($CURRENT_VER) differs from API version ($CLEAN_API_VER). Update needed."
+          fi
+
+      - name: Exit early if versions match
+        if: ${{ steps.version-check.outputs.versions_match == 'true' }}
+        run: |
+          echo "Versions match. Exiting workflow early."
+          rm -f openapi_spec.json
+          exit 0
+
+      - name: Ensure SDK directory exists
+        if: ${{ steps.version-check.outputs.versions_match == 'false' }}
+        run: mkdir -p "${{ steps.extract-sdk-info.outputs.package_path }}"
+
+      - name: Generate SDK (TypeScript)
+        if: ${{ steps.extract-sdk-info.outputs.sdk_type == 'typescript' && steps.version-check.outputs.versions_match == 'false' }}
+        uses: hatamiarash7/openapi-generator@v0.3.0
+        with:
+          generator: typescript-fetch
+          openapi-file: openapi_spec.json
+          output-dir: ${{ steps.extract-sdk-info.outputs.package_path }}
+
+
+      - name: Version check & update
+        if: ${{ steps.version-check.outputs.versions_match == 'false' }}
+        run: |
+          API_VERSION="${{ steps.get-version.outputs.api_version }}"
+          CLEAN_VER=$(echo "$API_VERSION" | tr -d '"')
+          PKG_PATH="${{ steps.extract-sdk-info.outputs.package_path }}"
+          if [ "${{ steps.extract-sdk-info.outputs.sdk_type }}" == "typescript" ]; then
+            cd "$PKG_PATH"
+            npm version "$CLEAN_VER" --no-git-tag-version --allow-same-version
+            cd -
+          else
+            echo "$CLEAN_VER" > "$PKG_PATH/version.txt"
+          fi
+
+      - name: Cleanup OpenAPI spec
+        if: ${{ steps.version-check.outputs.versions_match == 'false' }}
+        run: |
+          rm -f openapi_spec.json
+          rm -f "${{ steps.extract-sdk-info.outputs.package_path }}/openapi_spec.json" || true
+
+      - name: Cleanup unused files
+        if: ${{ steps.version-check.outputs.versions_match == 'false' }}
+        run: |
+          PKG_PATH="${{ steps.extract-sdk-info.outputs.package_path }}"
+          if [ -f "$PKG_PATH/.openapi-generator/FILES" ]; then
+            # Read the list of generated files
+            GENERATED_FILES=$(cat "$PKG_PATH/.openapi-generator/FILES")
+            if [ "${{ steps.extract-sdk-info.outputs.sdk_type }}" == "kotlin" ]; then
+              # For Kotlin projects, only clean up files in src/
+              find "$PKG_PATH/src" -type f | while read -r file; do
+                rel_path=$(realpath --relative-to="$PKG_PATH" "$file")
+                if ! echo "$GENERATED_FILES" | grep -q "$rel_path"; then
+                  echo "Removing unused file: $rel_path"
+                  rm -f "$file"
+                fi
+              done
+            else
+              # For TypeScript projects, only clean up files in apis/ and models/
+              find "$PKG_PATH/apis" "$PKG_PATH/models" -type f | while read -r file; do
+                rel_path=$(realpath --relative-to="$PKG_PATH" "$file")
+                if ! echo "$GENERATED_FILES" | grep -q "$rel_path"; then
+                  echo "Removing unused file: $rel_path"
+                  rm -f "$file"
+                fi
+              done
+            fi
+          else
+            echo "No .openapi-generator/FILES found in $PKG_PATH"
+          fi
+
+      - name: Stage all SDK changes
+        if: ${{ steps.version-check.outputs.versions_match == 'false' }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "${{ steps.extract-sdk-info.outputs.package_path }}"
+
+      - name: Create Pull Request
+        if: ${{ steps.version-check.outputs.versions_match == 'false' }}
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "feat(${{ steps.extract-sdk-info.outputs.sdk_name }}): update SDK"
+          branch: sdk-update/${{ steps.extract-sdk-info.outputs.sdk_name }}-${{ steps.get-version.outputs.api_version }}
+          title: "feat(${{ steps.extract-sdk-info.outputs.sdk_name }}): update to version ${{ steps.get-version.outputs.api_version }}"
+          body: |
+            Automated SDK update for `${{ steps.extract-sdk-info.outputs.sdk_name }}` to version `${{ steps.get-version.outputs.api_version }}`.
+          labels: sdk-update:${{ steps.extract-sdk-info.outputs.sdk_name }}
+          delete-branch: true
+          draft: false 
