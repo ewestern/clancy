@@ -18,6 +18,7 @@ import type { AgentRegistry } from '../registry.js';
 import type { MemorySystem } from '../memory.js';
 import type { MultiAgentGraphCreator } from '../graphCreator.js';
 import type { IntentEmitter } from '../intentEmitter.js';
+import type { LLMProvider } from './llm.js';
 
 export type FastifyTypeBox = FastifyInstance<
   RawServerDefault,
@@ -51,6 +52,7 @@ declare module 'fastify' {
     // Core services
     tokenService: TokenService;
     auditService: AuditService;
+    llmProvider: LLMProvider;
     
     // Agent-Core specific services
     supervisor: SupervisorAgent;
@@ -58,18 +60,5 @@ declare module 'fastify' {
     memorySystem: MemorySystem;
     graphCreator: MultiAgentGraphCreator;
     intentEmitter: IntentEmitter;
-    
-    // Configuration
-    config: {
-      nodeEnv: string;
-      port: number;
-      databaseUrl: string;
-      jwtSecret: string;
-      logLevel: string;
-      connectIqUrl: string;
-      authServiceUrl: string;
-      redisUrl: string;
-      openaiApiKey: string;
-    };
   }
 } 

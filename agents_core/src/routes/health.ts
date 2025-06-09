@@ -1,7 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import { Type } from '@sinclair/typebox';
-import { HealthResponseSchema, ErrorSchema } from '../schemas/index.js';
-import type { FastifyRequestTypeBox, FastifyReplyTypeBox } from '../types/fastify.js';
+import { HealthResponseSchema } from '../schemas/index.js';
 import packageJson from '../../package.json' with { type: 'json' };
 import { sql } from 'drizzle-orm';
 
@@ -126,7 +125,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
         name: packageJson.name,
         version: packageJson.version,
         description: packageJson.description,
-        nodeEnv: fastify.config.nodeEnv,
+        nodeEnv: process.env.NODE_ENV,
       });
     },
   });

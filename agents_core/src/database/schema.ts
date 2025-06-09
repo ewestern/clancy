@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, jsonb, index, text } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, jsonb, index, text, boolean, integer, real } from 'drizzle-orm/pg-core';
 
 export const agents = pgTable('agents', {
   agentId: uuid('agent_id').primaryKey().defaultRandom(),
@@ -50,15 +50,50 @@ export const multiAgentSystems = pgTable('multi_agent_systems', {
   systemId: uuid('system_id').primaryKey().defaultRandom(),
   organizationId: varchar('organization_id', { length: 255 }).notNull(),
   name: varchar('name', { length: 255 }).notNull(),
-  jobDescription: text('job_description').notNull(),
-  specification: jsonb('specification').$type<Record<string, any>>().notNull(),
+  jobDescription: varchar('job_description', { length: 5000 }).notNull(),
+  specification: jsonb('specification').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   createdBy: varchar('created_by', { length: 255 }),
   status: varchar('status', { length: 50 }).notNull().default('active'),
 }, (table) => ({
-  orgIndex: index('systems_org_idx').on(table.organizationId),
+  orgIndex: index('multi_agent_systems_org_idx').on(table.organizationId),
   statusIndex: index('systems_status_idx').on(table.status),
   createdAtIndex: index('systems_created_at_idx').on(table.createdAt),
+}));
+
+// Prompt execution tracking tables
+export const promptExecutions = pgTable('prompt_executions', {
+  executionId: uuid('execution_id').primaryKey().defaultRandom(),
+  promptId: varchar('prompt_id', { length: 255 }).notNull(),
+  version: varchar('version', { length: 50 }).notNull(),
+  variables: jsonb('variables').notNull(),
+  response: jsonb('response'),
+  success: boolean('success').notNull(),
+  responseTimeMs: integer('response_time_ms').notNull(),
+  qualityScore: real('quality_score'),
+  errorMessage: varchar('error_message', { length: 1000 }),
+  timestamp: timestamp('timestamp').defaultNow().notNull(),
+  organizationId: varchar('organization_id', { length: 255 }),
+}, (table) => ({
+  promptVersionIndex: index('prompt_executions_prompt_version_idx').on(table.promptId, table.version),
+  timestampIndex: index('prompt_executions_timestamp_idx').on(table.timestamp),
+  orgIndex: index('prompt_executions_org_idx').on(table.organizationId),
+}));
+
+export const promptVersions = pgTable('prompt_versions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  promptId: varchar('prompt_id', { length: 255 }).notNull(),
+  version: varchar('version', { length: 50 }).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  content: text('content').notNull(),
+  variables: jsonb('variables').notNull(),
+  metadata: jsonb('metadata').notNull(),
+  isActive: boolean('is_active').notNull().default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdBy: varchar('created_by', { length: 255 }),
+}, (table) => ({
+  promptVersionIndex: index('prompt_versions_prompt_version_idx').on(table.promptId, table.version),
+  activeIndex: index('prompt_versions_active_idx').on(table.promptId, table.isActive),
 }));
 
 // Type exports for use in application code

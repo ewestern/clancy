@@ -178,7 +178,6 @@ agents_core/
 ├── src/
 │   ├── index.ts                # Application entry point
 │   ├── app.ts                  # Fastify app configuration
-│   ├── config.ts               # Configuration management
 │   ├── supervisor.ts           # Supervisor agent
 │   ├── registry.ts             # Agent registry
 │   ├── memory.ts              # Memory system

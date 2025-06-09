@@ -1,7 +1,5 @@
-import type { Config } from '../config.js';
-
 export class TokenService {
-  constructor(private config: Config) {}
+  constructor(private jwtSecret: string) {}
 
   async generateToken(payload: Record<string, any>): Promise<string> {
     // TODO: Implement JWT token generation

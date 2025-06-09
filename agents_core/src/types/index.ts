@@ -62,6 +62,7 @@ export interface TaskDecomposition {
   priority: number;
   dependencies: string[];
   estimatedComplexity: 'simple' | 'medium' | 'complex';
+  requiredCapabilities: string[];
 }
 
 export interface AgentContext {

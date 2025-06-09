@@ -4,10 +4,7 @@ import apiReference from '@scalar/fastify-api-reference';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
 
-import { config } from './config.js';
 import packageJson from '../package.json' with { type: 'json' };
 
 // Import plugins
@@ -20,14 +17,19 @@ import { registerEventBus } from './plugins/eventBus.js';
 import { healthRoutes } from './routes/health.js';
 import { triggerRoutes } from './routes/triggers.js';
 import { agentRoutes } from './routes/agents.js';
-import { graphRoutes } from './routes/graphs.js';
+import {graphRoutes} from './routes/graphs.js';
 import { executionRoutes } from './routes/executions.js';
+import promptsRoutes from './routes/prompts.js';
 
 export async function createApp() {
+  // Get environment variables
+  const nodeEnv = process.env.NODE_ENV || 'development';
+  const logLevel = process.env.LOG_LEVEL || 'info';
+
   const app = Fastify({
     logger: {
-      level: config.logLevel,
-      ...(config.nodeEnv === 'development' && {
+      level: logLevel,
+      ...(nodeEnv === 'development' && {
         transport: {
           target: 'pino-pretty',
           options: {
@@ -37,9 +39,6 @@ export async function createApp() {
       }),
     },
   }).withTypeProvider<TypeBoxTypeProvider>();
-
-  // Store config in app instance
-  app.decorate('config', config);
 
   // Security plugins
   await app.register(helmet, {
@@ -67,6 +66,7 @@ export async function createApp() {
         { name: 'agents', description: 'Agent management endpoints' },
         { name: 'graphs', description: 'Multi-agent graph creation endpoints' },
         { name: 'executions', description: 'Execution tracking endpoints' },
+        { name: 'prompts', description: 'Prompt management endpoints' },
       ],
       components: {
         securitySchemes: {
@@ -130,7 +130,6 @@ export async function createApp() {
       method: request.method,
       url: request.url,
       statusCode: reply.statusCode,
-      responseTime: reply.getResponseTime(),
     }, 'Request completed');
   });
 
@@ -161,6 +160,7 @@ export async function createApp() {
   await app.register(agentRoutes, { prefix: '/v1' });
   await app.register(graphRoutes, { prefix: '/v1' });
   await app.register(executionRoutes, { prefix: '/v1' });
+      await app.register(promptsRoutes);
 
   return app;
 }

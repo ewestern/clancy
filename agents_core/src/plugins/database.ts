@@ -4,8 +4,15 @@ import postgres from 'postgres';
 import * as schema from '../database/schema.js';
 
 export const registerDatabase: FastifyPluginAsync = async (fastify) => {
+  // Get database URL from environment
+  const databaseUrl = process.env.DATABASE_URL || (
+    process.env.NODE_ENV === 'production' 
+      ? (() => { throw new Error('DATABASE_URL is required in production'); })()
+      : 'postgresql://localhost:5432/agents_core'
+  );
+
   // Create PostgreSQL connection
-  const queryClient = postgres(fastify.config.databaseUrl);
+  const queryClient = postgres(databaseUrl);
   
   // Create Drizzle database instance
   const db = drizzle(queryClient, { schema });

@@ -1,20 +1,23 @@
 import { createApp } from './app.js';
-import { config } from './config.js';
 
 async function start() {
   try {
     const app = await createApp();
     
+    // Get port from environment
+    const port = parseInt(process.env.PORT || '3000', 10);
+    const nodeEnv = process.env.NODE_ENV || 'development';
+    
     // Start the server
     await app.listen({
-      port: config.port,
+      port,
       host: '0.0.0.0',
     });
     
-    app.log.info(`Agent-Core service started on port ${config.port}`);
-    app.log.info(`Environment: ${config.nodeEnv}`);
-    app.log.info(`API Reference available at http://localhost:${config.port}/reference`);
-    app.log.info(`OpenAPI JSON available at http://localhost:${config.port}/openapi.json`);
+    app.log.info(`Agent-Core service started on port ${port}`);
+    app.log.info(`Environment: ${nodeEnv}`);
+    app.log.info(`API Reference available at http://localhost:${port}/reference`);
+    app.log.info(`OpenAPI JSON available at http://localhost:${port}/openapi.json`);
     
     // Graceful shutdown
     const gracefulShutdown = async (signal: string) => {
