@@ -8,7 +8,6 @@ export interface AIEmployee {
 }
 
 export interface KPIData {
-  humans: number;
   aiEmployees: number;
   aiEmployeesChange: number;
   pendingApprovals: number;

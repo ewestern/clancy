@@ -5,14 +5,16 @@ Agent-Core is the control plane for multi-agent workflow orchestration in the Cl
 ## Overview
 
 ### What Agent-Core Does
+
 - **Graph Creation**: Generate multi-agent workflows from natural language job descriptions
 - **Agent Lifecycle Management**: Create, activate, and manage persistent agent identities
-- **Supervisor Orchestration**: Route triggers to appropriate agents within organizations  
+- **Supervisor Orchestration**: Route triggers to appropriate agents within organizations
 - **Multi-Agent Coordination**: Handle inter-agent communication and workflow dependencies
 - **Event Projection**: Maintain runtime checkpoint store from global event stream
 - **Intent Emission**: Publish `runIntent` events to execution queue for Agent Workers
 
 ### What Agent-Core Does NOT Do
+
 - **Graph Execution**: Delegates to Agent Workers via event queue
 - **Capability Implementation**: Delegates to Connect-IQ service
 - **Authentication**: Uses external Auth service for token management
@@ -84,6 +86,7 @@ Once running, the API documentation is available at:
 ## Core Endpoints
 
 ### Health & Monitoring
+
 - `GET /health` - Comprehensive health check with dependencies
 - `GET /ready` - Kubernetes readiness probe
 - `GET /live` - Kubernetes liveness probe
@@ -91,18 +94,22 @@ Once running, the API documentation is available at:
 - `GET /metrics` - Prometheus metrics
 
 ### Trigger Processing
+
 - `POST /v1/triggers` - Process incoming triggers
 
 ### Agent Management
+
 - `GET /v1/organizations/:orgId/agents` - List agents
 - `POST /v1/organizations/:orgId/agents` - Create agent
 - `GET /v1/agents/:agentId` - Get agent details
 - `PUT /v1/agents/:agentId` - Update agent
 
 ### Graph Creation
+
 - `POST /v1/organizations/:orgId/graphs` - Create multi-agent system
 
 ### Execution Tracking
+
 - `GET /v1/executions/:executionId` - Get execution status
 - `GET /v1/organizations/:orgId/executions` - List executions
 
@@ -225,11 +232,13 @@ The service uses PostgreSQL with Drizzle ORM. Key tables:
 ## External Dependencies
 
 ### Required Services
+
 - **Connect-IQ**: Capability discovery and management
 - **Auth Service**: Authentication and authorization
 - **Event Bus**: Message queue for inter-service communication
 
 ### Optional Services
+
 - **Redis**: Caching and session storage
 - **Prometheus**: Metrics collection
 
@@ -265,4 +274,4 @@ The service automatically configures itself based on `NODE_ENV`:
 
 ## License
 
-MIT License - see LICENSE file for details. 
+MIT License - see LICENSE file for details.

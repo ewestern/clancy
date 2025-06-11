@@ -68,8 +68,7 @@ export function Dashboard() {
 
       {/* KPI Cards */}
       {kpiData && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
-          <KPICard title="Humans" value={kpiData.humans} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
           <KPICard
             title="AI Employees"
             value={kpiData.aiEmployees}
