@@ -1,16 +1,16 @@
-import { test, expect } from 'vitest';
-import { createApp } from '../../src/app.js';
+import { test, expect } from "vitest";
+import { createApp } from "../../src/app.js";
 
-test('GET /health returns 200', async () => {
+test("GET /health returns 200", async () => {
   const app = await createApp();
-  
+
   const response = await app.inject({
-    method: 'GET',
-    url: '/health',
+    method: "GET",
+    url: "/health",
   });
-  
+
   expect(response.statusCode).toBe(200);
-  
+
   const body = response.json();
   expect(body).toMatchObject({
     status: expect.any(String),
@@ -24,35 +24,35 @@ test('GET /health returns 200', async () => {
   });
 });
 
-test('GET /ready returns 200', async () => {
+test("GET /ready returns 200", async () => {
   const app = await createApp();
-  
+
   const response = await app.inject({
-    method: 'GET',
-    url: '/ready',
+    method: "GET",
+    url: "/ready",
   });
-  
+
   expect(response.statusCode).toBe(200);
 });
 
-test('GET /live returns 200', async () => {
+test("GET /live returns 200", async () => {
   const app = await createApp();
-  
+
   const response = await app.inject({
-    method: 'GET',
-    url: '/live',
+    method: "GET",
+    url: "/live",
   });
-  
+
   expect(response.statusCode).toBe(200);
 });
 
-test('GET /info returns 200', async () => {
+test("GET /info returns 200", async () => {
   const app = await createApp();
-  
+
   const response = await app.inject({
-    method: 'GET',
-    url: '/info',
+    method: "GET",
+    url: "/info",
   });
-  
+
   expect(response.statusCode).toBe(200);
-}); 
+});

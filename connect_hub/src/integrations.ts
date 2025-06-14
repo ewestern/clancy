@@ -18,4 +18,15 @@ export const registry = {
     }
     return provider;
   },
+
+  /**
+   * Assemble an array of provider capability objects that conform to
+   * ProviderCapabilitiesSchema.
+   */
+  getCapabilities() {
+    return Object.values(providers).map((p) => ({
+      ...p.metadata,
+      capabilities: p.listCapabilities(),
+    }));
+  },
 };

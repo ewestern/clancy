@@ -7,7 +7,7 @@ Unified integration, token, and proxy layer for Clancy Digital-Employees.
 ConnectHub is a Node.js + Fastify + TypeScript service that provides:
 
 - **OAuth Management**: Handle OAuth flows and credential storage
-- **Token Management**: Store and refresh third-party tokens using Auth0 integration  
+- **Token Management**: Store and refresh third-party tokens using Auth0 integration
 - **API Proxy**: Execute capability requests on behalf of agents
 - **Integration Catalog**: Maintain catalog of available integrations and actions
 - **Rate Limiting**: Manage API quotas and request throttling
@@ -67,19 +67,19 @@ npm run db:migrate
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NODE_ENV` | Environment mode | `development` |
-| `PORT` | Server port | `3000` |
-| `LOG_LEVEL` | Logging level | `info` |
-| `DB_HOST` | Database host | `localhost` |
-| `DB_PORT` | Database port | `5432` |
-| `DB_USER` | Database user | `postgres` |
-| `DB_PASSWORD` | Database password | `postgres` |
-| `DB_NAME` | Database name | `connect_hub` |
-| `AUTH0_DOMAIN` | Auth0 domain | Required in production |
+| Variable         | Description        | Default                |
+| ---------------- | ------------------ | ---------------------- |
+| `NODE_ENV`       | Environment mode   | `development`          |
+| `PORT`           | Server port        | `3000`                 |
+| `LOG_LEVEL`      | Logging level      | `info`                 |
+| `DB_HOST`        | Database host      | `localhost`            |
+| `DB_PORT`        | Database port      | `5432`                 |
+| `DB_USER`        | Database user      | `postgres`             |
+| `DB_PASSWORD`    | Database password  | `postgres`             |
+| `DB_NAME`        | Database name      | `connect_hub`          |
+| `AUTH0_DOMAIN`   | Auth0 domain       | Required in production |
 | `AUTH0_AUDIENCE` | Auth0 API audience | Required in production |
-| `AUTH0_ISSUER` | Auth0 issuer URL | Required in production |
+| `AUTH0_ISSUER`   | Auth0 issuer URL   | Required in production |
 
 ## API Documentation
 
@@ -143,4 +143,4 @@ connect_hub/
 
 ## License
 
-Proprietary - Clancy Digital-Employees 
+Proprietary - Clancy Digital-Employees

@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "modelHint": "gpt-4o-mini",
+  "system": "You are a service that formats parameters for Slack's chat.postMessage API and returns only JSON.",
+  "user": "Send the following message to the Slack channel.",
+  "fewShot": []
+}

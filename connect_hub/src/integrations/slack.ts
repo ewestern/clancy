@@ -5,7 +5,12 @@ import {
   EventContext,
   CapabilityMeta,
   JSONSchema,
+  PromptSpec,
 } from "../providers/types.js";
+
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 
 // Node 18+ provides global fetch. If your runtime is < 18, uncomment the next
 // line and add `node-fetch` as a dependency.
@@ -63,7 +68,7 @@ const resultSchema: JSONSchema = {
 
 async function slackChatPost(
   params: SlackChatPostParams,
-  ctx: ExecutionContext
+  ctx: ExecutionContext,
 ): Promise<SlackChatPostResult> {
   if (!ctx.accessToken) {
     throw new Error("Slack access token is missing from execution context");
@@ -84,7 +89,7 @@ async function slackChatPost(
   if (response.status === 429) {
     const retryAfter = response.headers.get("Retry-After") ?? "0";
     throw new Error(
-      `Slack rate-limited the request. Retry after ${retryAfter} seconds.`
+      `Slack rate-limited the request. Retry after ${retryAfter} seconds.`,
     );
   }
 
@@ -111,6 +116,18 @@ async function slackChatPost(
 export class SlackProvider implements ProviderRuntime {
   private capabilityCache = new Map<string, Capability<any, any>>();
 
+  // Static metadata about this provider
+  public readonly metadata = {
+    id: "slack",
+    displayName: "Slack",
+    description: "Slack is a team communication and collaboration platform.",
+    icon: "https://a.slack-edge.com/80588/marketing/img/meta/slack_hash_256.png",
+    docsUrl: "https://api.slack.com/",
+    kind: "external" as const,
+    auth: "oauth2" as const,
+    requiredScopes: ["chat:write"],
+  };
+
   getCapability<P, R>(capabilityId: string): Capability<P, R> {
     if (!this.capabilityCache.has(capabilityId)) {
       switch (capabilityId) {
@@ -118,12 +135,17 @@ export class SlackProvider implements ProviderRuntime {
           const meta: CapabilityMeta = {
             id: capabilityId,
             displayName: "Post Message",
-            description: "Send a message to a Slack channel using chat.postMessage",
+            description:
+              "Send a message to a Slack channel using chat.postMessage",
             paramsSchema,
             resultSchema,
+            promptVersions: loadPrompts(capabilityId),
           };
 
-          const capabilityImpl: Capability<SlackChatPostParams, SlackChatPostResult> = {
+          const capabilityImpl: Capability<
+            SlackChatPostParams,
+            SlackChatPostResult
+          > = {
             meta,
             execute: slackChatPost,
           };
@@ -142,10 +164,46 @@ export class SlackProvider implements ProviderRuntime {
   async handleEvent(
     _eventName: string,
     _payload: unknown,
-    _ctx: EventContext
+    _ctx: EventContext,
   ): Promise<void> {
     /* eslint-enable @typescript-eslint/no-unused-vars */
     // TODO: handle Slack Events API callbacks when webhook support is added.
     return;
   }
+
+  listCapabilities(): CapabilityMeta[] {
+    // Ensure at least one capability instantiated to provide metadata
+    if (this.capabilityCache.size === 0) {
+      // eager-build known capabilities
+      this.getCapability("chat.post");
+    }
+    return Array.from(this.capabilityCache.values()).map((c) => c.meta);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helper to load prompt specs from ./prompts/{capabilityId}/*.json
+// ---------------------------------------------------------------------------
+
+function loadPrompts(capabilityId: string): PromptSpec[] {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const promptsDir = resolve(__dirname, "prompts", capabilityId);
+  if (!existsSync(promptsDir)) return [];
+
+  const specs: PromptSpec[] = [];
+  for (const entry of readdirSync(promptsDir, { withFileTypes: true })) {
+    if (entry.isFile() && entry.name.endsWith(".json")) {
+      const json = JSON.parse(
+        readFileSync(resolve(promptsDir, entry.name), "utf-8"),
+      );
+      specs.push(json as PromptSpec);
+    }
+  }
+
+  // Sort by version if semver-ish
+  specs.sort((a, b) =>
+    a.version.localeCompare(b.version, "en", { numeric: true }),
+  );
+  return specs;
 }

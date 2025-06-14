@@ -1,8 +1,8 @@
-import { FastifyPluginAsync } from 'fastify';
-import { Type } from '@sinclair/typebox';
-import { HealthResponseSchema } from '../schemas/index.js';
-import packageJson from '../../package.json' with { type: 'json' };
-import { sql } from 'drizzle-orm';
+import { FastifyPluginAsync } from "fastify";
+import { Type } from "@sinclair/typebox";
+import { HealthResponseSchema } from "../models/index.js";
+import packageJson from "../../package.json" with { type: "json" };
+import { sql } from "drizzle-orm";
 
 const healthSchema = {
   response: {
@@ -15,7 +15,7 @@ const simpleHealthSchema = {
   response: {
     200: Type.Object({
       status: Type.String(),
-      timestamp: Type.String({ format: 'date-time' }),
+      timestamp: Type.String({ format: "date-time" }),
     }),
   },
 };
@@ -33,73 +33,71 @@ const infoSchema = {
 
 export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   // Comprehensive health check
-  fastify.get('/health', {
+  fastify.get("/health", {
     schema: healthSchema,
-    handler: async (
-      request,
-      reply
-    ) => {
+    handler: async (request, reply) => {
       const timestamp = new Date().toISOString();
-      
+
       try {
         // Check database connection
         await fastify.db.execute(sql`SELECT 1`);
-        const dbStatus = 'healthy';
-        
+        const dbStatus = "healthy";
+
         // TODO: Add other health checks (Redis, external services)
-        const redisStatus = 'healthy'; // Placeholder
-        const connectIqStatus = 'healthy'; // Placeholder
-        const authServiceStatus = 'healthy'; // Placeholder
-        
-        const isHealthy = dbStatus === 'healthy' && 
-                         redisStatus === 'healthy' && 
-                         connectIqStatus === 'healthy' && 
-                         authServiceStatus === 'healthy';
-        
+        const redisStatus = "healthy"; // Placeholder
+        const connectIqStatus = "healthy"; // Placeholder
+        const authServiceStatus = "healthy"; // Placeholder
+
+        const isHealthy =
+          dbStatus === "healthy" &&
+          redisStatus === "healthy" &&
+          connectIqStatus === "healthy" &&
+          authServiceStatus === "healthy";
+
         const response = {
-          status: isHealthy ? 'healthy' as const : 'unhealthy' as const,
+          status: isHealthy ? ("healthy" as const) : ("unhealthy" as const),
           timestamp,
           version: packageJson.version,
           dependencies: {
-            database: dbStatus as 'healthy' | 'unhealthy',
-            redis: redisStatus as 'healthy' | 'unhealthy',
-            connectIq: connectIqStatus as 'healthy' | 'unhealthy',
-            authService: authServiceStatus as 'healthy' | 'unhealthy',
+            database: dbStatus as "healthy" | "unhealthy",
+            redis: redisStatus as "healthy" | "unhealthy",
+            connectIq: connectIqStatus as "healthy" | "unhealthy",
+            authService: authServiceStatus as "healthy" | "unhealthy",
           },
         };
-        
+
         return reply.status(isHealthy ? 200 : 503).send(response);
       } catch (error) {
         const response = {
-          status: 'unhealthy' as const,
+          status: "unhealthy" as const,
           timestamp,
           version: packageJson.version,
           dependencies: {
-            database: 'unhealthy' as const,
-            redis: 'unhealthy' as const,
-            connectIq: 'unhealthy' as const,
-            authService: 'unhealthy' as const,
+            database: "unhealthy" as const,
+            redis: "unhealthy" as const,
+            connectIq: "unhealthy" as const,
+            authService: "unhealthy" as const,
           },
         };
-        
+
         return reply.status(503).send(response);
       }
     },
   });
 
   // Kubernetes readiness probe
-  fastify.get('/ready', {
+  fastify.get("/ready", {
     schema: simpleHealthSchema,
     handler: async (request, reply) => {
       try {
         await fastify.db.execute(sql`SELECT 1`);
         return reply.send({
-          status: 'ready',
+          status: "ready",
           timestamp: new Date().toISOString(),
         });
       } catch (error) {
         return reply.status(503).send({
-          status: 'not ready',
+          status: "not ready",
           timestamp: new Date().toISOString(),
         });
       }
@@ -107,18 +105,18 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Kubernetes liveness probe
-  fastify.get('/live', {
+  fastify.get("/live", {
     schema: simpleHealthSchema,
     handler: async (request, reply) => {
       return reply.send({
-        status: 'alive',
+        status: "alive",
         timestamp: new Date().toISOString(),
       });
     },
   });
 
   // Service information
-  fastify.get('/info', {
+  fastify.get("/info", {
     schema: infoSchema,
     handler: async (request, reply) => {
       return reply.send({
@@ -131,10 +129,10 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Metrics endpoint (placeholder)
-  fastify.get('/metrics', {
+  fastify.get("/metrics", {
     handler: async (request, reply) => {
       // TODO: Implement Prometheus metrics
-      return reply.type('text/plain').send('# Metrics not implemented yet\n');
+      return reply.type("text/plain").send("# Metrics not implemented yet\n");
     },
   });
-}; 
+};

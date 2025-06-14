@@ -61,7 +61,7 @@ export interface TaskDecomposition {
   category: string;
   priority: number;
   dependencies: string[];
-  estimatedComplexity: 'simple' | 'medium' | 'complex';
+  estimatedComplexity: "simple" | "medium" | "complex";
   requiredCapabilities: string[];
 }
 
@@ -124,7 +124,10 @@ export interface Capability {
 
 export interface ConnectIQClient {
   getCapabilities(orgId: string, category?: string): Promise<Capability[]>;
-  findCapabilityOrFallback(taskDescription: string, category?: string): Promise<Capability>;
+  findCapabilityOrFallback(
+    taskDescription: string,
+    category?: string,
+  ): Promise<Capability>;
 }
 
 export interface AuthClient {
@@ -142,14 +145,14 @@ export type EventHandler = (event: Event) => Promise<void>;
 
 // Health Check Response
 export interface HealthResponse {
-  status: 'healthy' | 'unhealthy';
+  status: "healthy" | "unhealthy";
   timestamp: string;
   version: string;
   dependencies: {
-    database: 'healthy' | 'unhealthy';
-    redis: 'healthy' | 'unhealthy';
-    connectIq: 'healthy' | 'unhealthy';
-    authService: 'healthy' | 'unhealthy';
+    database: "healthy" | "unhealthy";
+    redis: "healthy" | "unhealthy";
+    connectIq: "healthy" | "unhealthy";
+    authService: "healthy" | "unhealthy";
   };
 }
 
@@ -161,4 +164,4 @@ export interface ErrorResponse {
   timestamp: string;
   path?: string;
   details?: unknown;
-} 
+}

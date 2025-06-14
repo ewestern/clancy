@@ -1,18 +1,17 @@
-import Fastify from 'fastify';
-import swagger from '@fastify/swagger';
-import apiReference from '@scalar/fastify-api-reference';
-import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import Fastify from "fastify";
+import swagger from "@fastify/swagger";
+import apiReference from "@scalar/fastify-api-reference";
+import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import packageJson from "../package.json" with { type: "json" };
-import { registerServices } from './services/index.js';
-import { registerRoutes } from './routes/index.js';
-import { registerMiddleware } from './middleware/index.js';
-import { registerDatabase } from './plugins/database.js';
+import { registerServices } from "./services/index.js";
+import { registerRoutes } from "./routes/index.js";
+import { registerMiddleware } from "./middleware/index.js";
+import { registerDatabase } from "./plugins/database.js";
 
 export async function createApp() {
-  
   const app = Fastify({
     logger: {
-      level: 'info',
+      level: "info",
     },
   }).withTypeProvider<TypeBoxTypeProvider>();
 
@@ -20,36 +19,37 @@ export async function createApp() {
   await app.register(swagger, {
     hideUntagged: true,
     openapi: {
-      openapi: '3.0.0',
+      openapi: "3.0.0",
       info: {
-        title: 'ConnectHub API',
-        description: 'Unified integration, token, and proxy layer for Clancy Digital-Employees',
+        title: "ConnectHub API",
+        description:
+          "Unified integration, token, and proxy layer for Clancy Digital-Employees",
         version: packageJson.version,
       },
       servers: [
         {
           url: `http://localhost:3000`,
-          description: 'Development server',
+          description: "Development server",
         },
       ],
       tags: [
-        { name: 'Health', description: 'Health check endpoints' },
-        { name: 'OAuth', description: 'OAuth flow endpoints' },
-        { name: 'Proxy', description: 'API proxy endpoints' },
-        { name: 'Catalog', description: 'Integration catalog endpoints' },
+        { name: "Health", description: "Health check endpoints" },
+        { name: "OAuth", description: "OAuth flow endpoints" },
+        { name: "Proxy", description: "API proxy endpoints" },
+        { name: "Catalog", description: "Integration catalog endpoints" },
       ],
       components: {
         securitySchemes: {
           bearerAuth: {
-            type: 'http',
-            scheme: 'bearer',
-            bearerFormat: 'JWT',
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT",
           },
         },
       },
       externalDocs: {
-        url: 'https://swagger.io',
-        description: 'Find more info here',
+        url: "https://swagger.io",
+        description: "Find more info here",
       },
     },
     refResolver: {
@@ -67,15 +67,15 @@ export async function createApp() {
   });
 
   // OpenAPI JSON endpoint
-  app.get('/openapi.json', async () => {
+  app.get("/openapi.json", async () => {
     return app.swagger();
   });
 
   // API Reference UI
   await app.register(apiReference, {
-    routePrefix: '/reference',
+    routePrefix: "/reference",
     configuration: {
-      url: '/openapi.json',
+      url: "/openapi.json",
     },
   });
 
@@ -94,19 +94,19 @@ export async function createApp() {
   // Graceful shutdown
   const gracefulShutdown = async (signal: string) => {
     app.log.info(`Received ${signal}, shutting down gracefully`);
-    
+
     try {
       await app.close();
-      app.log.info('Application closed successfully');
+      app.log.info("Application closed successfully");
       process.exit(0);
     } catch (error) {
-      app.log.error('Error during shutdown:', error);
+      app.log.error("Error during shutdown:", error);
       process.exit(1);
     }
   };
 
-  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
   return app;
-} 
+}

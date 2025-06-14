@@ -1,7 +1,7 @@
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
-import type { 
-  FastifyInstance, 
-  FastifyRequest, 
+import type {
+  FastifyInstance,
+  FastifyRequest,
   FastifyReply,
   FastifySchema,
   RawServerDefault,
@@ -9,16 +9,16 @@ import type {
   RawReplyDefaultExpression,
   FastifyBaseLogger,
   RouteGenericInterface,
-  ContextConfigDefault
-} from 'fastify';
-import type { TokenService } from '../services/tokenService.js';
-import type { AuditService } from '../services/auditService.js';
-import type { SupervisorAgent } from '../supervisor.js';
-import type { AgentRegistry } from '../registry.js';
-import type { MemorySystem } from '../memory.js';
-import type { MultiAgentGraphCreator } from '../graphCreator.js';
-import type { IntentEmitter } from '../intentEmitter.js';
-import type { LLMProvider } from './llm.js';
+  ContextConfigDefault,
+} from "fastify";
+import type { TokenService } from "../services/tokenService.js";
+import type { AuditService } from "../services/auditService.js";
+import type { SupervisorAgent } from "../supervisor.js";
+import type { AgentRegistry } from "../registry.js";
+import type { MemorySystem } from "../memory.js";
+import type { MultiAgentGraphCreator } from "../graphCreator.js";
+import type { IntentEmitter } from "../intentEmitter.js";
+import type { LLMProvider } from "./llm.js";
 
 export type FastifyTypeBox = FastifyInstance<
   RawServerDefault,
@@ -47,13 +47,13 @@ export type FastifyReplyTypeBox<TSchema extends FastifySchema> = FastifyReply<
   TypeBoxTypeProvider
 >;
 
-declare module 'fastify' {
+declare module "fastify" {
   export interface FastifyInstance {
     // Core services
     tokenService: TokenService;
     auditService: AuditService;
     llmProvider: LLMProvider;
-    
+
     // Agent-Core specific services
     supervisor: SupervisorAgent;
     agentRegistry: AgentRegistry;
@@ -61,4 +61,4 @@ declare module 'fastify' {
     graphCreator: MultiAgentGraphCreator;
     intentEmitter: IntentEmitter;
   }
-} 
+}

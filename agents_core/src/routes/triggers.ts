@@ -1,15 +1,15 @@
-import { FastifyPluginAsync } from 'fastify';
-import { TriggerSchema, ErrorSchema } from '../schemas/index.js';
-import { Type } from '@sinclair/typebox';
+import { FastifyPluginAsync } from "fastify";
+import { TriggerSchema, ErrorSchema } from "../models/index.js";
+import { Type } from "@sinclair/typebox";
 
 export const triggerRoutes: FastifyPluginAsync = async (fastify) => {
-  fastify.post('/triggers', {
+  fastify.post("/triggers", {
     schema: {
-      tags: ['triggers'],
+      tags: ["triggers"],
       body: TriggerSchema,
       response: {
         200: Type.Object({
-          executionIds: Type.Array(Type.String({ format: 'uuid' })),
+          executionIds: Type.Array(Type.String({ format: "uuid" })),
         }),
         400: ErrorSchema,
         500: ErrorSchema,
@@ -17,7 +17,7 @@ export const triggerRoutes: FastifyPluginAsync = async (fastify) => {
     },
     handler: async (request, reply) => {
       // TODO: Implement trigger processing
-      throw new Error('Not implemented');
+      throw new Error("Not implemented");
     },
   });
-}; 
+};

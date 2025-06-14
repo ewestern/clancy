@@ -1,5 +1,9 @@
-import OpenAI from 'openai';
-import type { LLMProvider, LLMCompletionRequest, LLMCompletionResponse } from '../../types/llm.js';
+import OpenAI from "openai";
+import type {
+  LLMProvider,
+  LLMCompletionRequest,
+  LLMCompletionResponse,
+} from "../../types/llm.js";
 
 export class OpenAIProvider implements LLMProvider {
   private client: OpenAI;
@@ -10,11 +14,13 @@ export class OpenAIProvider implements LLMProvider {
     });
   }
 
-  async createCompletion(request: LLMCompletionRequest): Promise<LLMCompletionResponse> {
+  async createCompletion(
+    request: LLMCompletionRequest,
+  ): Promise<LLMCompletionResponse> {
     try {
       const requestParams: any = {
         model: request.model,
-        messages: request.messages.map(msg => ({
+        messages: request.messages.map((msg) => ({
           role: msg.role,
           content: msg.content,
         })),
@@ -31,7 +37,7 @@ export class OpenAIProvider implements LLMProvider {
 
       const choice = response.choices[0];
       if (!choice?.message?.content) {
-        throw new Error('No response content from OpenAI');
+        throw new Error("No response content from OpenAI");
       }
 
       const result: LLMCompletionResponse = {
@@ -48,11 +54,13 @@ export class OpenAIProvider implements LLMProvider {
 
       return result;
     } catch (error) {
-      throw new Error(`OpenAI API error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `OpenAI API error: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
   getProviderName(): string {
-    return 'openai';
+    return "openai";
   }
-} 
+}

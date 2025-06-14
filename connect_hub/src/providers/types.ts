@@ -9,6 +9,15 @@ export interface CapabilityMeta {
   description: string;
   paramsSchema: JSONSchema;
   resultSchema: JSONSchema;
+  promptVersions: PromptSpec[];
+}
+
+export interface PromptSpec {
+  version: string; // semver or date tag
+  modelHint?: string;
+  system: string;
+  user?: string;
+  fewShot?: Array<{ user: string; assistant: string }>;
 }
 
 export interface EventMeta {
@@ -24,6 +33,17 @@ export interface Quota {
 }
 
 export type AuthType = "none" | "oauth2" | "api_key" | "basic";
+
+export interface ProviderMetadata {
+  id: string;
+  displayName: string;
+  description: string;
+  icon: string;
+  docsUrl?: string;
+  kind: "internal" | "external";
+  auth: AuthType;
+  requiredScopes: string[];
+}
 
 export interface ProviderCatalogEntry {
   id: string;
@@ -69,15 +89,22 @@ export interface Capability<P = unknown, R = unknown> {
  * Runtime surface that every provider must implement.
  */
 export interface ProviderRuntime {
-  /**
-   * Returns an Action implementation for the given ID. Implementations may
-   * lazily construct the Action on first request, but must cache thereafter.
-   */
+  /** Retrieve a capability implementation by id (e.g. "chat.post") */
   getCapability<P, R>(capabilityId: string): Capability<P, R>;
+
+  /** List all capability metadata for this provider (no network calls) */
+  listCapabilities(): CapabilityMeta[];
+
+  /** Static metadata about the provider (excluding capabilities array) */
+  metadata: ProviderMetadata;
 
   /**
    * Optional webhook/event dispatch. If your provider exposes webhooks, you can
    * dispatch based on eventName, otherwise omit.
    */
-  handleEvent?(eventName: string, payload: unknown, ctx: EventContext): Promise<void>;
-} 
+  handleEvent?(
+    eventName: string,
+    payload: unknown,
+    ctx: EventContext,
+  ): Promise<void>;
+}

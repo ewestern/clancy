@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
-import { digitalEmployees, graphRegistry } from "./schema";
+//import { digitalEmployees, graphRegistry } from "./schema";
 
+/**
 export const digitalEmployeesRelations = relations(
   digitalEmployees,
   ({ one, many }) => ({
@@ -27,3 +28,5 @@ export const graphRegistryRelations = relations(
     }),
   }),
 );
+
+*/

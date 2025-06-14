@@ -1,13 +1,16 @@
-import type { AgentContext } from './types/index.js';
+import type { AgentContext } from "./types/index.js";
 
 export class MemorySystem {
   constructor(private db: any) {}
 
-  async getAgentContext(agentId: string, executionId?: string): Promise<AgentContext> {
+  async getAgentContext(
+    agentId: string,
+    executionId?: string,
+  ): Promise<AgentContext> {
     // TODO: Implement agent context reconstruction from event projections
     return {
       agentId,
-      organizationId: 'temp-org',
+      organizationId: "temp-org",
       ...(executionId && { executionId }),
       memory: {},
       capabilities: [],
@@ -16,13 +19,18 @@ export class MemorySystem {
     };
   }
 
-  async updateAgentMemory(agentId: string, updates: Record<string, any>): Promise<void> {
+  async updateAgentMemory(
+    agentId: string,
+    updates: Record<string, any>,
+  ): Promise<void> {
     // TODO: Implement memory updates
-    throw new Error('Not implemented');
+    throw new Error("Not implemented");
   }
 
-  async getOrganizationalKnowledge(orgId: string): Promise<Record<string, any>> {
+  async getOrganizationalKnowledge(
+    orgId: string,
+  ): Promise<Record<string, any>> {
     // TODO: Implement organizational knowledge retrieval
     return {};
   }
-} 
+}

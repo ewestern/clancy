@@ -6,7 +6,7 @@ export class AuditService {
     correlationId?: string;
   }): Promise<void> {
     // TODO: Implement structured audit logging
-    console.log('Audit log:', data);
+    console.log("Audit log:", data);
   }
 
   async logProxyCall(data: {
@@ -17,6 +17,6 @@ export class AuditService {
     duration: number;
   }): Promise<void> {
     // TODO: Implement proxy call audit logging
-    console.log('Proxy audit log:', data);
+    console.log("Proxy audit log:", data);
   }
-} 
+}

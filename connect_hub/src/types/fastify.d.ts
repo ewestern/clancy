@@ -1,7 +1,7 @@
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
-import type { 
-  FastifyInstance, 
-  FastifyRequest, 
+import type {
+  FastifyInstance,
+  FastifyRequest,
   FastifyReply,
   FastifySchema,
   RawServerDefault,
@@ -9,11 +9,11 @@ import type {
   RawReplyDefaultExpression,
   FastifyBaseLogger,
   RouteGenericInterface,
-  ContextConfigDefault
-} from 'fastify';
-import type { TokenService } from '../services/token.service.js';
-import type { AuditService } from '../services/audit.service.js';
-import type { DatabaseService } from '../services/database.service.js';
+  ContextConfigDefault,
+} from "fastify";
+import type { TokenService } from "../services/token.service.js";
+import type { AuditService } from "../services/audit.service.js";
+import type { DatabaseService } from "../services/database.service.js";
 
 export type FastifyTypeBox = FastifyInstance<
   RawServerDefault,
@@ -42,13 +42,13 @@ export type FastifyReplyTypeBox<TSchema extends FastifySchema> = FastifyReply<
   TypeBoxTypeProvider
 >;
 
-declare module 'fastify' {
+declare module "fastify" {
   export interface FastifyInstance {
     // Core services
     tokenService: TokenService;
     auditService: AuditService;
     databaseService: DatabaseService;
-    
+
     // Configuration
     config: {
       nodeEnv: string;
@@ -69,4 +69,4 @@ declare module 'fastify' {
       };
     };
   }
-} 
+}

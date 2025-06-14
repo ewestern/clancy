@@ -1,6 +1,6 @@
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyPluginAsync } from "fastify";
 
 export const executionRoutes: FastifyPluginAsync = async (fastify) => {
   // TODO: Implement execution tracking routes
-  fastify.log.info('Execution routes registered (stub)');
-}; 
+  fastify.log.info("Execution routes registered (stub)");
+};

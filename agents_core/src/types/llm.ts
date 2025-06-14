@@ -1,5 +1,5 @@
 export interface LLMMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: "system" | "user" | "assistant";
   content: string;
 }
 
@@ -23,10 +23,12 @@ export interface LLMProvider {
   /**
    * Generate a chat completion response
    */
-  createCompletion(request: LLMCompletionRequest): Promise<LLMCompletionResponse>;
-  
+  createCompletion(
+    request: LLMCompletionRequest,
+  ): Promise<LLMCompletionResponse>;
+
   /**
    * Get the provider name
    */
   getProviderName(): string;
-} 
+}

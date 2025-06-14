@@ -9,6 +9,6 @@ export class AuditService {
     metadata?: Record<string, any>;
   }): Promise<void> {
     // TODO: Implement audit logging
-    throw new Error('Not implemented');
+    throw new Error("Not implemented");
   }
-} 
+}
