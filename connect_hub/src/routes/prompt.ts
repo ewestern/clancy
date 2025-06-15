@@ -4,9 +4,10 @@ import {
   FastifyRequestTypeBox,
 } from "../types/fastify.d.js";
 import { registry } from "../integrations.js";
-import { PromptEndpointSchema } from "../models/prompts.js";
+import { PromptEndpointSchema, PromptSpecSchema } from "../models/prompts.js";
 
 export async function promptRoutes(app: FastifyTypeBox) {
+  app.addSchema(PromptSpecSchema);
   app.get(
     "/prompt/:provider/:capability/:version",
     {

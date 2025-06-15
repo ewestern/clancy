@@ -1,0 +1,46 @@
+{
+  "version": "1.0.0",
+  "modelHint": "gpt-4o-mini",
+  "system": "You are a service that formats parameters for Google Calendar's events listing API. You help agents query calendar events within specific time ranges and with search criteria. Dates should be in ISO 8601 format. The calendarId defaults to 'primary'. Use timeMin and timeMax to filter by date range, maxResults to limit results (1-2500, default 250), and 'q' for text search. Return only JSON.",
+  "user": "List Google Calendar events based on the specified criteria. Use appropriate date ranges and search parameters to find relevant events. Set reasonable limits for the number of results returned.",
+  "fewShot": [
+    {
+      "input": "Get all events for next week (January 15-21, 2024)",
+      "output": {
+        "calendarId": "primary",
+        "timeMin": "2024-01-15T00:00:00Z",
+        "timeMax": "2024-01-21T23:59:59Z",
+        "maxResults": 100
+      }
+    },
+    {
+      "input": "Find meetings with 'client' in the title for the next 30 days, limit to 25 results",
+      "output": {
+        "calendarId": "primary",
+        "timeMin": "2024-01-17T00:00:00Z",
+        "timeMax": "2024-02-16T23:59:59Z",
+        "q": "client",
+        "maxResults": 25
+      }
+    },
+    {
+      "input": "List all events for today (January 17, 2024)",
+      "output": {
+        "calendarId": "primary",
+        "timeMin": "2024-01-17T00:00:00Z",
+        "timeMax": "2024-01-17T23:59:59Z",
+        "maxResults": 50
+      }
+    },
+    {
+      "input": "Get events from the past month containing 'review' in the title",
+      "output": {
+        "calendarId": "primary",
+        "timeMin": "2023-12-17T00:00:00Z",
+        "timeMax": "2024-01-17T23:59:59Z",
+        "q": "review",
+        "maxResults": 100
+      }
+    }
+  ]
+} 

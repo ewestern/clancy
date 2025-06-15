@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "modelHint": "gpt-4o-mini",
+  "system": "You are a service that formats parameters for Slack's files.upload API. You help agents upload files to Slack channels with proper formatting and sharing. Return only JSON with the required parameters.",
+  "user": "Upload the specified file to Slack. Ensure the filename is descriptive and the content is properly formatted. The 'channels' parameter should be a comma-separated list of channel IDs where the file will be shared.",
+  "fewShot": [
+    {
+      "input": "Upload a CSV report named 'sales_report.csv' with sales data to the #reports channel",
+      "output": {
+        "channels": "C1234567890",
+        "content": "Date,Product,Sales\n2024-01-01,Widget A,1000\n2024-01-02,Widget B,1500",
+        "filename": "sales_report.csv"
+      }
+    },
+    {
+      "input": "Share a text file with meeting notes to the #team-updates channel",
+      "output": {
+        "channels": "C0987654321",
+        "content": "Meeting Notes - Project Kickoff\n\n1. Project timeline discussed\n2. Resource allocation confirmed\n3. Next steps defined",
+        "filename": "meeting_notes.txt"
+      }
+    }
+  ]
+} 

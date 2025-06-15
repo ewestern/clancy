@@ -1,4 +1,5 @@
-export type JSONSchema = Record<string, any>;
+import { ProviderAuth, ProviderKind } from "../models/capabilities.js";
+import { TSchema } from "@sinclair/typebox";
 
 /**
  * Rich metadata that the UI wizard and compiler consume.
@@ -7,9 +8,11 @@ export interface CapabilityMeta {
   id: string;
   displayName: string;
   description: string;
-  paramsSchema: JSONSchema;
-  resultSchema: JSONSchema;
+  docsUrl?: string;
+  paramsSchema: TSchema;
+  resultSchema: TSchema;
   promptVersions: PromptSpec[];
+  requiredScopes: string[];
 }
 
 export interface PromptSpec {
@@ -23,7 +26,7 @@ export interface PromptSpec {
 export interface EventMeta {
   name: string;
   description: string;
-  payloadSchema: JSONSchema;
+  payloadSchema: TSchema;
 }
 
 export interface Quota {
@@ -32,17 +35,14 @@ export interface Quota {
   docsUrl?: string;
 }
 
-export type AuthType = "none" | "oauth2" | "api_key" | "basic";
-
 export interface ProviderMetadata {
   id: string;
   displayName: string;
   description: string;
   icon: string;
   docsUrl?: string;
-  kind: "internal" | "external";
-  auth: AuthType;
-  requiredScopes: string[];
+  kind: ProviderKind;
+  auth: ProviderAuth;
 }
 
 export interface ProviderCatalogEntry {
@@ -52,9 +52,9 @@ export interface ProviderCatalogEntry {
   icon: string;
   docsUrl?: string;
   /** Identifies whether credentials are required from the end-user. */
-  kind: "internal" | "external";
+  kind: ProviderKind;
   /** Authentication mechanism used when `kind === "external"`. */
-  auth: AuthType;
+  auth: ProviderAuth;
   /** Provider-native scopes required for the proxy to function. */
   requiredScopes: string[];
   capabilities: CapabilityMeta[];

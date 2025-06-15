@@ -4,67 +4,32 @@ import {
   ExecutionContext,
   EventContext,
   CapabilityMeta,
-  JSONSchema,
-  PromptSpec,
 } from "../providers/types.js";
 
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { ProviderAuth, ProviderKind } from "../models/capabilities.js";
+import { Type, Static } from "@sinclair/typebox";
+import { loadPrompts } from "../providers/utils.js";
+const __dirname = import.meta.dirname;
 
-// Node 18+ provides global fetch. If your runtime is < 18, uncomment the next
-// line and add `node-fetch` as a dependency.
-// import fetch from "node-fetch";
+// Type definitions derived from schemas below
 
-// ---------------------------------------------------------------------------
+const paramsSchema = Type.Object({
+  channel: Type.String(),
+  text: Type.String(),
+  blocks: Type.Optional(Type.Array(Type.Any())),
+  thread_ts: Type.Optional(Type.String()),
+});
+
+const resultSchema = Type.Object({
+  ok: Type.Boolean(),
+  channel: Type.String(),
+  ts: Type.String(),
+  message: Type.Optional(Type.Any()),
+});
+
 // Type definitions
-// ---------------------------------------------------------------------------
-
-export interface SlackChatPostParams {
-  /** Channel ID or name (e.g., C1234567890 or #general) */
-  channel: string;
-  /** Plain-text message content or fallback text when sending blocks */
-  text: string;
-  /** Optional JSON block kit payload */
-  blocks?: unknown;
-  /** Optional thread timestamp to reply in thread */
-  thread_ts?: string;
-}
-
-export interface SlackChatPostResult {
-  ok: boolean;
-  channel: string;
-  ts: string;
-  message?: unknown;
-  [key: string]: unknown;
-}
-
-const paramsSchema: JSONSchema = {
-  type: "object",
-  required: ["channel", "text"],
-  properties: {
-    channel: { type: "string" },
-    text: { type: "string" },
-    blocks: { type: "array", items: { type: "object" } },
-    thread_ts: { type: "string" },
-  },
-  additionalProperties: false,
-};
-
-const resultSchema: JSONSchema = {
-  type: "object",
-  required: ["ok", "channel", "ts"],
-  properties: {
-    ok: { type: "boolean" },
-    channel: { type: "string" },
-    ts: { type: "string" },
-    message: { type: "object" },
-  },
-};
-
-// ---------------------------------------------------------------------------
-// Action implementation
-// ---------------------------------------------------------------------------
+type SlackChatPostParams = Static<typeof paramsSchema>;
+type SlackChatPostResult = Static<typeof resultSchema>;
 
 async function slackChatPost(
   params: SlackChatPostParams,
@@ -74,58 +39,24 @@ async function slackChatPost(
     throw new Error("Slack access token is missing from execution context");
   }
 
-  const endpoint = "https://slack.com/api/chat.postMessage";
-
-  const response = await globalThis.fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      Authorization: `Bearer ${ctx.accessToken}`,
-    },
-    body: JSON.stringify(params),
-  });
-
-  // Handle HTTP-level errors (e.g., 5xx, rate limits)
-  if (response.status === 429) {
-    const retryAfter = response.headers.get("Retry-After") ?? "0";
-    throw new Error(
-      `Slack rate-limited the request. Retry after ${retryAfter} seconds.`,
-    );
-  }
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Slack API HTTP error ${response.status}: ${text}`);
-  }
-
-  const data = (await response.json()) as SlackChatPostResult;
-
-  if (!data.ok) {
-    // Slack-level error (e.g., invalid_auth, channel_not_found)
-    const errCode = (data as Record<string, unknown>).error ?? "unknown_error";
-    throw new Error(`Slack API error: ${errCode}`);
-  }
-
-  return data;
+  return slackFetch<SlackChatPostResult>(
+    "https://slack.com/api/chat.postMessage",
+    params,
+    ctx,
+  );
 }
-
-// ---------------------------------------------------------------------------
-// Provider implementation
-// ---------------------------------------------------------------------------
 
 export class SlackProvider implements ProviderRuntime {
   private capabilityCache = new Map<string, Capability<any, any>>();
 
-  // Static metadata about this provider
   public readonly metadata = {
     id: "slack",
     displayName: "Slack",
     description: "Slack is a team communication and collaboration platform.",
     icon: "https://a.slack-edge.com/80588/marketing/img/meta/slack_hash_256.png",
     docsUrl: "https://api.slack.com/",
-    kind: "external" as const,
-    auth: "oauth2" as const,
-    requiredScopes: ["chat:write"],
+    kind: ProviderKind.External,
+    auth: ProviderAuth.OAuth2,
   };
 
   getCapability<P, R>(capabilityId: string): Capability<P, R> {
@@ -137,9 +68,11 @@ export class SlackProvider implements ProviderRuntime {
             displayName: "Post Message",
             description:
               "Send a message to a Slack channel using chat.postMessage",
+            docsUrl: "https://api.slack.com/methods/chat.postMessage",
             paramsSchema,
             resultSchema,
-            promptVersions: loadPrompts(capabilityId),
+            promptVersions: loadPrompts(__dirname, capabilityId),
+            requiredScopes: ["chat:write"],
           };
 
           const capabilityImpl: Capability<
@@ -148,6 +81,60 @@ export class SlackProvider implements ProviderRuntime {
           > = {
             meta,
             execute: slackChatPost,
+          };
+          this.capabilityCache.set(capabilityId, capabilityImpl);
+          break;
+        }
+        case "files.upload": {
+          const meta: CapabilityMeta = {
+            id: capabilityId,
+            displayName: "Upload File",
+            description: "Upload a file to Slack and share in channels",
+            docsUrl: "https://api.slack.com/methods/files.upload",
+            paramsSchema: filesUploadParamsSchema,
+            resultSchema: filesUploadResultSchema,
+            promptVersions: loadPrompts(__dirname, capabilityId),
+            requiredScopes: ["files:write"],
+          };
+          const capabilityImpl: Capability<SlackFilesUploadParams, SlackFilesUploadResult> = {
+            meta,
+            execute: slackFilesUpload,
+          };
+          this.capabilityCache.set(capabilityId, capabilityImpl);
+          break;
+        }
+        case "conversation.create": {
+          const meta: CapabilityMeta = {
+            id: capabilityId,
+            displayName: "Create Conversation",
+            description: "Create a channel or private group",
+            docsUrl: "https://api.slack.com/methods/conversations.create",
+            paramsSchema: convCreateParamsSchema,
+            resultSchema: convCreateResultSchema,
+            promptVersions: loadPrompts(__dirname, capabilityId),
+            requiredScopes: ["channels:manage"],
+          };
+          const capabilityImpl: Capability<SlackConversationCreateParams, SlackConversationCreateResult> = {
+            meta,
+            execute: slackConversationCreate,
+          };
+          this.capabilityCache.set(capabilityId, capabilityImpl);
+          break;
+        }
+        case "reaction.add": {
+          const meta: CapabilityMeta = {
+            id: capabilityId,
+            displayName: "Add Reaction",
+            description: "Add an emoji reaction to a message",
+            docsUrl: "https://api.slack.com/methods/reactions.add",
+            paramsSchema: reactionAddParamsSchema,
+            resultSchema: reactionAddResultSchema,
+            promptVersions: loadPrompts(__dirname, capabilityId),
+            requiredScopes: ["reactions:write"],
+          };
+          const capabilityImpl: Capability<SlackReactionAddParams, SlackReactionAddResult> = {
+            meta,
+            execute: slackReactionAdd,
           };
           this.capabilityCache.set(capabilityId, capabilityImpl);
           break;
@@ -181,29 +168,117 @@ export class SlackProvider implements ProviderRuntime {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Helper to load prompt specs from ./prompts/{capabilityId}/*.json
-// ---------------------------------------------------------------------------
+// -------------------- files.upload -----------------------------
+// Type definitions moved to be derived from schemas below
 
-function loadPrompts(capabilityId: string): PromptSpec[] {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = dirname(__filename);
-  const promptsDir = resolve(__dirname, "prompts", capabilityId);
-  if (!existsSync(promptsDir)) return [];
+const filesUploadParamsSchema = Type.Object({
+  channels: Type.String(),
+  content: Type.String(),
+  filename: Type.String(),
+});
 
-  const specs: PromptSpec[] = [];
-  for (const entry of readdirSync(promptsDir, { withFileTypes: true })) {
-    if (entry.isFile() && entry.name.endsWith(".json")) {
-      const json = JSON.parse(
-        readFileSync(resolve(promptsDir, entry.name), "utf-8"),
-      );
-      specs.push(json as PromptSpec);
-    }
+const filesUploadResultSchema = Type.Object({
+  ok: Type.Boolean(),
+  file: Type.Optional(Type.Any()),
+});
+
+// Type definitions
+type SlackFilesUploadParams = Static<typeof filesUploadParamsSchema>;
+type SlackFilesUploadResult = Static<typeof filesUploadResultSchema>;
+
+async function slackFilesUpload(
+  params: SlackFilesUploadParams,
+  ctx: ExecutionContext,
+): Promise<SlackFilesUploadResult> {
+  if (!ctx.accessToken) throw new Error("Slack access token missing");
+
+  return slackFetch<SlackFilesUploadResult>(
+    "https://slack.com/api/files.upload",
+    params,
+    ctx,
+  );
+}
+
+// -------------------- conversations.create ---------------------
+const convCreateParamsSchema = Type.Object({
+  name: Type.String(),
+  is_private: Type.Optional(Type.Boolean()),
+});
+
+const convCreateResultSchema = Type.Object({
+  ok: Type.Boolean(),
+  channel: Type.Optional(Type.Any()),
+});
+
+type SlackConversationCreateParams = Static<typeof convCreateParamsSchema>;
+type SlackConversationCreateResult = Static<typeof convCreateResultSchema>;
+
+async function slackConversationCreate(
+  params: SlackConversationCreateParams,
+  ctx: ExecutionContext,
+): Promise<SlackConversationCreateResult> {
+  if (!ctx.accessToken) throw new Error("Slack access token missing");
+
+  return slackFetch<SlackConversationCreateResult>(
+    "https://slack.com/api/conversations.create",
+    params,
+    ctx,
+  );
+}
+
+// -------------------- reactions.add ----------------------------
+const reactionAddParamsSchema = Type.Object({
+  name: Type.String(),
+  channel: Type.String(),
+  timestamp: Type.String(),
+});
+
+const reactionAddResultSchema = Type.Object({
+  ok: Type.Boolean(),
+});
+
+type SlackReactionAddParams = Static<typeof reactionAddParamsSchema>;
+type SlackReactionAddResult = Static<typeof reactionAddResultSchema>;
+
+async function slackReactionAdd(
+  params: SlackReactionAddParams,
+  ctx: ExecutionContext,
+): Promise<SlackReactionAddResult> {
+  if (!ctx.accessToken) throw new Error("Slack access token missing");
+
+  return slackFetch<SlackReactionAddResult>(
+    "https://slack.com/api/reactions.add",
+    params,
+    ctx,
+  );
+}
+
+// Helper: Slack-specific API call wrapper
+async function slackFetch<T>(endpoint: string, params: unknown, ctx: ExecutionContext): Promise<T> {
+  if (!ctx.accessToken) throw new Error("Slack access token missing");
+
+  const res = await globalThis.fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      Authorization: `Bearer ${ctx.accessToken}`,
+    },
+    body: JSON.stringify(params ?? {}),
+  });
+
+  if (res.status === 429) {
+    const retry = res.headers.get("Retry-After") ?? "0";
+    throw new Error(`Rate limited; retry after ${retry}s`);
   }
 
-  // Sort by version if semver-ish
-  specs.sort((a, b) =>
-    a.version.localeCompare(b.version, "en", { numeric: true }),
-  );
-  return specs;
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`HTTP ${res.status}: ${text}`);
+  }
+
+  const data = (await res.json()) as T & { ok?: boolean; error?: string };
+  if (typeof data === "object" && data && "ok" in data && data.ok === false) {
+    throw new Error(`Slack API error: ${data.error}`);
+  }
+  return data;
 }

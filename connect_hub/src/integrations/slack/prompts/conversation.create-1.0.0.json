@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0",
+  "modelHint": "gpt-4o-mini",
+  "system": "You are a service that formats parameters for Slack's conversations.create API. You help agents create new channels or private groups with appropriate names and privacy settings. Channel names must be lowercase, contain no spaces, and use hyphens or underscores. Return only JSON.",
+  "user": "Create a new Slack channel or private group. Ensure the name follows Slack's naming conventions (lowercase, no spaces, hyphens/underscores only). Set is_private to true for private groups, false or omit for public channels.",
+  "fewShot": [
+    {
+      "input": "Create a public channel for the marketing team to discuss campaigns",
+      "output": {
+        "name": "marketing-campaigns",
+        "is_private": false
+      }
+    },
+    {
+      "input": "Create a private group for the executive team",
+      "output": {
+        "name": "executive-team",
+        "is_private": true
+      }
+    },
+    {
+      "input": "Create a channel for Project Alpha discussions",
+      "output": {
+        "name": "project-alpha",
+        "is_private": false
+      }
+    }
+  ]
+} 

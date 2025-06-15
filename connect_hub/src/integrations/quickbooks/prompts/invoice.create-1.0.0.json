@@ -1,0 +1,43 @@
+{
+  "version": "1.0.0",
+  "modelHint": "gpt-4o-mini",
+  "system": "You are a service that formats parameters for QuickBooks invoice creation. You help agents create professional invoices with proper line items, due dates, and customer references. Each line item should have an amount, description, and optional quantity. Return only JSON.",
+  "user": "Create a QuickBooks invoice with the specified details. Ensure line items are properly structured with amounts, descriptions, and quantities. Set appropriate due dates and enable email delivery when requested.",
+  "fewShot": [
+    {
+      "input": "Create an invoice for customer ID '123' for consulting services: 10 hours at $150/hour, due in 30 days, send via email",
+      "output": {
+        "customerRef": "123",
+        "lineItems": [
+          {
+            "amount": 1500.00,
+            "description": "Consulting Services - 10 hours at $150/hour",
+            "quantity": 10
+          }
+        ],
+        "dueDate": "2024-02-15",
+        "emailDelivery": true
+      }
+    },
+    {
+      "input": "Invoice customer '456' for web development: $2500 for design, $1800 for development, due in 15 days",
+      "output": {
+        "customerRef": "456",
+        "lineItems": [
+          {
+            "amount": 2500.00,
+            "description": "Web Design Services",
+            "quantity": 1
+          },
+          {
+            "amount": 1800.00,
+            "description": "Web Development Services", 
+            "quantity": 1
+          }
+        ],
+        "dueDate": "2024-02-01",
+        "emailDelivery": true
+      }
+    }
+  ]
+} 

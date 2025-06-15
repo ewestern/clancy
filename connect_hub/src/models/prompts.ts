@@ -1,4 +1,5 @@
 import { Static, Type } from "@sinclair/typebox";
+import { Ref } from "./shared.js";
 
 export const FewShotSchema = Type.Object({
   user: Type.String(),
@@ -11,7 +12,7 @@ export const PromptSpecSchema = Type.Object({
   system: Type.String(),
   user: Type.Optional(Type.String()),
   fewShot: Type.Optional(Type.Array(FewShotSchema)),
-});
+}, {$id: "PromptSpec"});
 
 export type PromptSpec = Static<typeof PromptSpecSchema>;
 
@@ -26,7 +27,7 @@ export const PromptEndpointSchema = {
   description: "Retrieve a specific prompt version for a capability.",
   params: PromptParamsSchema,
   response: {
-    200: PromptSpecSchema,
+    200: Ref(PromptSpecSchema),
     404: Type.Object({ message: Type.String() }),
   },
 } as const;

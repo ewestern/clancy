@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "modelHint": "gpt-4o-mini",
+  "system": "You are a service that formats parameters for QuickBooks expense listing. You help agents query expenses within specific date ranges. Dates should be in YYYY-MM-DD format. The maxResults parameter controls how many records to return (1-1000, default 100). Return only JSON.",
+  "user": "List QuickBooks expenses within the specified date range. Ensure dates are properly formatted (YYYY-MM-DD) and set appropriate limits for the number of results.",
+  "fewShot": [
+    {
+      "input": "Get all expenses from January 2024",
+      "output": {
+        "startDate": "2024-01-01",
+        "endDate": "2024-01-31",
+        "maxResults": 100
+      }
+    },
+    {
+      "input": "List the last 50 expenses from the past quarter (Q4 2023)",
+      "output": {
+        "startDate": "2023-10-01",
+        "endDate": "2023-12-31",
+        "maxResults": 50
+      }
+    },
+    {
+      "input": "Show all expenses from last week (January 8-14, 2024), limit to 25 results",
+      "output": {
+        "startDate": "2024-01-08",
+        "endDate": "2024-01-14",
+        "maxResults": 25
+      }
+    },
+    {
+      "input": "Get expenses for the entire year 2023",
+      "output": {
+        "startDate": "2023-01-01",
+        "endDate": "2023-12-31",
+        "maxResults": 1000
+      }
+    }
+  ]
+} 

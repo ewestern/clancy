@@ -1,4 +1,7 @@
-import { Type } from "@sinclair/typebox";
+import { SchemaOptions, Static, TSchema, Type } from "@sinclair/typebox";
+
+export const Ref = <T extends TSchema>(schema: T) =>
+  Type.Unsafe<Static<T>>(Type.Ref(schema.$id!));
 
 export const ErrorSchema = Type.Object(
   {
@@ -11,3 +14,13 @@ export const ErrorSchema = Type.Object(
   },
   { $id: "ErrorResponse" },
 );
+
+export const StringEnum = <T extends string[]>(
+  values: [...T],
+  opts?: SchemaOptions,
+) =>
+  Type.Unsafe<T[number]>({
+    type: "string",
+    enum: values,
+    ...opts,
+  });

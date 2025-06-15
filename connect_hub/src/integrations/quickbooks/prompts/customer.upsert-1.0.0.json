@@ -1,0 +1,47 @@
+{
+  "version": "1.0.0",
+  "modelHint": "gpt-4o-mini",
+  "system": "You are a service that formats parameters for QuickBooks customer creation/update. You help agents create or update customer records with proper contact information and billing addresses. The displayName is required and should be the primary identifier. Return only JSON.",
+  "user": "Create or update a QuickBooks customer record. Ensure the displayName is clear and unique. Include email, phone, and billing address when available. The system will automatically search for existing customers by name and update if found.",
+  "fewShot": [
+    {
+      "input": "Create a customer record for Acme Corporation, email: billing@acme.com, phone: 555-0123, address: 123 Main St, Anytown, CA 90210",
+      "output": {
+        "displayName": "Acme Corporation",
+        "email": "billing@acme.com",
+        "phone": "555-0123",
+        "companyName": "Acme Corporation",
+        "billingAddress": {
+          "line1": "123 Main St",
+          "city": "Anytown",
+          "state": "CA",
+          "postalCode": "90210",
+          "country": "US"
+        }
+      }
+    },
+    {
+      "input": "Add customer John Smith, email john@example.com, phone 555-0456",
+      "output": {
+        "displayName": "John Smith",
+        "email": "john@example.com",
+        "phone": "555-0456"
+      }
+    },
+    {
+      "input": "Create customer for TechStart Inc, contact: info@techstart.io, located at 456 Innovation Dr, Silicon Valley, CA 94000",
+      "output": {
+        "displayName": "TechStart Inc",
+        "email": "info@techstart.io",
+        "companyName": "TechStart Inc",
+        "billingAddress": {
+          "line1": "456 Innovation Dr",
+          "city": "Silicon Valley",
+          "state": "CA",
+          "postalCode": "94000",
+          "country": "US"
+        }
+      }
+    }
+  ]
+} 

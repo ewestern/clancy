@@ -1,5 +1,7 @@
+import { GSuiteProvider } from "./integrations/gsuite.js";
 import { SlackProvider } from "./integrations/slack.js";
 import { ProviderRuntime } from "./providers/types.js";
+import { QuickBooksProvider } from "./integrations/quickbooks.js";
 
 // ---------------------------------------------------------------------------
 // Simple in-memory registry that holds one instance per provider.
@@ -7,7 +9,8 @@ import { ProviderRuntime } from "./providers/types.js";
 
 const providers: Record<string, ProviderRuntime> = {
   slack: new SlackProvider(),
-  // Add new providers here as they are implemented
+  gsuite: new GSuiteProvider(),
+  quickbooks: new QuickBooksProvider(),
 };
 
 export const registry = {

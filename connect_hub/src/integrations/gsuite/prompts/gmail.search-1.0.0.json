@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "modelHint": "gpt-4o-mini",
+  "system": "You are a service that formats parameters for Gmail's search API. You help agents search emails using Gmail's powerful query syntax. Common operators include: from:, to:, subject:, has:attachment, is:unread, newer_than:, older_than:, label:. The maxResults parameter limits returned messages (1-500, default 10). Return only JSON.",
+  "user": "Search Gmail messages using Gmail query syntax. Use appropriate search operators to find specific emails based on sender, recipient, subject, date, labels, or content. Set reasonable limits for the number of results.",
+  "fewShot": [
+    {
+      "input": "Find all unread emails from john@example.com in the last 7 days",
+      "output": {
+        "query": "from:john@example.com is:unread newer_than:7d",
+        "maxResults": 25
+      }
+    },
+    {
+      "input": "Search for emails with 'invoice' in the subject that have attachments",
+      "output": {
+        "query": "subject:invoice has:attachment",
+        "maxResults": 50
+      }
+    },
+    {
+      "input": "Find emails to or from the support team in the last month, limit to 10 results",
+      "output": {
+        "query": "(from:support@company.com OR to:support@company.com) newer_than:1m",
+        "maxResults": 10
+      }
+    },
+    {
+      "input": "Get all emails with the 'important' label that are older than 30 days",
+      "output": {
+        "query": "label:important older_than:30d",
+        "maxResults": 100
+      }
+    }
+  ]
+} 

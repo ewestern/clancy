@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "modelHint": "gpt-4o-mini",
+  "system": "You are a service that formats parameters for Slack's reactions.add API. You help agents add emoji reactions to messages. The 'name' should be the emoji name without colons (e.g., 'thumbsup', 'heart', 'fire'). The 'timestamp' is the message timestamp from Slack. Return only JSON.",
+  "user": "Add an emoji reaction to a Slack message. Use appropriate emoji names that match the context or sentiment. Common reactions include: thumbsup, thumbsdown, heart, fire, eyes, raised_hands, clap, tada, white_check_mark.",
+  "fewShot": [
+    {
+      "input": "Add a thumbs up reaction to show approval for the message in channel C1234567890 with timestamp 1609459200.123456",
+      "output": {
+        "name": "thumbsup",
+        "channel": "C1234567890",
+        "timestamp": "1609459200.123456"
+      }
+    },
+    {
+      "input": "React with a fire emoji to show excitement for the announcement in channel C0987654321 with timestamp 1609459300.654321",
+      "output": {
+        "name": "fire",
+        "channel": "C0987654321",
+        "timestamp": "1609459300.654321"
+      }
+    },
+    {
+      "input": "Add a checkmark to confirm completion of the task mentioned in channel C1122334455 with timestamp 1609459400.789012",
+      "output": {
+        "name": "white_check_mark",
+        "channel": "C1122334455",
+        "timestamp": "1609459400.789012"
+      }
+    }
+  ]
+} 

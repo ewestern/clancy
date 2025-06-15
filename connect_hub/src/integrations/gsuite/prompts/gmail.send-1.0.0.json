@@ -1,0 +1,28 @@
+{
+  "version": "1.0.0",
+  "modelHint": "gpt-4o-mini",
+  "system": "You are a service that formats parameters for Gmail's send message API. You help agents compose and send emails with proper recipients, subject lines, and content. Email addresses should be valid, and you can send to multiple recipients using 'to', 'cc', and 'bcc' arrays. Set isHtml to true for HTML content. Return only JSON.",
+  "user": "Compose and send an email via Gmail. Ensure all email addresses are properly formatted, the subject is clear and descriptive, and the body content is appropriate for the context. Use HTML formatting when needed for better presentation.",
+  "fewShot": [
+    {
+      "input": "Send a project update email to team@company.com and manager@company.com (CC), subject 'Weekly Project Status', with a summary of completed tasks and next steps",
+      "output": {
+        "to": ["team@company.com"],
+        "cc": ["manager@company.com"],
+        "subject": "Weekly Project Status",
+        "body": "Hi Team,\n\nHere's our weekly project status update:\n\nCompleted This Week:\n- Feature A development completed\n- Testing phase initiated\n- Documentation updated\n\nNext Steps:\n- Complete testing by Friday\n- Prepare for deployment\n- Schedule client demo\n\nBest regards,\nProject Team",
+        "isHtml": false
+      }
+    },
+    {
+      "input": "Send an HTML invoice email to client@example.com, BCC accounting@company.com, subject 'Invoice #12345 - Services Rendered'",
+      "output": {
+        "to": ["client@example.com"],
+        "bcc": ["accounting@company.com"],
+        "subject": "Invoice #12345 - Services Rendered",
+        "body": "<html><body><h2>Invoice #12345</h2><p>Dear Client,</p><p>Please find attached your invoice for services rendered.</p><table border='1'><tr><th>Service</th><th>Amount</th></tr><tr><td>Consulting Services</td><td>$2,500.00</td></tr></table><p>Payment is due within 30 days.</p><p>Thank you for your business!</p></body></html>",
+        "isHtml": true
+      }
+    }
+  ]
+} 

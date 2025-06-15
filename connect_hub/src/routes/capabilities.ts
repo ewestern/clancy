@@ -3,10 +3,16 @@ import {
   FastifyRequestTypeBox,
   FastifyReplyTypeBox,
 } from "../types/fastify.d.js";
-import { CapabilitiesEndpointSchema } from "../models/capabilities.js";
+import { CapabilitiesEndpointSchema, CapabilitySchema, ProviderAuthSchema, ProviderCapabilitiesSchema, ProviderKindSchema } from "../models/capabilities.js";
 import { registry } from "../integrations.js";
+import { PromptSpecSchema } from "../models/prompts.js";
 
 export async function capabilitiesRoutes(app: FastifyTypeBox) {
+  app.addSchema(ProviderCapabilitiesSchema);
+  app.addSchema(ProviderKindSchema);
+  app.addSchema(ProviderAuthSchema);
+  app.addSchema(CapabilitySchema);
+  app.addSchema(PromptSpecSchema);
   app.get(
     "/capabilities",
     {

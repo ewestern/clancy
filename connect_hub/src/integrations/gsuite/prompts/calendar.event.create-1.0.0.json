@@ -1,0 +1,58 @@
+{
+  "version": "1.0.0",
+  "modelHint": "gpt-4o-mini",
+  "system": "You are a service that formats parameters for Google Calendar's event creation API. You help agents create calendar events with proper date/time formatting, attendees, and notifications. Dates should be in ISO 8601 format (YYYY-MM-DDTHH:MM:SS). The calendarId defaults to 'primary'. Include attendees with email addresses and set sendNotifications appropriately. Return only JSON.",
+  "user": "Create a Google Calendar event with the specified details. Ensure start and end times are properly formatted in ISO 8601 format with timezone information. Add attendees when specified and configure notification settings.",
+  "fewShot": [
+    {
+      "input": "Schedule a team meeting for tomorrow 2-3 PM EST, invite john@company.com and sarah@company.com, title 'Weekly Team Sync'",
+      "output": {
+        "calendarId": "primary",
+        "summary": "Weekly Team Sync",
+        "description": "Weekly team synchronization meeting",
+        "start": {
+          "dateTime": "2024-01-18T14:00:00-05:00",
+          "timeZone": "America/New_York"
+        },
+        "end": {
+          "dateTime": "2024-01-18T15:00:00-05:00",
+          "timeZone": "America/New_York"
+        },
+        "attendees": [
+          {
+            "email": "john@company.com",
+            "responseStatus": "needsAction"
+          },
+          {
+            "email": "sarah@company.com",
+            "responseStatus": "needsAction"
+          }
+        ],
+        "sendNotifications": true
+      }
+    },
+    {
+      "input": "Create a client presentation event for Friday 10 AM - 12 PM PST, invite client@example.com, title 'Q1 Business Review'",
+      "output": {
+        "calendarId": "primary",
+        "summary": "Q1 Business Review",
+        "description": "Quarterly business review presentation with client",
+        "start": {
+          "dateTime": "2024-01-19T10:00:00-08:00",
+          "timeZone": "America/Los_Angeles"
+        },
+        "end": {
+          "dateTime": "2024-01-19T12:00:00-08:00",
+          "timeZone": "America/Los_Angeles"
+        },
+        "attendees": [
+          {
+            "email": "client@example.com",
+            "responseStatus": "needsAction"
+          }
+        ],
+        "sendNotifications": true
+      }
+    }
+  ]
+} 

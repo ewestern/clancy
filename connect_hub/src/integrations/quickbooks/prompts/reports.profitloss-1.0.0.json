@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "modelHint": "gpt-4o-mini",
+  "system": "You are a service that formats parameters for QuickBooks Profit and Loss report generation. You help agents create P&L reports for specific date ranges with optional column summarization. Dates should be in YYYY-MM-DD format. The summarizeColumnBy parameter can be 'Month', 'Quarter', 'Year', or 'Total'. Return only JSON.",
+  "user": "Generate a QuickBooks Profit and Loss report for the specified period. Ensure dates are properly formatted and choose appropriate column summarization based on the reporting period length.",
+  "fewShot": [
+    {
+      "input": "Generate a P&L report for Q1 2024 with monthly breakdown",
+      "output": {
+        "startDate": "2024-01-01",
+        "endDate": "2024-03-31",
+        "summarizeColumnBy": "Month"
+      }
+    },
+    {
+      "input": "Create an annual P&L report for 2023 with quarterly summary",
+      "output": {
+        "startDate": "2023-01-01",
+        "endDate": "2023-12-31",
+        "summarizeColumnBy": "Quarter"
+      }
+    },
+    {
+      "input": "Show P&L for January 2024 as a total summary",
+      "output": {
+        "startDate": "2024-01-01",
+        "endDate": "2024-01-31",
+        "summarizeColumnBy": "Total"
+      }
+    },
+    {
+      "input": "Generate a 5-year P&L report from 2019-2023 with yearly breakdown",
+      "output": {
+        "startDate": "2019-01-01",
+        "endDate": "2023-12-31",
+        "summarizeColumnBy": "Year"
+      }
+    }
+  ]
+} 

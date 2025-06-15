@@ -1,4 +1,6 @@
 import { Static, Type } from "@sinclair/typebox";
+import { Ref, StringEnum } from "./shared.js";
+import { PromptSpecSchema } from "./prompts.js";
 
 // ------------------------------------------------------------
 // Capability contracts (TypeBox)
@@ -12,24 +14,27 @@ export const CapabilitySchema = Type.Object({
   description: Type.String(),
   paramsSchema: JSONSchema,
   resultSchema: JSONSchema,
-  promptVersions: Type.Array(
-    Type.Object({
-      version: Type.String({
-        description: "Prompt version tag (semver or date)",
-      }),
-      modelHint: Type.Optional(Type.String()),
-      system: Type.String(),
-      user: Type.Optional(Type.String()),
-      fewShot: Type.Optional(
-        Type.Array(
-          Type.Object({
-            user: Type.String(),
-            assistant: Type.String(),
-          }),
-        ),
-      ),
-    }),
-  ),
+  requiredScopes: Type.Array(Type.String()),
+  promptVersions: Type.Optional(Type.Array(Ref(PromptSpecSchema))),
+}, {$id: "Capability"});
+
+export enum ProviderKind {
+  Internal = "internal",
+  External = "external",
+}
+
+export const ProviderKindSchema = StringEnum([ProviderKind.Internal, ProviderKind.External], {
+  $id: "ProviderKind",
+});
+
+export enum ProviderAuth {
+  None = "none",
+  OAuth2 = "oauth2",
+  APIKey = "api_key",
+  Basic = "basic",
+}
+export const ProviderAuthSchema = StringEnum([ProviderAuth.None, ProviderAuth.OAuth2, ProviderAuth.APIKey, ProviderAuth.Basic], {
+  $id: "ProviderAuth",
 });
 
 export const ProviderCapabilitiesSchema = Type.Object({
@@ -38,16 +43,10 @@ export const ProviderCapabilitiesSchema = Type.Object({
   description: Type.String(),
   icon: Type.String(),
   docsUrl: Type.Optional(Type.String({ format: "uri" })),
-  kind: Type.Union([Type.Literal("internal"), Type.Literal("external")]),
-  auth: Type.Union([
-    Type.Literal("none"),
-    Type.Literal("oauth2"),
-    Type.Literal("api_key"),
-    Type.Literal("basic"),
-  ]),
-  requiredScopes: Type.Array(Type.String()),
-  capabilities: Type.Array(CapabilitySchema),
-});
+  kind: Ref(ProviderKindSchema),
+  auth: Ref(ProviderAuthSchema),
+  capabilities: Type.Array(Ref(CapabilitySchema)),
+}, {$id: "ProviderCapabilities"});
 
 export type CapabilityMeta = Static<typeof CapabilitySchema>;
 export type ProviderCapabilities = Static<typeof ProviderCapabilitiesSchema>;
@@ -57,7 +56,7 @@ export const CapabilitiesEndpointSchema = {
   description:
     "Returns the catalog of provider capabilities available to the platform.",
   response: {
-    200: Type.Array(ProviderCapabilitiesSchema),
+    200: Type.Array(Ref(ProviderCapabilitiesSchema)),
   },
 } as const;
 
