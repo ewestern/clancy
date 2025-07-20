@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { OwnershipScope } from './OwnershipScope';
+import {
+    OwnershipScopeFromJSON,
+    OwnershipScopeFromJSONTyped,
+    OwnershipScopeToJSON,
+    OwnershipScopeToJSONTyped,
+} from './OwnershipScope';
 import type { CapabilityRisk } from './CapabilityRisk';
 import {
     CapabilityRiskFromJSON,
@@ -65,6 +72,12 @@ export interface Capability {
     requiredScopes: Array<string>;
     /**
      * 
+     * @type {OwnershipScope}
+     * @memberof Capability
+     */
+    ownershipScope: OwnershipScope;
+    /**
+     * 
      * @type {CapabilityRisk}
      * @memberof Capability
      */
@@ -89,6 +102,7 @@ export function instanceOfCapability(value: object): value is Capability {
     if (!('paramsSchema' in value) || value['paramsSchema'] === undefined) return false;
     if (!('resultSchema' in value) || value['resultSchema'] === undefined) return false;
     if (!('requiredScopes' in value) || value['requiredScopes'] === undefined) return false;
+    if (!('ownershipScope' in value) || value['ownershipScope'] === undefined) return false;
     if (!('risk' in value) || value['risk'] === undefined) return false;
     if (!('available' in value) || value['available'] === undefined) return false;
     return true;
@@ -110,6 +124,7 @@ export function CapabilityFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'paramsSchema': json['paramsSchema'],
         'resultSchema': json['resultSchema'],
         'requiredScopes': json['requiredScopes'],
+        'ownershipScope': OwnershipScopeFromJSON(json['ownershipScope']),
         'risk': CapabilityRiskFromJSON(json['risk']),
         'available': json['available'],
     };
@@ -132,6 +147,7 @@ export function CapabilityToJSONTyped(value?: Capability | null, ignoreDiscrimin
         'paramsSchema': value['paramsSchema'],
         'resultSchema': value['resultSchema'],
         'requiredScopes': value['requiredScopes'],
+        'ownershipScope': OwnershipScopeToJSON(value['ownershipScope']),
         'risk': CapabilityRiskToJSON(value['risk']),
         'available': value['available'],
     };

@@ -1,8 +1,9 @@
 # Check if NVM is installed by looking for either the NVM script or directory
 NVM_INSTALLED := $(shell command -v nvm >/dev/null 2>&1 || [ -d "$$HOME/.nvm" ] && echo "yes" || echo "no")
 DB_NAME := connect_hub
-CPM_IMAGE_NAME := foo
-CPM_IMAGE_REPO := 123.dkr.ecr.us-west-2.amazonaws.com/$(CPM_IMAGE_NAME)
+IMAGE_NAME := clancy/connect-hub
+IMAGE_REPO := 702853186114.dkr.ecr.us-east-1.amazonaws.com/$(IMAGE_NAME)
+PROFILE := clancy
 
 .PHONY: setup-nvm
 setup-nvm:
@@ -60,10 +61,10 @@ login:
 
 push-image: login
 	@echo "Retrieving NPM token from .npmrc..."
-	NPM_TOKEN=$(shell grep '//npm.pkg.github.com/:_authToken=' sample.npmrc | cut -d'=' -f2)
-	docker build --build-arg NPM_TOKEN=$$NPM_TOKEN -t $(CPM_IMAGE_NAME):latest .
-	docker tag $(CPM_IMAGE_NAME):latest $(CPM_IMAGE_REPO):latest
-	docker push $(CPM_IMAGE_REPO):latest
+	docker build --build-arg NPM_TOKEN=$$(grep '//npm.pkg.github.com/:_authToken=' .npmrc | cut -d'=' -f2) -t $(IMAGE_NAME):latest .
+	docker tag $(IMAGE_NAME):latest $(IMAGE_REPO):latest
+	docker push $(IMAGE_REPO):latest
+
 
 reset-dev-database:
 	dropdb $(DB_NAME) || true

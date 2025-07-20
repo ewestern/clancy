@@ -1,7 +1,8 @@
 {
-  "name": "@clancy/agents_core_sdk",
+  "name": "@ewestern/agents_core_sdk",
   "version": "0.0.1",
   "description": "Agents Core SDK - TypeScript client library",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

@@ -8,14 +8,16 @@ export const tokensRelations = relations(tokens, ({ one }) => ({
   }),
 }));
 
-export const triggerRegistrationsRelations = relations(triggerRegistrations, ({ one }) => ({
-  connection: one(connections, {
-    fields: [triggerRegistrations.connectionId],
-    references: [connections.id],
+export const triggerRegistrationsRelations = relations(
+  triggerRegistrations,
+  ({ one }) => ({
+    connection: one(connections, {
+      fields: [triggerRegistrations.connectionId],
+      references: [connections.id],
+    }),
   }),
-}));
+);
 
 export const connectionRelations = relations(connections, ({ many }) => ({
   triggerRegistrations: many(triggerRegistrations),
 }));
-

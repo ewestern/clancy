@@ -13,130 +13,148 @@ This document demonstrates how to use the WebSocket management system for memory
 ## Client Connection Examples
 
 ### Basic Connection
+
 ```javascript
-const ws = new WebSocket('ws://localhost:3000/ws');
+const ws = new WebSocket("ws://localhost:3000/ws");
 
 ws.onopen = () => {
-    console.log('Connected to WebSocket');
-    
-    // Join a channel
-    ws.send(JSON.stringify({
-        type: 'JOIN_CHANNEL',
-        channel: 'notifications'
-    }));
+  console.log("Connected to WebSocket");
+
+  // Join a channel
+  ws.send(
+    JSON.stringify({
+      type: "JOIN_CHANNEL",
+      channel: "notifications",
+    }),
+  );
 };
 
 ws.onmessage = (event) => {
-    const message = JSON.parse(event.data);
-    console.log('Received:', message);
+  const message = JSON.parse(event.data);
+  console.log("Received:", message);
 };
 ```
 
 ### Channel Management
+
 ```javascript
 // Join multiple channels
-ws.send(JSON.stringify({
-    type: 'JOIN_CHANNEL',
-    channel: 'org:company123'
-}));
+ws.send(
+  JSON.stringify({
+    type: "JOIN_CHANNEL",
+    channel: "org:company123",
+  }),
+);
 
-ws.send(JSON.stringify({
-    type: 'JOIN_CHANNEL',
-    channel: 'user:user456'
-}));
+ws.send(
+  JSON.stringify({
+    type: "JOIN_CHANNEL",
+    channel: "user:user456",
+  }),
+);
 
 // Leave a channel
-ws.send(JSON.stringify({
-    type: 'LEAVE_CHANNEL',
-    channel: 'notifications'
-}));
+ws.send(
+  JSON.stringify({
+    type: "LEAVE_CHANNEL",
+    channel: "notifications",
+  }),
+);
 ```
 
 ### Sending Messages
+
 ```javascript
 // Send message to a channel
-ws.send(JSON.stringify({
-    type: 'CHAT_MESSAGE',
-    channel: 'general',
+ws.send(
+  JSON.stringify({
+    type: "CHAT_MESSAGE",
+    channel: "general",
     data: {
-        text: 'Hello everyone!',
-        userId: 'user123'
-    }
-}));
+      text: "Hello everyone!",
+      userId: "user123",
+    },
+  }),
+);
 
 // Send job description
-ws.send(JSON.stringify({
-    type: 'JOB_DESCRIPTION',
+ws.send(
+  JSON.stringify({
+    type: "JOB_DESCRIPTION",
     data: {
-        title: 'Software Engineer',
-        description: 'We need a full-stack developer...',
-        organizationId: 'company123'
-    }
-}));
+      title: "Software Engineer",
+      description: "We need a full-stack developer...",
+      organizationId: "company123",
+    },
+  }),
+);
 ```
 
 ## Server-side Usage
 
 ### Broadcasting from REST Endpoints
+
 ```typescript
 // In any route handler
 export const someRoute: FastifyPluginAsync = async (fastify) => {
   fastify.post("/process-job", async (request, reply) => {
     const { jobId, organizationId } = request.body;
-    
+
     // Process the job...
-    
+
     // Notify WebSocket clients
     if (fastify.wsManager) {
       // Broadcast to organization channel
       fastify.wsManager.broadcastToChannel(`org:${organizationId}`, {
-        type: 'JOB_PROCESSED',
+        type: "JOB_PROCESSED",
         data: {
           jobId,
-          status: 'completed',
-          completedAt: new Date().toISOString()
-        }
+          status: "completed",
+          completedAt: new Date().toISOString(),
+        },
       });
-      
+
       // Or broadcast to specific users
       fastify.wsManager.broadcastToFiltered(
         { organizationId },
         {
-          type: 'JOB_NOTIFICATION',
-          channel: 'notifications',
-          data: { jobId, message: 'Your job has been processed!' }
-        }
+          type: "JOB_NOTIFICATION",
+          channel: "notifications",
+          data: { jobId, message: "Your job has been processed!" },
+        },
       );
     }
-    
+
     return { success: true };
   });
 };
 ```
 
 ### Using the Event Bus
+
 ```typescript
 // In any service
 export class JobProcessingService {
   constructor(private wsManager: WebSocketManager) {}
-  
+
   async processJob(jobId: string) {
     // Process the job...
-    
+
     // Use event bus for cross-service messaging
     const eventBus = this.wsManager.getEventBus();
-    
-    await eventBus.publish('broadcast_to_channel', {
-      type: 'JOB_UPDATE',
-      channel: 'job-updates',
-      data: { jobId, status: 'in-progress' },
-      timestamp: new Date().toISOString()
+
+    await eventBus.publish("broadcast_to_channel", {
+      type: "JOB_UPDATE",
+      channel: "job-updates",
+      data: { jobId, status: "in-progress" },
+      timestamp: new Date().toISOString(),
     });
   }
 }
 ```
 
 ### Custom Broadcast Endpoint
+
 ```bash
 # Send message to specific channel
 curl -X POST http://localhost:3000/v1/broadcast \
@@ -164,7 +182,7 @@ curl -X POST http://localhost:3000/v1/broadcast \
 ## Channel Naming Conventions
 
 - `org:{organizationId}` - Organization-wide messages
-- `user:{userId}` - User-specific messages  
+- `user:{userId}` - User-specific messages
 - `job:{jobId}` - Job-specific updates
 - `notifications` - General notifications
 - `alerts` - System alerts
@@ -181,11 +199,13 @@ curl -X POST http://localhost:3000/v1/broadcast \
 ## Monitoring
 
 ### Get WebSocket Statistics
+
 ```bash
 curl http://localhost:3000/ws/status
 ```
 
 Response:
+
 ```json
 {
   "stats": {

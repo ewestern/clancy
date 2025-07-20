@@ -8,8 +8,9 @@ import {
   CallbackResult,
   CapabilityFactory,
   CapabilityRisk,
+  Trigger,
 } from "../providers/types.js";
-import { ProviderKind, ProviderAuth } from "../models/capabilities.js";
+import { ProviderKind, ProviderAuth } from "../models/providers.js";
 import { google } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
 
@@ -17,10 +18,13 @@ import { OAuth2Client } from "google-auth-library";
 import {
   gmailSend,
   gmailSearch,
+  gmailMessagesGet,
   gmailSendParamsSchema,
   gmailSendResultSchema,
   gmailSearchParamsSchema,
   gmailSearchResultSchema,
+  gmailMessagesGetParamsSchema,
+  gmailMessagesGetResultSchema,
   gmailLabelsCreate,
   gmailLabelsList,
   gmailLabelsGet,
@@ -95,6 +99,7 @@ import {
 } from "./google/drive.js";
 import { FastifyInstance } from "fastify";
 import { Type } from "@sinclair/typebox";
+import { OwnershipScope } from "../models/shared.js";
 
 const __dirname = import.meta.dirname;
 
@@ -104,10 +109,12 @@ function createGmailSendCapability(): Capability {
     id: "gmail.messages.send",
     displayName: "Send Email",
     description: "Send an email via Gmail",
-    docsUrl: "https://developers.google.com/gmail/api/reference/rest/v1/users.messages/send",
+    docsUrl:
+      "https://developers.google.com/gmail/api/reference/rest/v1/users.messages/send",
     paramsSchema: gmailSendParamsSchema,
     resultSchema: gmailSendResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/gmail.send"],
+    ownershipScope: OwnershipScope.User,
     risk: CapabilityRisk.HIGH,
   };
   return { meta, execute: gmailSend };
@@ -118,13 +125,31 @@ function createGmailSearchCapability(): Capability {
     id: "gmail.messages.search",
     displayName: "Search Emails",
     description: "Search for emails using Gmail query syntax",
-    docsUrl: "https://developers.google.com/gmail/api/reference/rest/v1/users.messages/list",
+    docsUrl:
+      "https://developers.google.com/gmail/api/reference/rest/v1/users.messages/list",
     paramsSchema: gmailSearchParamsSchema,
     resultSchema: gmailSearchResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/gmail.readonly"],
+    ownershipScope: OwnershipScope.User,
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: gmailSearch };
+}
+
+function createGmailMessagesGetCapability(): Capability {
+  const meta: CapabilityMeta = {
+    id: "gmail.messages.get",
+    displayName: "Get Email",
+    description: "Retrieve a specific email message by ID",
+    docsUrl:
+      "https://developers.google.com/gmail/api/reference/rest/v1/users.messages/get",
+    paramsSchema: gmailMessagesGetParamsSchema,
+    resultSchema: gmailMessagesGetResultSchema,
+    requiredScopes: ["https://www.googleapis.com/auth/gmail.readonly"],
+    ownershipScope: OwnershipScope.User,
+    risk: CapabilityRisk.LOW,
+  };
+  return { meta, execute: gmailMessagesGet };
 }
 
 function createGmailLabelsCreateCapability(): Capability {
@@ -132,10 +157,12 @@ function createGmailLabelsCreateCapability(): Capability {
     id: "gmail.labels.create",
     displayName: "Create Gmail Label",
     description: "Create a new Gmail label",
-    docsUrl: "https://developers.google.com/gmail/api/reference/rest/v1/users.labels/create",
+    docsUrl:
+      "https://developers.google.com/gmail/api/reference/rest/v1/users.labels/create",
     paramsSchema: gmailLabelsCreateParamsSchema,
     resultSchema: gmailLabelsCreateResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/gmail.labels"],
+    ownershipScope: OwnershipScope.User,
     risk: CapabilityRisk.MEDIUM,
   };
   return { meta, execute: gmailLabelsCreate };
@@ -146,10 +173,12 @@ function createGmailLabelsListCapability(): Capability {
     id: "gmail.labels.list",
     displayName: "List Gmail Labels",
     description: "List all Gmail labels",
-    docsUrl: "https://developers.google.com/gmail/api/reference/rest/v1/users.labels/list",
+    docsUrl:
+      "https://developers.google.com/gmail/api/reference/rest/v1/users.labels/list",
     paramsSchema: gmailLabelsListParamsSchema,
     resultSchema: gmailLabelsListResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/gmail.labels"],
+    ownershipScope: OwnershipScope.User,
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: gmailLabelsList };
@@ -160,38 +189,48 @@ function createGmailLabelsGetCapability(): Capability {
     id: "gmail.labels.get",
     displayName: "Get Gmail Label",
     description: "Get a specific Gmail label by ID",
-    docsUrl: "https://developers.google.com/gmail/api/reference/rest/v1/users.labels/get",
+    docsUrl:
+      "https://developers.google.com/gmail/api/reference/rest/v1/users.labels/get",
     paramsSchema: gmailLabelsGetParamsSchema,
     resultSchema: gmailLabelsGetResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/gmail.labels"],
+    ownershipScope: OwnershipScope.User,
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: gmailLabelsGet };
 }
 
+// Add ownershipScope to all remaining capabilities that are missing it
+
+// Gmail attachments - User scope
 function createGmailAttachmentsGetCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "gmail.messages.attachments.get",
     displayName: "Get Gmail Message Attachment",
     description: "Get an attachment from a Gmail message",
-    docsUrl: "https://developers.google.com/gmail/api/reference/rest/v1/users.messages.attachments/get",
+    docsUrl:
+      "https://developers.google.com/gmail/api/reference/rest/v1/users.messages.attachments/get",
     paramsSchema: gmailMessagesAttachmentsGetParamsSchema,
     resultSchema: gmailMessagesAttachmentsGetResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/gmail.readonly"],
+    ownershipScope: OwnershipScope.User,
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: gmailMessagesAttachmentsGet };
 }
 
+// Gmail drafts - User scope
 function createGmailDraftsCreateCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "gmail.drafts.create",
     displayName: "Create Gmail Draft",
     description: "Create a new Gmail draft",
-    docsUrl: "https://developers.google.com/gmail/api/reference/rest/v1/users.drafts/create",
+    docsUrl:
+      "https://developers.google.com/gmail/api/reference/rest/v1/users.drafts/create",
     paramsSchema: gmailDraftsCreateParamsSchema,
     resultSchema: gmailDraftsCreateResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/gmail.compose"],
+    ownershipScope: OwnershipScope.User,
     risk: CapabilityRisk.MEDIUM,
   };
   return { meta, execute: gmailDraftsCreate };
@@ -202,10 +241,12 @@ function createGmailDraftsListCapability(): Capability {
     id: "gmail.drafts.list",
     displayName: "List Gmail Drafts",
     description: "List Gmail drafts",
-    docsUrl: "https://developers.google.com/gmail/api/reference/rest/v1/users.drafts/list",
+    docsUrl:
+      "https://developers.google.com/gmail/api/reference/rest/v1/users.drafts/list",
     paramsSchema: gmailDraftsListParamsSchema,
     resultSchema: gmailDraftsListResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/gmail.readonly"],
+    ownershipScope: OwnershipScope.User,
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: gmailDraftsList };
@@ -216,10 +257,12 @@ function createGmailDraftsGetCapability(): Capability {
     id: "gmail.drafts.get",
     displayName: "Get Gmail Draft",
     description: "Get a specific Gmail draft by ID",
-    docsUrl: "https://developers.google.com/gmail/api/reference/rest/v1/users.drafts/get",
+    docsUrl:
+      "https://developers.google.com/gmail/api/reference/rest/v1/users.drafts/get",
     paramsSchema: gmailDraftsGetParamsSchema,
     resultSchema: gmailDraftsGetResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/gmail.readonly"],
+    ownershipScope: OwnershipScope.User,
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: gmailDraftsGet };
@@ -230,25 +273,29 @@ function createGmailDraftsSendCapability(): Capability {
     id: "gmail.drafts.send",
     displayName: "Send Gmail Draft",
     description: "Send a Gmail draft",
-    docsUrl: "https://developers.google.com/gmail/api/reference/rest/v1/users.drafts/send",
+    docsUrl:
+      "https://developers.google.com/gmail/api/reference/rest/v1/users.drafts/send",
     paramsSchema: gmailDraftsSendParamsSchema,
     resultSchema: gmailDraftsSendResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/gmail.send"],
+    ownershipScope: OwnershipScope.User,
     risk: CapabilityRisk.HIGH,
   };
   return { meta, execute: gmailDraftsSend };
 }
 
-// Calendar capability factory functions
+// Calendar capabilities - User scope (accessing personal calendar)
 function createCalendarEventsCreateCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "calendar.events.create",
     displayName: "Create Calendar Event",
     description: "Create a new calendar event",
-    docsUrl: "https://developers.google.com/calendar/api/v3/reference/events/insert",
+    docsUrl:
+      "https://developers.google.com/calendar/api/v3/reference/events/insert",
     paramsSchema: calendarEventCreateParamsSchema,
     resultSchema: calendarEventCreateResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/calendar"],
+    ownershipScope: OwnershipScope.User,
     risk: CapabilityRisk.HIGH,
   };
   return { meta, execute: calendarEventCreate };
@@ -259,25 +306,28 @@ function createCalendarEventsListCapability(): Capability {
     id: "calendar.events.list",
     displayName: "List Calendar Events",
     description: "List events from a calendar",
-    docsUrl: "https://developers.google.com/calendar/api/v3/reference/events/list",
+    docsUrl:
+      "https://developers.google.com/calendar/api/v3/reference/events/list",
     paramsSchema: calendarEventsListParamsSchema,
     resultSchema: calendarEventsListResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+    ownershipScope: OwnershipScope.User,
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: calendarEventsList };
 }
 
-// Drive capability factory functions
+// Drive capabilities - Organization scope (shared drives, org-wide access)
 function createDriveDrivesListCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.drives.list",
-    displayName: "List Drives",
-    description: "List Google Drives (shared drives)",
-    docsUrl: "https://developers.google.com/drive/api/reference/rest/v3/drives/list",
+    displayName: "List Google Drives",
+    description: "List shared drives accessible to the user",
+    docsUrl: "https://developers.google.com/drive/api/v3/reference/drives/list",
     paramsSchema: driveDrivesListParamsSchema,
     resultSchema: driveDrivesListResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/drive.readonly"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: driveDrivesList };
@@ -288,10 +338,12 @@ function createDriveDrivesGetCapability(): Capability {
     id: "drive.drives.get",
     displayName: "Get Drive",
     description: "Get information about a specific Google Drive",
-    docsUrl: "https://developers.google.com/drive/api/reference/rest/v3/drives/get",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/drives/get",
     paramsSchema: driveDrivesGetParamsSchema,
     resultSchema: driveDrivesGetResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/drive.readonly"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: driveDrivesGet };
@@ -302,10 +354,12 @@ function createDriveFilesListCapability(): Capability {
     id: "drive.files.list",
     displayName: "List Files",
     description: "List files and folders in Google Drive",
-    docsUrl: "https://developers.google.com/drive/api/reference/rest/v3/files/list",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/files/list",
     paramsSchema: driveFilesListParamsSchema,
     resultSchema: driveFilesListResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/drive.readonly"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: driveFilesList };
@@ -316,10 +370,12 @@ function createDriveFilesGetCapability(): Capability {
     id: "drive.files.get",
     displayName: "Get File",
     description: "Get information about a specific file in Google Drive",
-    docsUrl: "https://developers.google.com/drive/api/reference/rest/v3/files/get",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/files/get",
     paramsSchema: driveFilesGetParamsSchema,
     resultSchema: driveFilesGetResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/drive.readonly"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: driveFilesGet };
@@ -330,10 +386,12 @@ function createDriveFilesCreateCapability(): Capability {
     id: "drive.files.create",
     displayName: "Create File",
     description: "Create a new file or folder in Google Drive",
-    docsUrl: "https://developers.google.com/drive/api/reference/rest/v3/files/create",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/files/create",
     paramsSchema: driveFilesCreateParamsSchema,
     resultSchema: driveFilesCreateResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/drive.file"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.MEDIUM,
   };
   return { meta, execute: driveFilesCreate };
@@ -344,10 +402,12 @@ function createDriveFilesUpdateCapability(): Capability {
     id: "drive.files.update",
     displayName: "Update File",
     description: "Update an existing file in Google Drive",
-    docsUrl: "https://developers.google.com/drive/api/reference/rest/v3/files/update",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/files/update",
     paramsSchema: driveFilesUpdateParamsSchema,
     resultSchema: driveFilesUpdateResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/drive.file"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.MEDIUM,
   };
   return { meta, execute: driveFilesUpdate };
@@ -358,10 +418,12 @@ function createDriveFilesExportCapability(): Capability {
     id: "drive.files.export",
     displayName: "Export File",
     description: "Export a Google Workspace document in a specific format",
-    docsUrl: "https://developers.google.com/drive/api/reference/rest/v3/files/export",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/files/export",
     paramsSchema: driveFilesExportParamsSchema,
     resultSchema: driveFilesExportResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/drive.readonly"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: driveFilesExport };
@@ -372,10 +434,12 @@ function createDriveFilesDownloadCapability(): Capability {
     id: "drive.files.download",
     displayName: "Download File",
     description: "Download the content of a file from Google Drive",
-    docsUrl: "https://developers.google.com/drive/api/reference/rest/v3/files/get",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/files/get",
     paramsSchema: driveFilesDownloadParamsSchema,
     resultSchema: driveFilesDownloadResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/drive.readonly"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: driveFilesDownload };
@@ -386,10 +450,12 @@ function createDriveCommentsListCapability(): Capability {
     id: "drive.comments.list",
     displayName: "List Comments",
     description: "List comments on a Google Drive file",
-    docsUrl: "https://developers.google.com/drive/api/reference/rest/v3/comments/list",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/comments/list",
     paramsSchema: driveCommentsListParamsSchema,
     resultSchema: driveCommentsListResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/drive.readonly"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: driveCommentsList };
@@ -400,10 +466,12 @@ function createDriveCommentsGetCapability(): Capability {
     id: "drive.comments.get",
     displayName: "Get Comment",
     description: "Get a specific comment on a Google Drive file",
-    docsUrl: "https://developers.google.com/drive/api/reference/rest/v3/comments/get",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/comments/get",
     paramsSchema: driveCommentsGetParamsSchema,
     resultSchema: driveCommentsGetResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/drive.readonly"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: driveCommentsGet };
@@ -414,10 +482,12 @@ function createDriveCommentsCreateCapability(): Capability {
     id: "drive.comments.create",
     displayName: "Create Comment",
     description: "Add a comment to a Google Drive file",
-    docsUrl: "https://developers.google.com/drive/api/reference/rest/v3/comments/create",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/comments/create",
     paramsSchema: driveCommentsCreateParamsSchema,
     resultSchema: driveCommentsCreateResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/drive.file"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.MEDIUM,
   };
   return { meta, execute: driveCommentsCreate };
@@ -446,6 +516,7 @@ export class GoogleProvider implements ProviderRuntime {
       // Gmail capabilities
       "gmail.messages.send": createGmailSendCapability,
       "gmail.messages.search": createGmailSearchCapability,
+      "gmail.messages.get": createGmailMessagesGetCapability,
       "gmail.labels.create": createGmailLabelsCreateCapability,
       "gmail.labels.list": createGmailLabelsListCapability,
       "gmail.labels.get": createGmailLabelsGetCapability,
@@ -499,12 +570,15 @@ export class GoogleProvider implements ProviderRuntime {
   listCapabilities() {
     return Array.from(this.dispatchTable.values()).map((c) => c.meta);
   }
+  listTriggers(): Trigger<any>[] {
+    return [];
+  }
 
   // OAuth methods implementation
   generateAuthUrl(params: OAuthAuthUrlParams, ctx: OAuthContext): string {
     const oauth2Client = new google.auth.OAuth2(
-      ctx.clientId,
-      ctx.clientSecret,
+      ctx.providerSecrets.clientId as string,
+      ctx.providerSecrets.clientSecret as string,
       ctx.redirectUri,
     );
     return oauth2Client.generateAuthUrl({
@@ -519,8 +593,8 @@ export class GoogleProvider implements ProviderRuntime {
     ctx: OAuthContext,
   ): Promise<CallbackResult> {
     const oauth2Client = new google.auth.OAuth2(
-      ctx.clientId,
-      ctx.clientSecret,
+      ctx.providerSecrets.clientId as string,
+      ctx.providerSecrets.clientSecret as string,
       ctx.redirectUri,
     );
     const { tokens } = await oauth2Client.getToken(callbackParams.code);
@@ -531,59 +605,21 @@ export class GoogleProvider implements ProviderRuntime {
     };
   }
 
-  //async refreshToken(
-  //  tokenPayload: Record<string, unknown>,
-  //  ctx: OAuthContext,
-  //): Promise<Record<string, unknown>> {
-  //  const oauth2Client = new google.auth.OAuth2(
-  //    ctx.clientId,
-  //    ctx.clientSecret,
-  //    ctx.redirectUri,
-  //  );
-  //  const { credentials } = await oauth2Client.refreshAccessToken();
-  //  if (!credentials.access_token || !credentials.refresh_token) {
-  //    throw new Error("Invalid tokens");
-  //  }
-  //  return {
-  //    accessToken: credentials.access_token,
-  //    refreshToken: credentials.refresh_token,
-  //    expiresAt: new Date(credentials.expiry_date || 0),
-  //    grantedScopes: credentials.scope?.split(" ") || [],
-  //  };
-  //}
-
   async isTokenValid(accessToken: string): Promise<boolean> {
     try {
       const oauth2Client = new google.auth.OAuth2();
       oauth2Client.setCredentials({ access_token: accessToken });
-      
+
       // Make a simple API call to verify the token
       const oauth2 = google.oauth2({
         version: "v2",
         auth: oauth2Client,
       });
       await oauth2.userinfo.get();
-      
+
       return true;
     } catch (error) {
       return false;
     }
   }
-  //webhookRegistrations(): WebhookRegistration[] {
-  //  return [{
-  //    eventSchema: Type.Object({
-  //      type: Type.Literal("gmail.messages.create"),
-  //      data: Type.Object({
-  //        message: Type.Object({
-  //          id: Type.String(),
-  //          threadId: Type.String(),
-  //        }),
-  //      }),
-  //    }),
-  //    handler: async (request, reply) => {
-  //      console.log("Webhook received", JSON.stringify(request.body));
-  //    },
-  //  }];
-  //}
-
 }

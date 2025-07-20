@@ -6,18 +6,27 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "NODE_ENV=test tap -t4 --disable-coverage",
-    "clean": "rm -rf ./dist"
+    "clean": "rm -rf ./dist",
+    "graphCreator": "tsx scripts/graphCreator.ts"
   },
   "dependencies": {
     "@aws-sdk/client-kinesis": "^3.845.0",
     "@clancy/agents_core_sdk": "file:../sdks/agents_core",
-    "@clancy/sdk": "file:../sdks/connect_hub",
-    "@langchain/core": "^0.3.64",
-    "@langchain/langgraph": "^0.3.10",
+    "@clancy/connect_hub_sdk": "file:../sdks/connect_hub",
+    "@ewestern/events": "^1.0.17",
+    "@langchain/anthropic": "^0.3.25",
+    "@langchain/core": "^0.3.66",
+    "@langchain/langgraph": "^0.3.11",
     "@langchain/langgraph-checkpoint-postgres": "^0.0.5",
-    "@langchain/openai": "^0.5.18",
-    "langchain": "^0.3.29",
-    "langsmith": "^0.3.39"
+    "@langchain/langgraph-supervisor": "^0.0.15",
+    "@langchain/langgraph-swarm": "^0.0.4",
+    "@langchain/openai": "^0.6.3",
+    "@sinclair/typemap": "^0.10.1",
+    "dayjs": "^1.11.13",
+    "dotenv": "^17.2.0",
+    "langchain": "^0.3.30",
+    "langsmith": "^0.3.39",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@jest/globals": "^29.2.0",
@@ -34,6 +43,7 @@
     "rimraf": "^5.0.0",
     "ts-jest": "^29.0.5",
     "ts-node": "^10.9.1",
+    "tsx": "^4.20.3",
     "typescript": "^5.0.0"
   },
   "author": "Clancy",

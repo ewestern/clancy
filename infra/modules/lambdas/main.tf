@@ -4,35 +4,42 @@ resource "null_resource" "build_lambdas" {
   triggers = {
     package_json = filemd5("${local.lambdas_path}/package.json")
     # You could add more specific triggers for source files if needed
-    source_hash = filemd5("${local.lambdas_path}/tsconfig.json")
+    tsconfig = filemd5("${local.lambdas_path}/tsconfig.json")
+    tsconfig = filemd5("${local.lambdas_path}/template.yaml")
+    graph_creator_executor = filemd5("${local.lambdas_path}/src/graph-creator-executor/handler.ts")
+    main_agent_executor = filemd5("${local.lambdas_path}/src/main-agent-executor/handler.ts")
+    shared_graphCreator = filemd5("${local.lambdas_path}/src/shared/graphCreator.ts")
+    shared_index = filemd5("${local.lambdas_path}/src/shared/index.ts")
+    shared_utils = filemd5("${local.lambdas_path}/src/shared/utils.ts")
+    agent_enrichment = filemd5("${local.lambdas_path}/src/agent-enrichment/handler.ts")
   }
 
   provisioner "local-exec" {
-    command = "cd ${local.lambdas_path} && npm ci && npm run build"
+    command = "cd ${local.lambdas_path} && npm ci && npm run build && sam build"
   }
 }
 
 # Archive data sources for each lambda function
 data "archive_file" "agent_enrichment" {
   type        = "zip"
-  source_dir  = "${local.lambdas_path}/dist/agent-enrichment"
-  output_path = "${local.lambdas_path}/dist/agent-enrichment.zip"
+  source_dir  = "${local.sam_build_path}/AgentEnrichmentFunction"
+  output_path = "${path.module}/.terraform/archives/agent-enrichment.zip"
   
   depends_on = [null_resource.build_lambdas]
 }
 
 data "archive_file" "graph_creator_executor" {
   type        = "zip"
-  source_dir  = "${local.lambdas_path}/dist/graph-creator-executor"
-  output_path = "${local.lambdas_path}/dist/graph-creator-executor.zip"
+  source_dir  = "${local.sam_build_path}/GraphCreatorExecutorFunction"
+  output_path = "${path.module}/.terraform/archives/graph-creator-executor.zip"
   
   depends_on = [null_resource.build_lambdas]
 }
 
 data "archive_file" "main_agent_executor" {
   type        = "zip"
-  source_dir  = "${local.lambdas_path}/dist/main-agent-executor"
-  output_path = "${local.lambdas_path}/dist/main-agent-executor.zip"
+  source_dir  = "${local.sam_build_path}/MainAgentExecutorFunction"
+  output_path = "${path.module}/.terraform/archives/main-agent-executor.zip"
   
   depends_on = [null_resource.build_lambdas]
 }

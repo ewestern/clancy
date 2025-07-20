@@ -1,10 +1,20 @@
-import React, { useEffect, useRef, useMemo, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useMemo,
+  useState,
+  useCallback,
+} from "react";
 import useWebSocket from "react-use-websocket";
-import { Subscriber, WebSocketContext, WebSocketContextType } from "../context/WebSocketContext";
+import {
+  Subscriber,
+  WebSocketContext,
+  WebSocketContextType,
+} from "../context/WebSocketContext";
 import { useAuth } from "@clerk/react-router";
-import type { WizardWebSocketMessage } from "../types";
+import type { WebsocketMessage } from "../types";
 
-const WS_URL = import.meta.env.VITE_WS_URL ?? "ws://localhost:3001/ws";
+const WS_URL = import.meta.env.VITE_AGENTS_CORE_URL!;
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const { getToken } = useAuth();
@@ -12,50 +22,48 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
   const updateUrl = useCallback(async () => {
     const token = await getToken();
-    setWsUrl(`${WS_URL}?token=${token}`);
+    setWsUrl(`${WS_URL}/ws?token=${token}`);
   }, [getToken]);
 
   useEffect(() => {
     updateUrl();
-  }, []); 
+  }, []);
 
   const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(wsUrl, {
     shouldReconnect: () => true,
+    onClose: () => {
+      updateUrl();
+    },
     onError: (error) => {
       updateUrl();
       console.error("WebSocket error:", error);
     },
     share: true, // ensures a single native socket for the whole tab
   });
-  console.log("READY STATE", readyState);
   console.log("LAST JSON MESSAGE", lastJsonMessage);
-
   // Map<eventName, Set<callback>>
-  const subscribers = useRef(new Map<string, Set<Subscriber>>());
+  const subscribers = useRef(
+    new Map<string, Set<Subscriber<WebsocketMessage>>>(),
+  );
 
-  // Fan-out incoming messages to relevant subscribers
+  // Fan-out incoming messages by top-level "type"
   useEffect(() => {
     if (!lastJsonMessage) return;
 
-    const { event, payload } = lastJsonMessage as {
-      event?: string;
-      payload?: unknown;
-    };
-
-    if (event && subscribers.current.has(event)) {
-      subscribers.current.get(event)!.forEach((cb) => cb(payload));
-    }
-
-    // Handle wizard-specific events
-    if (event && ['wizard_update', 'workflow_update', 'provider_connected', 'chat_message', 'completion_check', 'job_analysis'].includes(event)) {
-      const wizardEvent = lastJsonMessage as WizardWebSocketMessage;
-      if (subscribers.current.has('wizard_events')) {
-        subscribers.current.get('wizard_events')!.forEach((cb) => cb(wizardEvent));
+    if (
+      typeof lastJsonMessage === "object" &&
+      lastJsonMessage !== null &&
+      "type" in lastJsonMessage
+    ) {
+      const message = lastJsonMessage as WebsocketMessage;
+      const key = message.type;
+      if (subscribers.current.has(key)) {
+        subscribers.current.get(key)!.forEach((cb) => cb(message));
       }
     }
   }, [lastJsonMessage]);
 
-  const subscribe = (event: string, callback: Subscriber) => {
+  const subscribe = (event: string, callback: Subscriber<WebsocketMessage>) => {
     if (!subscribers.current.has(event)) {
       subscribers.current.set(event, new Set());
     }
@@ -72,31 +80,19 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
-  // Wizard-specific subscription helper
-  const subscribeToWizardEvents = (callback: Subscriber<WizardWebSocketMessage>) => {
-    return subscribe('wizard_events', (payload: unknown) => {
-      callback(payload as WizardWebSocketMessage);
-    });
-  };
-
-  // Wizard-specific send helper
-  const sendWizardMessage = (message: WizardWebSocketMessage) => {
-    sendJsonMessage({
-      event: message.type,
-      payload: message.payload
-    });
-  };
-
   const value: WebSocketContextType = useMemo(
     () => ({
-      send: sendJsonMessage,
-      sendWizardMessage,
-      subscribe,
-      subscribeToWizardEvents,
+      send: (message: WebsocketMessage) => sendJsonMessage(message),
+      subscribe: (event: string, callback: Subscriber<WebsocketMessage>) =>
+        subscribe(event, callback),
       readyState,
     }),
     [sendJsonMessage, readyState],
   );
 
-  return <WebSocketContext.Provider value={value}>{children}</WebSocketContext.Provider>;
+  return (
+    <WebSocketContext.Provider value={value}>
+      {children}
+    </WebSocketContext.Provider>
+  );
 }

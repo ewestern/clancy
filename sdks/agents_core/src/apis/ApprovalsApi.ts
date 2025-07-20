@@ -16,14 +16,14 @@
 import * as runtime from '../runtime';
 import type {
   ApprovalRequest,
-  V1ApprovalsGet404Response,
+  V1AgentsPost400Response,
   V1ApprovalsIdPutRequest,
 } from '../models/index';
 import {
     ApprovalRequestFromJSON,
     ApprovalRequestToJSON,
-    V1ApprovalsGet404ResponseFromJSON,
-    V1ApprovalsGet404ResponseToJSON,
+    V1AgentsPost400ResponseFromJSON,
+    V1AgentsPost400ResponseToJSON,
     V1ApprovalsIdPutRequestFromJSON,
     V1ApprovalsIdPutRequestToJSON,
 } from '../models/index';

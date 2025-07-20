@@ -171,3 +171,61 @@ export type OAuthCallbackQuery = Static<typeof OAuthCallbackQuerySchema>;
 export type OAuthSuccessResponse = Static<typeof OAuthSuccessResponseSchema>;
 export type OAuthErrorResponse = Static<typeof OAuthErrorResponseSchema>;
 export type OAuthTransaction = Static<typeof OAuthTransactionSchema>;
+
+// OAuth Audit Request/Response Schemas
+export const OAuthAuditRequestSchema = Type.Object({
+  capabilities: Type.Array(
+    Type.Object({
+      providerId: Type.String(),
+      capabilityId: Type.String(),
+    }),
+  ),
+  triggers: Type.Array(
+    Type.Object({
+      providerId: Type.String(),
+      triggerId: Type.String(),
+    }),
+  ),
+});
+
+export const OAuthAuditProviderResultSchema = Type.Object({
+  providerId: Type.String(),
+  providerDisplayName: Type.String(),
+  providerIcon: Type.String(),
+  status: Type.Union([
+    Type.Literal("connected"),
+    Type.Literal("needs_auth"),
+    Type.Literal("needs_scope_upgrade"),
+  ]),
+  missingScopes: Type.Array(Type.String()),
+  oauthUrl: Type.String(),
+  message: Type.Optional(Type.String()),
+});
+
+export const OAuthAuditResponseSchema = Type.Array(
+  OAuthAuditProviderResultSchema,
+  {
+    $id: "OAuthAuditResponse",
+  },
+);
+
+export const OAuthAuditEndpointSchema = {
+  tags: ["OAuth"],
+  body: OAuthAuditRequestSchema,
+  querystring: Type.Object({
+    orgId: Type.String(),
+  }),
+  response: {
+    200: OAuthAuditResponseSchema,
+    400: Type.Object({
+      error: Type.String(),
+      message: Type.String(),
+    }),
+  },
+};
+
+export type OAuthAuditRequest = Static<typeof OAuthAuditRequestSchema>;
+export type OAuthAuditProviderResult = Static<
+  typeof OAuthAuditProviderResultSchema
+>;
+export type OAuthAuditResponse = Static<typeof OAuthAuditResponseSchema>;

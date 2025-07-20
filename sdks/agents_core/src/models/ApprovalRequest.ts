@@ -51,10 +51,10 @@ export interface ApprovalRequest {
     summary: string;
     /**
      * 
-     * @type {object}
+     * @type {any}
      * @memberof ApprovalRequest
      */
-    modifications: object;
+    modifications: any | null;
     /**
      * 
      * @type {string}
@@ -63,10 +63,10 @@ export interface ApprovalRequest {
     capability: string;
     /**
      * 
-     * @type {object}
+     * @type {any}
      * @memberof ApprovalRequest
      */
-    request: object;
+    request: any | null;
     /**
      * 
      * @type {string}

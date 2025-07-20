@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
-declare module 'intuit-oauth' {
-  import csrf from 'csrf';
+declare module "intuit-oauth" {
+  import csrf from "csrf";
 
   interface TokenData {
     realmId?: string;
@@ -95,12 +95,18 @@ declare module 'intuit-oauth' {
 
     authorizeUri(params: OAuthClient.AuthorizeParams): string;
 
-    createError(e: Error, authResponse?: AuthResponse): OAuthClient.OAuthClientError;
+    createError(
+      e: Error,
+      authResponse?: AuthResponse,
+    ): OAuthClient.OAuthClientError;
 
     createToken(uri: string): Promise<AuthResponse>;
 
-    getKeyFromJWKsURI(id_token: string, kid: string, request: Request):
-      Promise<Record<string, unknown> | string>;
+    getKeyFromJWKsURI(
+      id_token: string,
+      kid: string,
+      request: Request,
+    ): Promise<Record<string, unknown> | string>;
 
     getTokenRequest(request: Request): Promise<AuthResponse>;
 
@@ -124,7 +130,9 @@ declare module 'intuit-oauth' {
 
     setToken(params: TokenData): Token;
 
-    validateIdToken(params?: OAuthClient.ValidateIdTokenParams): Promise<Response>;
+    validateIdToken(
+      params?: OAuthClient.ValidateIdTokenParams,
+    ): Promise<Response>;
 
     validateToken(): void;
   }
@@ -140,22 +148,22 @@ declare module 'intuit-oauth' {
     }
 
     enum environment {
-      sandbox = 'https://sandbox-quickbooks.api.intuit.com/',
-      production = 'https://quickbooks.api.intuit.com/'
+      sandbox = "https://sandbox-quickbooks.api.intuit.com/",
+      production = "https://quickbooks.api.intuit.com/",
     }
 
     enum scopes {
-      Accounting = 'com.intuit.quickbooks.accounting',
-      Payment = 'com.intuit.quickbooks.payment',
-      Payroll = 'com.intuit.quickbooks.payroll',
-      TimeTracking = 'com.intuit.quickbooks.payroll.timetracking',
-      Benefits = 'com.intuit.quickbooks.payroll.benefits',
-      Profile = 'profile',
-      Email = 'email',
-      Phone = 'phone',
-      Address = 'address',
-      OpenId = 'openid',
-      Intuit_name = 'intuit_name'
+      Accounting = "com.intuit.quickbooks.accounting",
+      Payment = "com.intuit.quickbooks.payment",
+      Payroll = "com.intuit.quickbooks.payroll",
+      TimeTracking = "com.intuit.quickbooks.payroll.timetracking",
+      Benefits = "com.intuit.quickbooks.payroll.benefits",
+      Profile = "profile",
+      Email = "email",
+      Phone = "phone",
+      Address = "address",
+      OpenId = "openid",
+      Intuit_name = "intuit_name",
     }
 
     interface AuthorizeParams {

@@ -36,8 +36,8 @@ The Clancy platform consists of three core services that work together to provid
 **Tech Stack**: Node.js + Fastify + Drizzle ORM + PostgreSQL
 
 **Primary Responsibilities**:
-- 🧠 **Hierarchical Graph Creation**: Generate "Digital Employee" graphs from job descriptions
-- 👥 **Employee Registry**: Manage persistent digital employee identities and skill compositions
+- 🧠 **Hierarchical Graph Creation**: Generate "AI Employee" graphs from job descriptions
+- 👥 **Employee Registry**: Manage persistent ai employee identities and skill compositions
 - 🎛️ **Supervisor Logic**: Route triggers to appropriate employees and skill nodes
 - 💾 **Memory Management**: Maintain unified context across employee, skill, and organizational layers
 - 📤 **Intent Emission**: Publish `runIntent` events with hierarchical context to execution queue
@@ -45,10 +45,10 @@ The Clancy platform consists of three core services that work together to provid
 **What it does NOT do**:
 - Execute hierarchical graphs (delegates to agent workers)
 - Implement capabilities (uses ConnectHub)
-- Handle authentication (uses Auth0)
+- Handle authentication (delegates to Clerk & AWS Cognito)
 
 ### 2. ConnectHub (Integration Layer)
-**Tech Stack**: Python + FastAPI + PostgreSQL
+**Tech Stack**: Node.js + Fastify + Drizzle ORM + PostgreSQL + TypeScript
 
 **Primary Responsibilities**:
 - 🔌 **Integration Catalog**: Maintain catalog of available integrations and actions
@@ -59,39 +59,48 @@ The Clancy platform consists of three core services that work together to provid
 - 🔐 **Secure Proxy**: Zero raw tokens exposed to workers
 
 **API Surface**:
-- `POST /oauth/complete` - Complete OAuth flow for a connection
-- `POST /proxy/{internal_action}` - Execute capability via proxy
-- `GET /catalog` - List available integrations and actions
+- `GET /health` - Comprehensive service health check
+- `GET /capabilities` - List available integrations and their capabilities
+- `GET /oauth/launch/:provider` - Initiate OAuth flow for a specific provider
+- `GET /oauth/callback/:provider` - Handle OAuth callback and token exchange
+- `POST /proxy/:providerId/:capabilityId` - Execute a provider capability via secure proxy
 
 ### 3. Agent Workers (Graph Execution)
-**Tech Stack**: Python + LangGraph + FastAPI
+**Tech Stack**: Node.js + LangGraph (TypeScript) + AWS Lambda (SAM)
 
 **Primary Responsibilities**:
 - 🚀 **Hierarchical Graph Execution**: Run employee supervisor graphs with nested skill graphs
 - 💾 **State Management**: Handle LangGraph checkpointing across skill and micro-agent layers
 - 🔗 **Capability Integration**: Call ConnectHub for capability execution with hierarchical context
 - 📡 **Event Emission**: Publish execution events with hierarchical run_id correlation
-- 🔐 **Secure Execution**: Authenticate with Auth0 M2M tokens
+- 🔐 **Secure Execution**: Authenticate with AWS Cognito JWTs (M2M)
 
 **Event Consumption**:
 - Subscribes to `runIntent` events from Agent-Core
 - Publishes `executionResult` and `agentEvent` events
 
-### 4. Auth0 (External Authentication Service)
+### 4. Clerk (User & Organization Identity)
 
 **Responsibilities**:
-- 👤 **User Authentication**: Manage user (manager) authentication via Universal Login
-- 🤖 **Agent Authentication**: M2M authentication for agents and services
-- 🔐 **Token Management**: Issue and validate JWTs for all services
-- 🏢 **Organization Management**: Multi-tenant isolation via Auth0 Organizations
-- 📊 **Audit Logging**: Centralized authentication and authorization logs
-- 🔑 **Token Vault**: Secure storage for select third-party OAuth tokens
+ - 👤 **User Authentication**: Universal login, session management, passwordless/email magic links
+ - 🏢 **Organization Management**: Built-in multi-tenant support (Clerk Organizations)
+ - 🔑 **JWT Issuance**: Short-lived JWTs (15 min) embedding `org_id`, `user_id`, and role claims
+ - 📊 **Audit Logging**: Centralized auth logs & webhooks to Agent-Core for security analytics
+
+### 5. AWS Cognito (Machine-to-Machine Authentication)
+
+**Responsibilities**:
+ - 🤖 **M2M Tokens**: Issue and validate JWTs for service & agent workloads
+ - 🔐 **Scoped Credentials**: Separate user pool app clients for Agent-Core, ConnectHub, Event Bus, etc.
+ - 🏷️ **Fine-grained Claims**: Custom claims for `capability_scope`, `org_id`, `agent_id`
+ - 🔄 **Token Rotation**: Automatic refresh via AWS SDK providers; <1 hour expiry
+ - 📜 **Policy Enforcement**: API Gateway & Lambda authorisers validate Cognito JWTs
 
 ## Data Flow
 
 ### 1. Hierarchical Graph Creation Flow
 ```
-User Request (with Auth0 JWT)
+User Request (with Clerk JWT)
     ↓
 Agent-Core (validate JWT, parse job description into skills)
     ↓
@@ -108,7 +117,7 @@ Response (EmployeeGraphSpec)
 ```
 Trigger (Slack, webhook, schedule)
     ↓
-Agent-Core (supervisor routes to digital employees)
+Agent-Core (supervisor routes to ai employees)
     ↓
 Event Bus (runIntent event with hierarchical context)
     ↓
@@ -116,7 +125,7 @@ Agent Worker (compile supervisor graph, execute skill nodes)
     ↓
   ├─ Skill Graph A (micro-agents in-process)
   ├─ Skill Graph B (micro-agents in-process)  
-  └─ Each skill calls ConnectHub (proxy capability with Auth0 token)
+  └─ Each skill calls ConnectHub (proxy capability with Cognito M2M token)
     ↓
 External Providers (execute actions)
     ↓
@@ -139,7 +148,7 @@ Agent-Core (update employee memory with skill-level context)
     "execution_id": "string",
     "run_id": "emp:42_v3:2025-06-09T18:00Z",
     "auth_context": {
-        "auth0_org_id": "org_xxx",
+        "clerk_org_id": "org_xxx",
         "employee_m2m_app_id": "string"
     },
     "trigger": {
@@ -198,20 +207,20 @@ Agent-Core (update employee memory with skill-level context)
 
 ## Authentication Strategy
 
-### User Authentication
-- Managers authenticate via Auth0 Universal Login
-- Receive short-lived access tokens (15 minutes)
-- Refresh tokens for session management
+### User Authentication (Clerk)
+- End-users and managers sign in via Clerk Universal Login  
+- Clerk issues 15-minute JWTs containing `user_id`, `org_id`, and role claims  
+- Refresh tokens handled client-side via Clerk SDK; no long-lived cookies  
 
-### Employee Authentication
-- Each digital employee has a dedicated M2M application in Auth0
-- Longer-lived tokens (1 hour) with automatic refresh
-- Scoped to specific skill capabilities and organizations
+### Agent / Service Authentication (AWS Cognito)
+- Each AI employee and internal service receives a dedicated Cognito app-client ID  
+- Cognito issues JWTs (up to 60 min) with custom claims: `agent_id`, `org_id`, `capability_scope`  
+- Tokens are obtained via the service’s IAM-secured secret or SRP flow and injected into HTTP headers  
 
-### Service-to-Service
-- ConnectHub and Agent-Core have their own M2M apps
-- Internal API calls include Auth0 bearer tokens
-- Token validation on every request
+### Token Validation & Propagation
+- API Gateway/Lambda authorisers validate Cognito JWTs  
+- Fastify middleware validates Clerk or Cognito tokens depending on route type  
+- Downstream services propagate the original JWT via `Authorization: Bearer` header to maintain traceability
 
 ## Scaling Characteristics
 
@@ -230,10 +239,13 @@ Agent-Core (update employee memory with skill-level context)
 - **Bottlenecks**: Hierarchical graph compilation, nested skill execution, capability calls
 - **Optimization**: Worker pools, execution timeouts, skill-level parallelization
 
-### Auth0
-- **Scaling**: Managed by Auth0
-- **Considerations**: M2M token quotas per employee, API rate limits
-- **Optimization**: Token caching, efficient skill-based scope design
+### Clerk
+- **Scaling**: SaaS-hosted; horizontal scaling managed by Clerk  
+- **Considerations**: User/org limits, webhook delivery latency  
+
+### Cognito
+- **Scaling**: Fully managed; high concurrency for token issuance  
+- **Considerations**: App-client quotas, JWT size limits; cold-start costs for Lambda authorisers
 
 ## Development Phases
 
@@ -260,11 +272,21 @@ Agent-Core (update employee memory with skill-level context)
 ### Synchronous (HTTP)
 - Agent-Core → ConnectHub (capability queries)
 - Agent Workers → ConnectHub (capability execution)
-- All services → Auth0 (token validation)
+- All services → API Gateway authorisers / Fastify middleware → Clerk or Cognito (token validation)
 
 ### Asynchronous (Event Bus)
 - Agent-Core → Agent Workers (runIntent events)
 - Agent Workers → Agent-Core (execution results)
 - All services → Event Bus (audit events)
 
-This architecture provides clean separation of concerns while leveraging Auth0's proven authentication infrastructure and maintaining the flexibility to scale each component independently based on load patterns. 
+This architecture now leverages Clerk for human identity and AWS Cognito for machine identity, giving us a clear separation between interactive users and automated workloads while remaining cloud-native to AWS.
+
+## Future Authentication Enhancements
+
+1. 🔐 **Zero-Trust Service Mesh** – Introduce mTLS between internal services (e.g., AWS App Mesh or Linkerd) so that even internal traffic is mutually authenticated in addition to JWTs.  
+2. 🔏 **Fine-Grained Capability Scopes** – Expand Cognito custom scopes to align 1-to-1 with ConnectHub capability IDs, enabling least-privilege execution at skill level.  
+3. 📜 **Signed Webhooks** – Replace simple bearer tokens with HMAC-signed webhook payloads (Clerk session keys or AWS SigV4) to prevent replay attacks.  
+4. 🕵️ **Centralised Audit & SIEM** – Stream Clerk and Cognito logs into AWS Security Lake and Datadog to enable real-time anomaly detection.  
+5. 🔄 **Shorter-Lived Tokens + Automatic Rotation** – Reduce Cognito token TTL to 15 min and implement proactive refresh in Agent-Workers to tighten blast radius.  
+6. 🧩 **SSO & Social Providers** – Leverage Clerk’s built-in SSO (SAML, OIDC) to support enterprise identity providers without custom code.  
+7. 🛡️ **Advanced RBAC** – Layer AWS IAM policies on API Gateway stages to enforce organisation-level quotas combined with Clerk role claims. 

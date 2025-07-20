@@ -4,13 +4,19 @@
 // This file temporarily contains both reusable framework code and the
 // customer_support_email "app".  Each block is annotated with the
 // directory/filename where it will reside after extraction.
-// 
+//
 // ENVIRONMENT VARIABLES REQUIRED:
 // - DATABASE_URL: PostgreSQL connection string (e.g., "postgresql://user:password@localhost:5432/dbname")
 // - OPENAI_API_KEY: OpenAI API key for LLM operations
 // ============================================================================
 import { createEventBus } from "../src/prototype_helpers/event_bus.js";
-import { StateGraph, Annotation, START, END, interrupt } from "@langchain/langgraph";
+import {
+  StateGraph,
+  Annotation,
+  START,
+  END,
+  interrupt,
+} from "@langchain/langgraph";
 import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
 import { initChatModel } from "langchain/chat_models/universal";
 import { Event } from "../src/models/events.js";
@@ -63,8 +69,10 @@ const llm = await initChatModel("openai:gpt-o4-mini");
 // apps/customer_support_email/nodes/ExamineForQuestions.ts
 // =============================================================================
 // Node 1: Examine email for questions
-async function examineForQuestions(state: AgentStateType, config?: Record<string, any>): Promise<Partial<AgentStateType>> {
-  
+async function examineForQuestions(
+  state: AgentStateType,
+  config?: Record<string, any>,
+): Promise<Partial<AgentStateType>> {
   try {
     const prompt = `
 Analyze the following email and determine if it contains questions that require answers.
@@ -80,14 +88,11 @@ Respond with JSON in this format:
 }`;
 
     const response = await llm.invoke({
-      messages: [
-        { role: "user", content: prompt }
-      ],
-      responseFormat: { type: "json_object" }
+      messages: [{ role: "user", content: prompt }],
+      responseFormat: { type: "json_object" },
     });
     const analysis = JSON.parse(response.content);
-    
-    
+
     return {
       hasQuestions: analysis.hasQuestions,
     };
@@ -104,8 +109,9 @@ Respond with JSON in this format:
 // apps/customer_support_email/nodes/ExtractQuestions.ts
 // =============================================================================
 // Node 2: Extract questions from email
-async function extractQuestions(state: AgentStateType): Promise<Partial<AgentStateType>> {
-  
+async function extractQuestions(
+  state: AgentStateType,
+): Promise<Partial<AgentStateType>> {
   try {
     const prompt = `
 Extract all questions from the following email. Return them as a JSON array of strings.
@@ -120,14 +126,11 @@ Respond with JSON in this format:
 }`;
 
     const response = await llm.invoke({
-      messages: [
-        { role: "user", content: prompt }
-      ],
-      responseFormat: { type: "json_object" }
+      messages: [{ role: "user", content: prompt }],
+      responseFormat: { type: "json_object" },
     });
     const extraction = JSON.parse(response.content);
-    
-    
+
     return {
       extractedQuestions: extraction.questions,
     };
@@ -144,20 +147,19 @@ Respond with JSON in this format:
 // apps/customer_support_email/nodes/PerformRAGSearch.ts
 // =============================================================================
 // Node 3: Perform RAG search (stub implementation)
-async function performRAGSearch(state: AgentStateType): Promise<Partial<AgentStateType>> {
-  
+async function performRAGSearch(
+  state: AgentStateType,
+): Promise<Partial<AgentStateType>> {
   try {
     // Stub implementation - in real implementation, this would query a vector database
     const ragResults: string[] = [];
-    
+
     for (const question of state.extractedQuestions) {
-      
       // Simulate knowledge base lookup
       const mockResults = await searchKnowledgeBase(question);
       ragResults.push(...mockResults);
     }
-    
-    
+
     return {
       ragResults,
     };
@@ -174,15 +176,17 @@ async function performRAGSearch(state: AgentStateType): Promise<Partial<AgentSta
 // apps/customer_support_email/nodes/FormulateAnswer.ts
 // =============================================================================
 // Node 4: Formulate answer
-async function formulateAnswer(state: AgentStateType): Promise<Partial<AgentStateType>> {
+async function formulateAnswer(
+  state: AgentStateType,
+): Promise<Partial<AgentStateType>> {
   const isRefinement = state.reflectionCount > 0;
-  
+
   try {
-    const questionsText = state.extractedQuestions.join('\n- ');
-    const contextText = state.ragResults.join('\n\n');
-    
+    const questionsText = state.extractedQuestions.join("\n- ");
+    const contextText = state.ragResults.join("\n\n");
+
     let prompt = `
-Based on the following context from our knowledge base, ${isRefinement ? 'improve the existing answer' : 'determine if you can answer the customer\'s questions and provide an appropriate response'}.
+Based on the following context from our knowledge base, ${isRefinement ? "improve the existing answer" : "determine if you can answer the customer's questions and provide an appropriate response"}.
 
 Questions:
 - ${questionsText}
@@ -208,28 +212,27 @@ Please improve this answer by making it more complete, accurate, clear, helpful,
 Analyze whether you have sufficient information to provide helpful answers. Respond with JSON in this exact format:
 {
   "canAnswer": boolean,
-  "answer": "string - provide a comprehensive ${isRefinement ? 'improved ' : ''}answer if canAnswer is true, or explain what information is missing if canAnswer is false",
+  "answer": "string - provide a comprehensive ${isRefinement ? "improved " : ""}answer if canAnswer is true, or explain what information is missing if canAnswer is false",
   "reasoning": "string - brief explanation of your decision"
 }
 
 If you can answer most or all questions with the provided context, set canAnswer to true.
 If critical information is missing or the context is insufficient, set canAnswer to false.`;
 
-    const systemMessage = isRefinement 
+    const systemMessage = isRefinement
       ? "You are a helpful assistant that improves customer service responses based on feedback. Always return valid JSON."
       : "You are a helpful assistant that analyzes context and determines if sufficient information exists to answer customer questions. Always return valid JSON.";
 
     const response = await llm.invoke({
       messages: [
         { role: "system", content: systemMessage },
-        { role: "user", content: prompt }
+        { role: "user", content: prompt },
       ],
-      responseFormat: { type: "json_object" }
+      responseFormat: { type: "json_object" },
     });
-    
+
     const analysis = JSON.parse(response.content);
-    
-    
+
     return {
       proposedAnswer: analysis.answer,
       canAnswerQuestions: analysis.canAnswer,
@@ -237,7 +240,8 @@ If critical information is missing or the context is insufficient, set canAnswer
   } catch (error) {
     console.error("❌ Error formulating answer:", error);
     return {
-      proposedAnswer: "I apologize, but I encountered an error while processing your questions. Please try again or contact support directly.",
+      proposedAnswer:
+        "I apologize, but I encountered an error while processing your questions. Please try again or contact support directly.",
       canAnswerQuestions: false,
       error: `Failed to formulate answer: ${error instanceof Error ? error.message : String(error)}`,
     };
@@ -248,12 +252,13 @@ If critical information is missing or the context is insufficient, set canAnswer
 // apps/customer_support_email/nodes/ReflectOnAnswer.ts
 // =============================================================================
 // Node 5: Reflection - evaluate and potentially improve the answer
-async function reflectOnAnswer(state: AgentStateType): Promise<Partial<AgentStateType>> {
-  
+async function reflectOnAnswer(
+  state: AgentStateType,
+): Promise<Partial<AgentStateType>> {
   try {
-    const questionsText = state.extractedQuestions.join('\n- ');
-    const contextText = state.ragResults.join('\n\n');
-    
+    const questionsText = state.extractedQuestions.join("\n- ");
+    const contextText = state.ragResults.join("\n\n");
+
     const prompt = `
 You are an expert reviewer evaluating the quality of a customer service response. 
 
@@ -288,21 +293,25 @@ Set needsImprovement to true only if there are significant improvements that wou
 
     const response = await llm.invoke({
       messages: [
-        { role: "system", content: "You are an expert reviewer that provides constructive feedback on customer service responses. Always return valid JSON." },
-        { role: "user", content: prompt }
+        {
+          role: "system",
+          content:
+            "You are an expert reviewer that provides constructive feedback on customer service responses. Always return valid JSON.",
+        },
+        { role: "user", content: prompt },
       ],
-      responseFormat: { type: "json_object" }
+      responseFormat: { type: "json_object" },
     });
-    
+
     const reflection = JSON.parse(response.content);
     const newReflectionCount = state.reflectionCount + 1;
-    
+
     // If we've reached max iterations, don't improve further
     const shouldImprove = reflection.needsImprovement && newReflectionCount < 3;
-    
+
     if (newReflectionCount >= 3 && reflection.needsImprovement) {
     }
-    
+
     return {
       reflectionCount: newReflectionCount,
       needsImprovement: shouldImprove,
@@ -321,8 +330,9 @@ Set needsImprovement to true only if there are significant improvements that wou
 // apps/customer_support_email/nodes/CreateProposedReply.ts
 // =============================================================================
 // Node 6: Create proposed email reply
-async function createProposedReply(state: AgentStateType): Promise<Partial<AgentStateType>> {
-  
+async function createProposedReply(
+  state: AgentStateType,
+): Promise<Partial<AgentStateType>> {
   try {
     const proposedReply: Email = {
       from: state.email.to, // Reply from the original recipient
@@ -339,7 +349,7 @@ AI Assistant`,
       timestamp: new Date(),
       messageId: `reply-${Date.now()}-${Math.random().toString(36).substring(7)}`,
     };
-    
+
     return {
       proposedReply,
     };
@@ -355,10 +365,12 @@ AI Assistant`,
 // apps/customer_support_email/nodes/HumanApproval.ts
 // =============================================================================
 // Node 7: Human-in-the-loop interrupt
-async function humanApprovalInterrupt(state: AgentStateType): Promise<Partial<AgentStateType>> {
+async function humanApprovalInterrupt(
+  state: AgentStateType,
+): Promise<Partial<AgentStateType>> {
   // Use LangGraph's interrupt() function to pause execution and wait for user input
   // This creates a proper checkpoint that can be resumed with user approval
-  const result =  interrupt({
+  const result = interrupt({
     // Include the proposed reply in the interrupt data so external systems can access it
     hilType: "approval",
     proposedReply: state.proposedReply,
@@ -376,8 +388,9 @@ async function humanApprovalInterrupt(state: AgentStateType): Promise<Partial<Ag
 // apps/customer_support_email/nodes/SendEmail.ts
 // =============================================================================
 // Node 8: Send email (LLM-powered with tool)
-async function sendEmail(state: AgentStateType): Promise<Partial<AgentStateType>> {
-  
+async function sendEmail(
+  state: AgentStateType,
+): Promise<Partial<AgentStateType>> {
   try {
     if (!state.userApproval) {
       return {
@@ -385,7 +398,7 @@ async function sendEmail(state: AgentStateType): Promise<Partial<AgentStateType>
         error: "Email sending cancelled by user",
       };
     }
-    
+
     const prompt = `
 You are an email formatting specialist. You need to prepare and send an email response to a customer.
 
@@ -398,7 +411,7 @@ Proposed Reply Content:
 ${state.proposedAnswer}
 
 Customer Questions Asked:
-${state.extractedQuestions.map(q => `- ${q}`).join('\n')}
+${state.extractedQuestions.map((q) => `- ${q}`).join("\n")}
 
 Please format an appropriate email response and then send it using the sendEmail tool. Consider:
 1. Professional tone and structure
@@ -426,23 +439,22 @@ Respond with JSON indicating the action taken:
 
     const response = await llm.invoke({
       messages: [
-        { 
-          role: "system", 
-          content: "You are an email formatting specialist. Format professional email responses and use the sendEmail tool to send them. Always return valid JSON with the sendEmail tool call." 
+        {
+          role: "system",
+          content:
+            "You are an email formatting specialist. Format professional email responses and use the sendEmail tool to send them. Always return valid JSON with the sendEmail tool call.",
         },
-        { role: "user", content: prompt }
+        { role: "user", content: prompt },
       ],
-      responseFormat: { type: "json_object" }
+      responseFormat: { type: "json_object" },
     });
-    
+
     const llmResponse = JSON.parse(response.content);
-    
+
     if (llmResponse.action === "send_email" && llmResponse.emailData) {
-      
-      
       // Use the sendEmail tool
       const result = await sendEmailTool(llmResponse.emailData);
-      
+
       if (result.success) {
         console.log("✅ Email sent successfully!");
         return {
@@ -452,7 +464,9 @@ Respond with JSON indicating the action taken:
         throw new Error(result.error || "Email sending failed");
       }
     } else {
-      throw new Error("LLM did not provide valid email formatting instructions");
+      throw new Error(
+        "LLM did not provide valid email formatting instructions",
+      );
     }
   } catch (error) {
     console.error("❌ Error sending email:", error);
@@ -466,50 +480,50 @@ Respond with JSON indicating the action taken:
 // Stub function for knowledge base search
 async function searchKnowledgeBase(question: string): Promise<string[]> {
   // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   // Mock knowledge base results based on question keywords
   const mockKnowledgeBase = {
-    "pricing": [
+    pricing: [
       "Our standard pricing starts at $99/month for the basic plan.",
       "Enterprise pricing includes custom features and 24/7 support.",
-      "We offer a 30-day free trial for all new customers."
+      "We offer a 30-day free trial for all new customers.",
     ],
-    "support": [
+    support: [
       "Technical support is available Monday-Friday 9AM-6PM EST.",
       "Emergency support is available 24/7 for enterprise customers.",
-      "You can reach support via email at support@company.com or phone at 1-800-SUPPORT."
+      "You can reach support via email at support@company.com or phone at 1-800-SUPPORT.",
     ],
-    "features": [
+    features: [
       "Our platform includes advanced analytics and reporting tools.",
       "Integration with 50+ third-party applications is supported.",
-      "Custom workflows can be configured to match your business needs."
+      "Custom workflows can be configured to match your business needs.",
     ],
-    "account": [
+    account: [
       "You can manage your account settings in the user dashboard.",
       "Password resets can be initiated from the login page.",
-      "Account upgrades and downgrades take effect immediately."
-    ]
+      "Account upgrades and downgrades take effect immediately.",
+    ],
   };
-  
+
   // Simple keyword matching to simulate semantic search
   const questionLower = question.toLowerCase();
   const results: string[] = [];
-  
+
   for (const [category, entries] of Object.entries(mockKnowledgeBase)) {
     if (questionLower.includes(category)) {
       results.push(...entries);
     }
   }
-  
+
   // If no specific matches, return some generic helpful information
   if (results.length === 0) {
     results.push(
       "For specific questions about our services, please visit our documentation at docs.company.com",
-      "You can contact our customer success team for personalized assistance."
+      "You can contact our customer success team for personalized assistance.",
     );
   }
-  
+
   return results.slice(0, 3); // Return top 3 results
 }
 
@@ -521,12 +535,12 @@ async function sendEmailTool(emailData: {
   from?: string;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
   // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
   // Simulate 95% success rate
   const success = Math.random() > 0.05;
   const messageId = `msg-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-  
+
   if (success) {
     return { success: true, messageId };
   } else {
@@ -561,12 +575,12 @@ function routeAfterApproval(state: AgentStateType): string {
 async function createEmailProcessingGraph() {
   // Create a PostgreSQL checkpointer
   const checkpointer = PostgresSaver.fromConnString(
-    process.env.DATABASE_URL || "postgresql://localhost:5432/agents_core"
+    process.env.DATABASE_URL || "postgresql://localhost:5432/agents_core",
   );
-  
+
   // Setup the checkpointer (creates tables if they don't exist)
   await checkpointer.setup();
-  
+
   const graph = new StateGraph(AgentState)
     // Add nodes
     .addNode("examineForQuestions", examineForQuestions)
@@ -577,7 +591,7 @@ async function createEmailProcessingGraph() {
     .addNode("createProposedReply", createProposedReply)
     .addNode("humanApprovalInterrupt", humanApprovalInterrupt)
     .addNode("sendEmail", sendEmail)
-    
+
     // Define edges
     .addEdge(START, "examineForQuestions")
     .addConditionalEdges("examineForQuestions", routeAfterQuestionCheck)
@@ -588,7 +602,7 @@ async function createEmailProcessingGraph() {
     .addEdge("createProposedReply", "humanApprovalInterrupt")
     .addConditionalEdges("humanApprovalInterrupt", routeAfterApproval)
     .addEdge("sendEmail", END);
-  
+
   return graph.compile({
     // Add checkpointing for state persistence
     checkpointer,
@@ -601,7 +615,6 @@ type ProcessEmailResult = {
   interruptData?: any;
 };
 
-
 // kinds of HIL requests:
 // - should I do the thing? (yes, no, edit)
 // - which of these should I do? ()
@@ -609,7 +622,8 @@ type ProcessEmailResult = {
 const HilState = Annotation.Root({
   kind: Annotation<"options" | "questions" | "approval">(),
   options: Annotation<{ id: string; label: string; description?: string }[]>(),
-  questions: Annotation<{ id: string; text: string; exampleAnswer?: string }[]>(),
+  questions:
+    Annotation<{ id: string; text: string; exampleAnswer?: string }[]>(),
   // --- NEW: store the eventual human response so the parent graph can access it
   response: Annotation<any>(),
   requestPayload: Annotation<Record<string, any>>(),
@@ -630,15 +644,20 @@ async function fetchCapabilityInfo(provider: string, capability: string) {
 
 // -------- Payload builders --------
 
-async function buildOptionsPayload(state: HilGraphState, config?: Record<string, any>): Promise<Partial<HilGraphState>> {
+async function buildOptionsPayload(
+  state: HilGraphState,
+  config?: Record<string, any>,
+): Promise<Partial<HilGraphState>> {
   try {
-    const { hilProvider, hilCapability } = config || {} as any;
-    if (!hilProvider || !hilCapability) throw new Error("hilProvider/hilCapability missing");
+    const { hilProvider, hilCapability } = config || ({} as any);
+    if (!hilProvider || !hilCapability)
+      throw new Error("hilProvider/hilCapability missing");
 
     const capInfo = await fetchCapabilityInfo(hilProvider, hilCapability);
     const paramsSchema = capInfo.capability?.paramsSchema;
 
-    const prompt = `You are a JSON assistant. Produce a JSON object that conforms to the following JSON Schema (no extra keys):\n` +
+    const prompt =
+      `You are a JSON assistant. Produce a JSON object that conforms to the following JSON Schema (no extra keys):\n` +
       `${JSON.stringify(paramsSchema, null, 2)}\n\n` +
       `The action represents asking a human to choose ONE of the following options. Map this to the schema fields appropriately. Options array:\n` +
       `${JSON.stringify(state.options, null, 2)}\n\n` +
@@ -659,15 +678,20 @@ async function buildOptionsPayload(state: HilGraphState, config?: Record<string,
   }
 }
 
-async function buildQuestionsPayload(state: HilGraphState, config?: Record<string, any>): Promise<Partial<HilGraphState>> {
+async function buildQuestionsPayload(
+  state: HilGraphState,
+  config?: Record<string, any>,
+): Promise<Partial<HilGraphState>> {
   try {
-    const { hilProvider, hilCapability } = config || {} as any;
-    if (!hilProvider || !hilCapability) throw new Error("hilProvider/hilCapability missing");
+    const { hilProvider, hilCapability } = config || ({} as any);
+    if (!hilProvider || !hilCapability)
+      throw new Error("hilProvider/hilCapability missing");
 
     const capInfo = await fetchCapabilityInfo(hilProvider, hilCapability);
     const paramsSchema = capInfo.capability?.paramsSchema;
 
-    const prompt = `You are a JSON assistant. Produce a JSON object that conforms to this JSON Schema:\n` +
+    const prompt =
+      `You are a JSON assistant. Produce a JSON object that conforms to this JSON Schema:\n` +
       `${JSON.stringify(paramsSchema, null, 2)}\n\n` +
       `We need to ask the human the following open-ended questions. Use the schema to include them correctly:\n` +
       `${JSON.stringify(state.questions, null, 2)}\n\n` +
@@ -688,15 +712,20 @@ async function buildQuestionsPayload(state: HilGraphState, config?: Record<strin
   }
 }
 
-async function buildApprovalPayload(state: HilGraphState, config?: Record<string, any>): Promise<Partial<HilGraphState>> {
+async function buildApprovalPayload(
+  state: HilGraphState,
+  config?: Record<string, any>,
+): Promise<Partial<HilGraphState>> {
   try {
-    const { hilProvider, hilCapability } = config || {} as any;
-    if (!hilProvider || !hilCapability) throw new Error("hilProvider/hilCapability missing");
+    const { hilProvider, hilCapability } = config || ({} as any);
+    if (!hilProvider || !hilCapability)
+      throw new Error("hilProvider/hilCapability missing");
 
     const capInfo = await fetchCapabilityInfo(hilProvider, hilCapability);
     const paramsSchema = capInfo.capability?.paramsSchema;
 
-    const prompt = `You are a JSON assistant. Produce a JSON object that conforms to the following JSON Schema:\n` +
+    const prompt =
+      `You are a JSON assistant. Produce a JSON object that conforms to the following JSON Schema:\n` +
       `${JSON.stringify(paramsSchema, null, 2)}\n\n` +
       `This is an approval request. The action awaiting approval is described below (free form):\n` +
       `${JSON.stringify({ kind: state.kind }, null, 2)}\n\n` +
@@ -723,12 +752,18 @@ async function sendHilRequest(
   config?: Record<string, any>,
 ): Promise<Partial<HilGraphState>> {
   try {
-    const { hilProvider, hilCapability, thread_id } = config || {} as any;
+    const { hilProvider, hilCapability, thread_id } = config || ({} as any);
     if (!hilProvider || !hilCapability) {
-      throw new Error("hilProvider and hilCapability must be supplied via graph configuration");
+      throw new Error(
+        "hilProvider and hilCapability must be supplied via graph configuration",
+      );
     }
 
-    const actionResult = await performAction(hilProvider, hilCapability, state.requestPayload);
+    const actionResult = await performAction(
+      hilProvider,
+      hilCapability,
+      state.requestPayload,
+    );
 
     // Emit event
     eventBus.publish(defaultTopic, {
@@ -786,31 +821,46 @@ async function createHilGraph() {
   return graph.compile({ checkpointer });
 }
 
-async function performAction(provider: string, capability: string, request: Record<string, any>) {
-  const response = await axios.post(`${process.env.CONNECT_HUB_URL}/proxy/${provider}/${capability}`, request);
+async function performAction(
+  provider: string,
+  capability: string,
+  request: Record<string, any>,
+) {
+  const response = await axios.post(
+    `${process.env.CONNECT_HUB_URL}/proxy/${provider}/${capability}`,
+    request,
+  );
   return response.data;
 }
 
-async function getCapabilityPrompt(provider: string, capability: string, version: string = "1.0.0") {
-
-  const response = await axios.get(`${process.env.CONNECT_HUB_URL}/prompt/${provider}/${capability}/${version}`);
+async function getCapabilityPrompt(
+  provider: string,
+  capability: string,
+  version: string = "1.0.0",
+) {
+  const response = await axios.get(
+    `${process.env.CONNECT_HUB_URL}/prompt/${provider}/${capability}/${version}`,
+  );
   return response.data;
-
 }
 async function getCapability(provider: string, capability: string) {
-  const response = await axios.get(`${process.env.CONNECT_HUB_URL}/capabilities/${provider}/${capability}`);
+  const response = await axios.get(
+    `${process.env.CONNECT_HUB_URL}/capabilities/${provider}/${capability}`,
+  );
   return response.data;
 }
 
-
-
 // Example usage function with checkpointing
-async function processEmail(email: Email, threadId?: string): Promise<ProcessEmailResult> {
+async function processEmail(
+  email: Email,
+  threadId?: string,
+): Promise<ProcessEmailResult> {
   const graph = await createEmailProcessingGraph();
-  
+
   // Generate a unique thread ID if not provided
-  const configuredThreadId = threadId || `email-${email.messageId}-${Date.now()}`;
-  
+  const configuredThreadId =
+    threadId || `email-${email.messageId}-${Date.now()}`;
+
   const initialState: AgentStateType = {
     email,
     hasQuestions: false,
@@ -825,32 +875,30 @@ async function processEmail(email: Email, threadId?: string): Promise<ProcessEma
     emailSent: false,
     error: null,
   };
-  
-    // Run the graph with checkpointing configuration
-const stream = await graph.stream(initialState, {
+
+  // Run the graph with checkpointing configuration
+  const stream = await graph.stream(initialState, {
     configurable: { thread_id: configuredThreadId },
     streamMode: "values",
-});
+  });
 
-for await (const event of stream) {
-  const interrupt = event["__interrupt__"];
-  if (interrupt) {
-    eventBus.publish(defaultTopic, {
-      event_type: "hil_requested",
-      run_id: configuredThreadId,
-      graph_id: "1",
-      org_id: "1",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      kind: "approval",
-    });
+  for await (const event of stream) {
+    const interrupt = event["__interrupt__"];
+    if (interrupt) {
+      eventBus.publish(defaultTopic, {
+        event_type: "hil_requested",
+        run_id: configuredThreadId,
+        graph_id: "1",
+        org_id: "1",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        kind: "approval",
+      });
+    }
   }
 
-}
-
-console.log("\n🎯 Workflow completed!");
-return { threadId: configuredThreadId };
-
+  console.log("\n🎯 Workflow completed!");
+  return { threadId: configuredThreadId };
 }
 
 type ResumeEmailResult = {
@@ -859,33 +907,34 @@ type ResumeEmailResult = {
 };
 
 // Function to resume a workflow from a checkpoint
-async function resumeEmailWorkflow(threadId: string, userApproval?: boolean): Promise<ResumeEmailResult> {
-  
+async function resumeEmailWorkflow(
+  threadId: string,
+  userApproval?: boolean,
+): Promise<ResumeEmailResult> {
   const graph = await createEmailProcessingGraph();
-  
+
   try {
     // If we have user approval, update the state before resuming
     if (userApproval !== undefined) {
-      
       // Update the state with user approval
       await graph.updateState(
         { configurable: { thread_id: threadId } },
-        { userApproval }
+        { userApproval },
       );
     }
-    
+
     // Resume the workflow
     const stream = await graph.stream(null, {
       configurable: { thread_id: threadId },
       streamMode: "values",
     });
-    
+
     let finalState: AgentStateType | null = null;
-    
+
     for await (const event of stream) {
       finalState = event;
     }
-    
+
     return { finalState, threadId };
   } catch (error) {
     console.error("❌ Failed to resume workflow:", error);
@@ -937,8 +986,6 @@ Technical Team`,
   messageId: "complex-email-456",
 };
 
-
-
 const defaultTopic = "email-processing";
 const eventBus = createEventBus<Event>();
 eventBus.subscribe(defaultTopic, async (event) => {
@@ -977,36 +1024,40 @@ interface ProviderCapability {
 
 ///// . new style
 async function getCapabilities(): Promise<ProviderCapability[]> {
-  const response = await axios.get(`${process.env.CONNECT_HUB_URL}/capabilities`);
+  const response = await axios.get(
+    `${process.env.CONNECT_HUB_URL}/capabilities`,
+  );
   return response.data;
 }
 
 async function createAgent() {
   const checkpointer = PostgresSaver.fromConnString(
-    process.env.DATABASE_URL || "postgresql://localhost:5432/agents_core"
+    process.env.DATABASE_URL || "postgresql://localhost:5432/agents_core",
   );
   const capabilities = await getCapabilities();
   const tools = capabilities.flatMap((provider) => {
     return provider.capabilities
       .filter((capability) => capability.available)
       .map((capability) => {
-      tool(
-        async (args: any, config: RunnableConfig) => {
-
-          const response = await performAction(provider.id, capability.id, args);
-          return response;
-        },
-        {
-          name: capability.id,
-          description: capability.description,
-          schema: capability.paramsSchema,
-        }
-      )
-    })
+        tool(
+          async (args: any, config: RunnableConfig) => {
+            const response = await performAction(
+              provider.id,
+              capability.id,
+              args,
+            );
+            return response;
+          },
+          {
+            name: capability.id,
+            description: capability.description,
+            schema: capability.paramsSchema,
+          },
+        );
+      });
   });
-  
-  const llm = await initChatModel("openai:gpt-o4-mini");
 
+  const llm = await initChatModel("openai:gpt-o4-mini");
 
   // Setup the checkpointer (creates tables if they don't exist)
   await checkpointer.setup();
@@ -1014,27 +1065,21 @@ async function createAgent() {
     llm: llm,
     tools: [],
     checkpointSaver: checkpointer,
-
-  })
-
+  });
 }
 
-async function processEmailReact(email: Email, threadId?: string): Promise<void> {
-}
+async function processEmailReact(
+  email: Email,
+  threadId?: string,
+): Promise<void> {}
 
 // Main execution function demonstrating checkpointing
 async function main() {
-
-
-
   try {
-
     await processEmail(sampleEmail);
-    
+
     //await processEmail(complexEmail);
-    await new Promise(() => {}); 
-    
-    
+    await new Promise(() => {});
   } catch (error) {
     console.error("💥 Application error:", error);
     process.exit(1);

@@ -1,20 +1,24 @@
 import { relations } from "drizzle-orm";
-import { agents, approvalRequests} from "./schema";
+import { agents, aiEmployees, approvalRequests } from "./schema.js";
 
-
-export const agentRelations = relations(
-  agents,
-  ({ many }) => ({
-    approvalRequests: many(approvalRequests),
+export const agentRelations = relations(agents, ({ many, one }) => ({
+  approvalRequests: many(approvalRequests),
+  aiEmployee: one(aiEmployees, {
+    fields: [agents.aiEmployeeId],
+    references: [aiEmployees.id],
   }),
-);
+}));
+
+export const aiEmployeeRelations = relations(aiEmployees, ({ many }) => ({
+  agents: many(agents),
+}));
 
 export const approvalRequestRelations = relations(
   approvalRequests,
   ({ one, many }) => ({
     agent: one(agents, {
       fields: [approvalRequests.agentId],
-      references: [agents.agentId],
+      references: [agents.id],
     }),
   }),
 );

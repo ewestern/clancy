@@ -2,7 +2,7 @@ import { FastifyTypeBox } from "../types/fastify.js";
 
 export async function connectionRoutes(app: FastifyTypeBox) {
   app.get(
-    "/connection",
+    "/connections",
     {
       schema: {},
     },

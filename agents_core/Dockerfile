@@ -1,10 +1,15 @@
-FROM node:18-alpine
+FROM node:23-bullseye-slim AS builder
+ARG NPM_TOKEN
+RUN echo "NPM_TOKEN=${NPM_TOKEN}"
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+RUN npm config set @ewestern:registry https://npm.pkg.github.com
+RUN npm config set //npm.pkg.github.com/:_authToken ${NPM_TOKEN}
+
 
 # Install dependencies
 RUN npm ci --only=production
@@ -19,8 +24,6 @@ RUN npm run build
 EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
-
+ENV NODE_ENV=production
 # Start the application
-CMD ["npm", "start"] 
+CMD ["npm", "run", "start"] 

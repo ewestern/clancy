@@ -4,18 +4,16 @@ import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { HiringWizard } from "./HiringWizard";
 import { createAIEmployee } from "../api/stubs";
-import type { HiringWizardData } from "../types";
+import type { CollaborativeWizardData } from "../types";
 
 export function Layout() {
-
-
   const [isHiringWizardOpen, setIsHiringWizardOpen] = useState(false);
 
   const handleHireClick = () => {
     setIsHiringWizardOpen(true);
   };
 
-  const handleWizardComplete = async (wizardData: HiringWizardData) => {
+  const handleWizardComplete = async (wizardData: CollaborativeWizardData) => {
     try {
       await createAIEmployee(wizardData);
       // Optionally show success notification
@@ -28,7 +26,6 @@ export function Layout() {
   const handleWizardClose = () => {
     setIsHiringWizardOpen(false);
   };
-
 
   return (
     <div className="flex min-h-screen bg-gray-50">

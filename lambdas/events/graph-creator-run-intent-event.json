@@ -7,36 +7,13 @@
   "time": "2024-01-15T11:00:00Z",
   "region": "us-east-1",
   "detail": {
-    "eventType": "run_intent",
-    "runId": "run-graph-12345678-1234-1234-1234-123456789012",
-    "agentId": "agent-graph-creator",
-    "orgId": "org-12345678-1234-1234-1234-123456789012",
-    "triggerType": "api",
-    "payload": {
-      "requirement": "Create a workflow for processing customer onboarding",
-      "capabilities": ["user_verification", "document_processing", "email_notification", "crm_integration"],
-      "complexity": "medium",
-      "nodeCount": 5,
-      "integrations": ["salesforce", "docusign", "sendgrid"]
-    },
-    "timestamp": "2024-01-15T11:00:00Z",
-    "source": "workflow-builder-ui",
-    "agentMetadata": {
-      "agentId": "agent-graph-creator",
-      "name": "Graph Creator Agent",
-      "description": "Creates workflow graphs based on business requirements",
-      "type": "workflow",
-      "capabilities": ["graph_creation", "workflow_design", "capability_mapping", "validation"],
-      "config": {
-        "maxNodes": 20,
-        "supportedIntegrations": ["salesforce", "slack", "google", "microsoft", "docusign"],
-        "complexityLevels": ["simple", "medium", "complex"],
-        "validationRules": {
-          "minNodes": 2,
-          "maxBranches": 10,
-          "requiredConnections": true
-        }
-      }
+    "data": {
+      "type": "runintent",
+      "agentId": "graph-creator",
+      "orgId": "org-123",
+      "executionId": "exec-123",
+      "jobDescription": "The Executive Assistant will create leverage and capacity and act as a true business partner for our President and COO. You will learn and understand the business at a level required to help team members prioritize conflicting needs with meeting schedules, travel, and delivery of projects. A successful EA will learn, understand, and anticipate the style and personal preferences of each executive they support and make proactive offers to enhance the executive's experience and management load. Essentially the expectation is that the EA will act as a business partner to the executive team to improve the fluidity of their roles and the overall operations of the business.\\n\\nResponsibilities:\\n• Manage Outlook calendars for President and COO.\\n• Proactively review calendars to ensure proper time for executive to travel between appointments, prepare for key meetings, breaks/moments to reflect, vacations, etc. and resolve conflicts in scheduling by discussing with executive(s) and potentially external parties. Ensure all key participants are invited and if unsure of necessary attendees gain clarification from the requestor.\\n• Ensures that proper logistics are tested and set-up (e.g., conference room booking, A/V tested, virtual meeting software set-up) for key meetings.\\n• Occasionally support others to resolve large meeting conflicts. Develops an understanding of who should be included based on the meeting objectives, asks for clarity when unsure.\\n• Manage expense reports for President and COO including gathering appropriate documentation and submitting through Concur.\\n• Providing feedback to those you support to improve processes and reduce waste around expense reports and approving expense reports submitted by Executives' direct reports.\\n• Arrange travel (air, hotel, car, reservations, etc.), itineraries, agendas, logistics, and compilation or documents for travel-related meetings for executives as requested.\\n• Act as the administrative point of contact between the executives and internal/external clients, board members, and advisory board members. Act as a brand ambassador and represent Experience Senior Living with the highest level of professionalism.\\n• Perform general administrative duties and pitch in around the office for clean-up, restocking of refreshments and supplies, managing vendors, etc.\\n• May perform other duties as needed and /or assigned.",
+      "timestamp": "2024-01-15T11:00:00Z"
     }
   }
-} 
+}

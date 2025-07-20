@@ -7,7 +7,6 @@ import {
   TypeRegistry,
 } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
-import { PromptRegistry } from "../prompts/promptRegistry";
 
 export const TDate = (opts?: SchemaOptions) =>
   Type.Transform(Type.String(opts))
@@ -76,7 +75,10 @@ export const HealthResponseSchema = Type.Object({
   dependencies: Type.Object({
     database: Type.Union([Type.Literal("healthy"), Type.Literal("unhealthy")]),
     redis: Type.Union([Type.Literal("healthy"), Type.Literal("unhealthy")]),
-    connectHub: Type.Union([Type.Literal("healthy"), Type.Literal("unhealthy")]),
+    connectHub: Type.Union([
+      Type.Literal("healthy"),
+      Type.Literal("unhealthy"),
+    ]),
     authService: Type.Union([
       Type.Literal("healthy"),
       Type.Literal("unhealthy"),

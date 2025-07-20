@@ -2,8 +2,7 @@ import { createApp } from "./app.js";
 
 async function start() {
   try {
-    const baseUrl = process.argv[2];
-    const app = await createApp(baseUrl);
+    const app = await createApp();
 
     // Get port from environment
     const port = parseInt(process.env.PORT || "3000", 10);

@@ -9,8 +9,10 @@ import {
   OAuthCallbackParams,
   OAuthContext,
   CallbackResult,
+  Trigger,
 } from "../providers/types.js";
-import { ProviderKind, ProviderAuth } from "../models/capabilities.js";
+import { ProviderKind, ProviderAuth } from "../models/providers.js";
+import { OwnershipScope } from "../models/shared.js";
 import { Type, Static } from "@sinclair/typebox";
 import OAuthClient from "intuit-oauth";
 const __dirname = import.meta.dirname;
@@ -20,9 +22,10 @@ const __dirname = import.meta.dirname;
 // ---------------------------------------------------------------------------
 function createOAuthClient(ctx: OAuthContext): OAuthClient {
   return new OAuthClient({
-    clientId: ctx.clientId,
-    clientSecret: ctx.clientSecret,
-    environment: process.env.NODE_ENV === "production" ? "production" : "sandbox",
+    clientId: ctx.providerSecrets.clientId as string,
+    clientSecret: ctx.providerSecrets.clientSecret as string,
+    environment:
+      process.env.NODE_ENV === "production" ? "production" : "sandbox",
     redirectUri: ctx.redirectUri,
   });
 }
@@ -34,14 +37,16 @@ async function qbFetch<T>(
   ctx: ExecutionContext,
 ): Promise<T> {
   if (!ctx.tokenPayload) throw new Error("QuickBooks token payload missing");
-  if (!ctx.externalAccountId) throw new Error("QuickBooks company (realm) id missing");
+  if (!ctx.externalAccountId)
+    throw new Error("QuickBooks company (realm) id missing");
 
   const tokenPayload = ctx.tokenPayload;
 
   const oauthClient = new OAuthClient({
     clientId: process.env.QUICKBOOKS_CLIENT_ID!,
     clientSecret: process.env.QUICKBOOKS_CLIENT_SECRET!,
-    environment: process.env.NODE_ENV === "production" ? "production" : "sandbox",
+    environment:
+      process.env.NODE_ENV === "production" ? "production" : "sandbox",
     redirectUri: "", // Not needed for API calls
   });
 
@@ -68,7 +73,9 @@ async function qbFetch<T>(
     if (error.originalMessage?.includes("429")) {
       throw new Error(`QuickBooks rate limited; retry after 60s`);
     }
-    throw new Error(`QuickBooks API error: ${error.originalMessage || error.message}`);
+    throw new Error(
+      `QuickBooks API error: ${error.originalMessage || error.message}`,
+    );
   }
 }
 
@@ -386,7 +393,10 @@ async function qbReportPL(
 }
 
 // Capability factory functions
-function createInvoiceCreateCapability(): Capability<InvoiceCreateParams, InvoiceCreateResult> {
+function createInvoiceCreateCapability(): Capability<
+  InvoiceCreateParams,
+  InvoiceCreateResult
+> {
   const meta: CapabilityMeta = {
     id: "invoice.create",
     displayName: "Create Invoice",
@@ -396,13 +406,17 @@ function createInvoiceCreateCapability(): Capability<InvoiceCreateParams, Invoic
     paramsSchema: invoiceCreateParamsSchema,
     resultSchema: invoiceCreateResultSchema,
     requiredScopes: ["com.intuit.quickbooks.accounting"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.HIGH,
   };
-  
+
   return { meta, execute: qbInvoiceCreate };
 }
 
-function createCustomerUpsertCapability(): Capability<CustomerUpsertParams, CustomerUpsertResult> {
+function createCustomerUpsertCapability(): Capability<
+  CustomerUpsertParams,
+  CustomerUpsertResult
+> {
   const meta: CapabilityMeta = {
     id: "customer.upsert",
     displayName: "Upsert Customer",
@@ -412,13 +426,17 @@ function createCustomerUpsertCapability(): Capability<CustomerUpsertParams, Cust
     paramsSchema: customerUpsertParamsSchema,
     resultSchema: customerUpsertResultSchema,
     requiredScopes: ["com.intuit.quickbooks.accounting"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.MEDIUM,
   };
-  
+
   return { meta, execute: qbCustomerUpsert };
 }
 
-function createExpenseListCapability(): Capability<ExpenseListParams, ExpenseListResult> {
+function createExpenseListCapability(): Capability<
+  ExpenseListParams,
+  ExpenseListResult
+> {
   const meta: CapabilityMeta = {
     id: "expense.list",
     displayName: "List Expenses",
@@ -428,41 +446,50 @@ function createExpenseListCapability(): Capability<ExpenseListParams, ExpenseLis
     paramsSchema: expenseListParamsSchema,
     resultSchema: expenseListResultSchema,
     requiredScopes: ["com.intuit.quickbooks.accounting"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
-  
+
   return { meta, execute: qbExpenseList };
 }
 
-function createPaymentRecordCapability(): Capability<PaymentRecordParams, PaymentRecordResult> {
+function createPaymentRecordCapability(): Capability<
+  PaymentRecordParams,
+  PaymentRecordResult
+> {
   const meta: CapabilityMeta = {
     id: "payment.record",
     displayName: "Record Payment",
-    description: "Record a payment to a customer",
+    description: "Record a payment received against an invoice",
     docsUrl:
       "https://developer.intuit.com/app/developer/qbo/docs/api/accounting/all-entities/payment#create-a-payment",
     paramsSchema: paymentRecordParamsSchema,
     resultSchema: paymentRecordResultSchema,
     requiredScopes: ["com.intuit.quickbooks.accounting"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.HIGH,
   };
-  
+
   return { meta, execute: qbPaymentRecord };
 }
 
-function createReportPLCapability(): Capability<ReportPLParams, ReportPLResult> {
+function createReportPLCapability(): Capability<
+  ReportPLParams,
+  ReportPLResult
+> {
   const meta: CapabilityMeta = {
     id: "reports.profitloss",
-    displayName: "Profit and Loss Report",
-    description: "Generate a profit and loss report",
+    displayName: "Generate Profit & Loss Report",
+    description: "Generate profit and loss report for specified date range",
     docsUrl:
-      "https://developer.intuit.com/app/developer/qbo/docs/api/accounting/reports#profit-and-loss-report",
+      "https://developer.intuit.com/app/developer/qbo/docs/api/accounting/reports",
     paramsSchema: reportPLParamsSchema,
     resultSchema: reportPLResultSchema,
     requiredScopes: ["com.intuit.quickbooks.accounting"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
-  
+
   return { meta, execute: qbReportPL };
 }
 
@@ -471,8 +498,8 @@ function createReportPLCapability(): Capability<ReportPLParams, ReportPLResult> 
 // ---------------------------------------------------------------------------
 export class QuickBooksProvider implements ProviderRuntime {
   links = [
-    "https://developer.intuit.com/appdetail/overview?appId=djQuMTo6OGQzYmJlYTI3Yg:f0608889-15b2-441b-93c8-8e9c3c644242&id=9341454993684865"
-  ]
+    "https://developer.intuit.com/appdetail/overview?appId=djQuMTo6OGQzYmJlYTI3Yg:f0608889-15b2-441b-93c8-8e9c3c644242&id=9341454993684865",
+  ];
   private readonly dispatchTable = new Map<string, Capability>();
   public readonly scopeMapping: Record<string, string[]>;
 
@@ -526,16 +553,20 @@ export class QuickBooksProvider implements ProviderRuntime {
     return Array.from(this.dispatchTable.values()).map((c) => c.meta);
   }
 
+  listTriggers(): Trigger<any>[] {
+    return [];
+  }
+
   // ---------------------------------------------------------------------------
   // OAuth Implementation
   // ---------------------------------------------------------------------------
 
   generateAuthUrl(params: OAuthAuthUrlParams, ctx: OAuthContext): string {
     const oauthClient = createOAuthClient(ctx);
-    
+
     // QuickBooks requires specific scopes format
     const scopeString = params.scopes.join(" ");
-    
+
     return oauthClient.authorizeUri({
       scope: scopeString,
       state: params.state,
@@ -547,7 +578,9 @@ export class QuickBooksProvider implements ProviderRuntime {
     ctx: OAuthContext,
   ): Promise<CallbackResult> {
     if (callbackParams.error) {
-      throw new Error(`QuickBooks OAuth error: ${callbackParams.error_description || callbackParams.error}`);
+      throw new Error(
+        `QuickBooks OAuth error: ${callbackParams.error_description || callbackParams.error}`,
+      );
     }
 
     if (!callbackParams.code) {
@@ -566,7 +599,9 @@ export class QuickBooksProvider implements ProviderRuntime {
         externalAccountMetadata: {},
       };
     } catch (error: any) {
-      throw new Error(`QuickBooks token exchange failed: ${error.originalMessage || error.message}`);
+      throw new Error(
+        `QuickBooks token exchange failed: ${error.originalMessage || error.message}`,
+      );
     }
   }
 
@@ -583,7 +618,9 @@ export class QuickBooksProvider implements ProviderRuntime {
       const newTokenData = await oauthClient.refresh();
       return newTokenData.getJson();
     } catch (error: any) {
-      throw new Error(`QuickBooks token refresh failed: ${error.originalMessage || error.message}`);
+      throw new Error(
+        `QuickBooks token refresh failed: ${error.originalMessage || error.message}`,
+      );
     }
   }
 
@@ -592,7 +629,8 @@ export class QuickBooksProvider implements ProviderRuntime {
     const oauthClient = new (OAuthClient as any)({
       clientId: process.env.QUICKBOOKS_CLIENT_ID!,
       clientSecret: process.env.QUICKBOOKS_CLIENT_SECRET!,
-      environment: process.env.NODE_ENV === "production" ? "production" : "sandbox",
+      environment:
+        process.env.NODE_ENV === "production" ? "production" : "sandbox",
       redirectUri: "", // Not needed for token validation
     });
 

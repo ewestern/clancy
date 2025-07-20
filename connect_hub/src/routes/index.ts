@@ -4,7 +4,8 @@ import { capabilitiesRoutes } from "./capabilities.js";
 import { oauthRoutes } from "./oauth.js";
 import { proxyRoutes } from "./proxy.js";
 import { webhookRoutes } from "./webhooks.js";
-import { websocketRoutes } from "./ws.js";
+import { triggerRoutes } from "./triggers.js";
+import { providersRoutes } from "./providers.js";
 
 export async function registerRoutes(app: FastifyTypeBox) {
   // Register health routes
@@ -13,9 +14,8 @@ export async function registerRoutes(app: FastifyTypeBox) {
   await app.register(oauthRoutes);
   await app.register(proxyRoutes);
   await app.register(webhookRoutes);
-  
-  // Register WebSocket routes
-  await app.register(websocketRoutes, { prefix: "/ws" });
+  await app.register(triggerRoutes);
+  await app.register(providersRoutes);
 
   app.log.info("All routes registered successfully");
 }

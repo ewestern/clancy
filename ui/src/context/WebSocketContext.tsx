@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { WizardWebSocketMessage } from "../types";
+import type { WebsocketMessage } from "../types";
 
 export interface Subscriber<T = unknown> {
   (payload: T): void;
@@ -7,18 +7,19 @@ export interface Subscriber<T = unknown> {
 
 export interface WebSocketContextType {
   /** Send a JSON-serializable message */
-  send: (data: unknown) => void;
-  /** Send a wizard-specific message with proper typing */
-  sendWizardMessage: (message: WizardWebSocketMessage) => void;
+  send: (data: WebsocketMessage) => void;
   /** Subscribe to a named event coming from the server. Returns an unsubscribe fn */
-  subscribe: (event: string, callback: Subscriber) => () => void;
-  /** Subscribe to wizard-specific events with proper typing */
-  subscribeToWizardEvents: (callback: Subscriber<WizardWebSocketMessage>) => () => void;
+  subscribe: (
+    event: string,
+    callback: Subscriber<WebsocketMessage>,
+  ) => () => void;
   /** ReadyState from the underlying WebSocket */
   readyState: number;
 }
 
-export const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
+export const WebSocketContext = createContext<WebSocketContextType | undefined>(
+  undefined,
+);
 
 export function useWebSocketCtx() {
   const ctx = useContext(WebSocketContext);
@@ -26,4 +27,4 @@ export function useWebSocketCtx() {
     throw new Error("useWebSocketCtx must be used within a WebSocketProvider");
   }
   return ctx;
-} 
+}

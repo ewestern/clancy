@@ -1,6 +1,6 @@
 import { Type } from "@sinclair/typebox";
-import { ErrorSchema, StringEnum, TDate } from "./shared";
-import { Ref } from "./shared";
+import { ErrorSchema, StringEnum, TDate } from "./shared.js";
+import { Ref } from "./shared.js";
 
 export enum ApprovalRequestStatus {
   Pending = "pending",
@@ -14,27 +14,35 @@ export const ApprovalRequestStatusSchema = StringEnum([
   ApprovalRequestStatus.Rejected,
 ]);
 
-export const ApprovalRequestSchema = Type.Object({
-  id: Type.ReadonlyOptional(Type.String({
-    readOnly: true
-  })),
-  agentId: Type.String(),
-  runId: Type.String(),
-  status: Type.Optional(ApprovalRequestStatusSchema),
-  summary: Type.String(),
-  modifications: Type.Any(),
-  capability: Type.String(),
-  request: Type.Any(),
-  createdAt: Type.ReadonlyOptional(TDate({
-    readOnly: true
-  })),
-  updatedAt: Type.ReadonlyOptional(TDate({
-    readOnly: true
-  })),
-}, {
-  $id: "ApprovalRequest"
-});
-
+export const ApprovalRequestSchema = Type.Object(
+  {
+    id: Type.ReadonlyOptional(
+      Type.String({
+        readOnly: true,
+      }),
+    ),
+    agentId: Type.String(),
+    runId: Type.String(),
+    status: Type.Optional(ApprovalRequestStatusSchema),
+    summary: Type.String(),
+    modifications: Type.Any(),
+    capability: Type.String(),
+    request: Type.Any(),
+    createdAt: Type.ReadonlyOptional(
+      TDate({
+        readOnly: true,
+      }),
+    ),
+    updatedAt: Type.ReadonlyOptional(
+      TDate({
+        readOnly: true,
+      }),
+    ),
+  },
+  {
+    $id: "ApprovalRequest",
+  },
+);
 
 export const GetApprovalRequestsEndpoint = {
   tags: ["Approvals"],
@@ -47,7 +55,7 @@ export const GetApprovalRequestsEndpoint = {
     200: Type.Array(Ref(ApprovalRequestSchema)),
     404: ErrorSchema,
   },
-}
+};
 export const GetApprovalRequestEndpoint = {
   tags: ["Approvals"],
   summary: "Get an approval request",
@@ -59,7 +67,7 @@ export const GetApprovalRequestEndpoint = {
     200: Ref(ApprovalRequestSchema),
     404: ErrorSchema,
   },
-}
+};
 
 export const CreateApprovalRequestEndpoint = {
   tags: ["Approvals"],
@@ -70,7 +78,7 @@ export const CreateApprovalRequestEndpoint = {
     200: Ref(ApprovalRequestSchema),
     400: ErrorSchema,
   },
-}
+};
 
 export const UpdateApprovalRequestEndpoint = {
   tags: ["Approvals"],
@@ -79,12 +87,14 @@ export const UpdateApprovalRequestEndpoint = {
   params: Type.Object({
     id: Type.String(),
   }),
-  body: Type.Partial(Type.Object({
-    status: Type.Optional(ApprovalRequestStatusSchema),
-    modifications: Type.Optional(Type.Object({})),
-  })),
+  body: Type.Partial(
+    Type.Object({
+      status: Type.Optional(ApprovalRequestStatusSchema),
+      modifications: Type.Optional(Type.Object({})),
+    }),
+  ),
   response: {
     200: Ref(ApprovalRequestSchema),
     400: ErrorSchema,
   },
-}
+};

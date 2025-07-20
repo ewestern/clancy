@@ -1,4 +1,11 @@
-import { SchemaOptions, Static, TSchema, Type, Kind, TypeRegistry } from "@sinclair/typebox";
+import {
+  SchemaOptions,
+  Static,
+  TSchema,
+  Type,
+  Kind,
+  TypeRegistry,
+} from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 
 export const Ref = <T extends TSchema>(schema: T) =>
@@ -9,7 +16,6 @@ export const Nullable = <T extends TSchema>(schema: T) =>
 
 export const VOptional = <T extends TSchema>(schema: T) =>
   Type.Optional(Nullable(schema));
-
 
 export interface TUnionOneOf<T extends TSchema[]> extends TSchema {
   [Kind]: "UnionOneOf";
@@ -56,3 +62,12 @@ export const StringEnum = <T extends string[]>(
     enum: values,
     ...opts,
   });
+
+export enum OwnershipScope {
+  User = "user",
+  Organization = "organization",
+}
+
+export type OwnershipScopeType =
+  | OwnershipScope.User
+  | OwnershipScope.Organization;

@@ -6,7 +6,7 @@ import type {
   KnowledgeItem,
   WorkflowTask,
   Integration,
-  HiringWizardData,
+  CollaborativeWizardData,
 } from "../types";
 
 // Mock data
@@ -28,7 +28,7 @@ const mockAIEmployees: AIEmployee[] = [
   {
     id: "3",
     name: "Customer Support Bot",
-    role: "Support Agent",
+    role: "Support AI Employee",
     lastRun: "1 day ago",
     status: "error",
   },
@@ -361,7 +361,7 @@ export const connectIntegration = async (
 };
 
 export const createAIEmployee = async (
-  wizardData: HiringWizardData,
+  wizardData: CollaborativeWizardData,
 ): Promise<AIEmployee> => {
   await new Promise((resolve) => setTimeout(resolve, 1500));
 

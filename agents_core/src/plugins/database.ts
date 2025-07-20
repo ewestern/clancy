@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from "fastify";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { schemaAndRelations } from "../database";
+import { schemaAndRelations } from "../database/index.js";
 import fp from "fastify-plugin";
 
 export type Database = ReturnType<typeof drizzle<typeof schemaAndRelations>>;
@@ -30,11 +30,3 @@ const register: FastifyPluginAsync = async (fastify) => {
 export const registerDatabase = fp(register, {
   name: "database",
 });
-
-
-// Extend Fastify instance types
-declare module "fastify" {
-  interface FastifyInstance {
-    db: Database;
-  }
-}

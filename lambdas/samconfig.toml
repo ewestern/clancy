@@ -4,6 +4,13 @@ version = 0.1
 
 [default.global.parameters]
 stack_name = "clancy-lambdas"
+parameter_overrides = [
+    "Environment=dev",
+    "AgentsCoreApiUrl=http://host.docker.internal:3000",
+    "ConnectHubApiUrl=http://host.docker.internal:3001", 
+    "KinesisStreamName=clancy-main-staging",
+    "CheckpointerDbUrl=postgresql://peterfrance:@host.docker.internal:5432/checkpointer_db"
+]
 
 [default.build.parameters]
 cached = true
@@ -28,3 +35,4 @@ warm_containers = "EAGER"
 
 [default.local_start_lambda.parameters]
 warm_containers = "EAGER"
+

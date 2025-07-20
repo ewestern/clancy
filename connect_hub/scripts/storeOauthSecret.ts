@@ -1,6 +1,11 @@
 #!/usr/bin/env tsx
 
-import { SecretsManagerClient, CreateSecretCommand, UpdateSecretCommand, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+import {
+  SecretsManagerClient,
+  CreateSecretCommand,
+  UpdateSecretCommand,
+  GetSecretValueCommand,
+} from "@aws-sdk/client-secrets-manager";
 import { config } from "dotenv";
 
 // Load environment variables
@@ -20,14 +25,20 @@ class OAuthSecretManager {
   constructor() {
     this.secretsClient = new SecretsManagerClient({
       region: process.env.AWS_REGION || "us-east-1",
-      profile: "clancy"
+      profile: "clancy",
     });
   }
 
   /**
    * Create or update an OAuth secret in AWS Secrets Manager
    */
-  async createOrUpdateSecret(environment: string, providerId: string, clientId: string, clientSecret: string, signingSecret?: string): Promise<void> {
+  async createOrUpdateSecret(
+    environment: string,
+    providerId: string,
+    clientId: string,
+    clientSecret: string,
+    signingSecret?: string,
+  ): Promise<void> {
     const secretName = `clancy/oauth/${environment}/${providerId}`;
     const secretValue: OAuthSecretData = {
       clientId,
@@ -45,9 +56,11 @@ class OAuthSecretManager {
       // Try to get the existing secret first
       const getCommand = new GetSecretValueCommand({ SecretId: secretName });
       const existingSecret = await this.secretsClient.send(getCommand);
-      
+
       if (existingSecret.SecretString) {
-        const existingData: OAuthSecretData = JSON.parse(existingSecret.SecretString);
+        const existingData: OAuthSecretData = JSON.parse(
+          existingSecret.SecretString,
+        );
         secretValue.createdAt = existingData.createdAt;
         // Preserve existing signing secret if no new one is provided
         if (!signingSecret && existingData.signingSecret) {
@@ -61,12 +74,16 @@ class OAuthSecretManager {
         SecretString: JSON.stringify(secretValue, null, 2),
         Description: `OAuth credentials for ${providerId} provider`,
       });
-      
+
       await this.secretsClient.send(updateCommand);
-      console.log(`✅ Successfully updated OAuth secret for provider: ${providerId}`);
-      
+      console.log(
+        `✅ Successfully updated OAuth secret for provider: ${providerId}`,
+      );
     } catch (error) {
-      if (error instanceof Error && error.name === "ResourceNotFoundException") {
+      if (
+        error instanceof Error &&
+        error.name === "ResourceNotFoundException"
+      ) {
         // Secret doesn't exist, create it
         try {
           const createCommand = new CreateSecretCommand({
@@ -74,16 +91,23 @@ class OAuthSecretManager {
             SecretString: JSON.stringify(secretValue, null, 2),
             Description: `OAuth credentials for ${providerId} provider`,
           });
-          
+
           await this.secretsClient.send(createCommand);
-          console.log(`✅ Successfully created OAuth secret for provider: ${providerId}`);
-          
+          console.log(
+            `✅ Successfully created OAuth secret for provider: ${providerId}`,
+          );
         } catch (createError) {
-          console.error(`❌ Failed to create secret for provider ${providerId}:`, createError);
+          console.error(
+            `❌ Failed to create secret for provider ${providerId}:`,
+            createError,
+          );
           throw createError;
         }
       } else {
-        console.error(`❌ Failed to update secret for provider ${providerId}:`, error);
+        console.error(
+          `❌ Failed to update secret for provider ${providerId}:`,
+          error,
+        );
         throw error;
       }
     }
@@ -94,18 +118,22 @@ class OAuthSecretManager {
    */
   async getSecret(environment: string, providerId: string): Promise<void> {
     const secretName = `clancy/oauth/${environment}/${providerId}`;
-    
+
     try {
       const command = new GetSecretValueCommand({ SecretId: secretName });
       const result = await this.secretsClient.send(command);
-      
+
       if (result.SecretString) {
         const secretData: OAuthSecretData = JSON.parse(result.SecretString);
         console.log(`\n📋 OAuth Secret for ${providerId}:`);
         console.log(`   Client ID: ${secretData.clientId}`);
-        console.log(`   Client Secret: ${secretData.clientSecret.substring(0, 8)}...`);
+        console.log(
+          `   Client Secret: ${secretData.clientSecret.substring(0, 8)}...`,
+        );
         if (secretData.signingSecret) {
-          console.log(`   Signing Secret: ${secretData.signingSecret.substring(0, 8)}...`);
+          console.log(
+            `   Signing Secret: ${secretData.signingSecret.substring(0, 8)}...`,
+          );
         }
         console.log(`   Created At: ${secretData.createdAt}`);
         console.log(`   Updated At: ${secretData.updatedAt}`);
@@ -113,10 +141,16 @@ class OAuthSecretManager {
         console.log(`❌ No secret data found for provider: ${providerId}`);
       }
     } catch (error) {
-      if (error instanceof Error && error.name === "ResourceNotFoundException") {
+      if (
+        error instanceof Error &&
+        error.name === "ResourceNotFoundException"
+      ) {
         console.log(`❌ Secret not found for provider: ${providerId}`);
       } else {
-        console.error(`❌ Failed to retrieve secret for provider ${providerId}:`, error);
+        console.error(
+          `❌ Failed to retrieve secret for provider ${providerId}:`,
+          error,
+        );
       }
     }
   }
@@ -126,7 +160,9 @@ class OAuthSecretManager {
    */
   async listSecrets(): Promise<void> {
     console.log("🔍 Listing OAuth secrets is not implemented yet.");
-    console.log("   Use AWS CLI or console to view all secrets with prefix 'clancy/oauth/'");
+    console.log(
+      "   Use AWS CLI or console to view all secrets with prefix 'clancy/oauth/'",
+    );
   }
 }
 
@@ -208,7 +244,7 @@ function validateUrl(url: string): boolean {
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
-  
+
   if (args.length === 0) {
     showUsage();
     process.exit(1);
@@ -222,43 +258,74 @@ async function main(): Promise<void> {
       case "create": {
         if (args.length !== 5 && args.length !== 6) {
           console.error("❌ Error: 'create' command requires 4 or 5 arguments");
-          console.error("   Usage: tsx scripts/storeOauthSecret.ts create <environment> <provider> <client_id> <client_secret> [signing_secret]");
+          console.error(
+            "   Usage: tsx scripts/storeOauthSecret.ts create <environment> <provider> <client_id> <client_secret> [signing_secret]",
+          );
           process.exit(1);
         }
 
         console.log(args);
-        const [, environment, providerId, clientId, clientSecret, signingSecret] = args;
-        console.log(environment, providerId, clientId, clientSecret, signingSecret);
+        const [
+          ,
+          environment,
+          providerId,
+          clientId,
+          clientSecret,
+          signingSecret,
+        ] = args;
+        console.log(
+          environment,
+          providerId,
+          clientId,
+          clientSecret,
+          signingSecret,
+        );
 
         // Validate environment
         if (!validateEnvironment(environment)) {
           console.error(`❌ Error: Invalid environment '${environment}'`);
-          console.error("   Environment must be lowercase and contain only letters, numbers, and hyphens");
+          console.error(
+            "   Environment must be lowercase and contain only letters, numbers, and hyphens",
+          );
           process.exit(1);
         }
 
         // Validate provider
         if (!validateProvider(providerId)) {
           console.error(`❌ Error: Invalid provider ID '${providerId}'`);
-          console.error("   Provider ID must contain only letters, numbers, hyphens, and underscores");
+          console.error(
+            "   Provider ID must contain only letters, numbers, hyphens, and underscores",
+          );
           process.exit(1);
         }
 
         // Validate required fields
         if (!clientId || !clientSecret) {
-          console.error("❌ Error: Client ID and Client Secret cannot be empty");
+          console.error(
+            "❌ Error: Client ID and Client Secret cannot be empty",
+          );
           process.exit(1);
         }
 
-        console.log(`🔐 Creating/updating OAuth secret for provider: ${providerId} in environment: ${environment}`);
-        await manager.createOrUpdateSecret(environment, providerId, clientId, clientSecret, signingSecret);
+        console.log(
+          `🔐 Creating/updating OAuth secret for provider: ${providerId} in environment: ${environment}`,
+        );
+        await manager.createOrUpdateSecret(
+          environment,
+          providerId,
+          clientId,
+          clientSecret,
+          signingSecret,
+        );
         break;
       }
 
       case "get": {
         if (args.length !== 3) {
           console.error("❌ Error: 'get' command requires exactly 2 arguments");
-          console.error("   Usage: tsx scripts/storeOauthSecret.ts get <environment> <provider>");
+          console.error(
+            "   Usage: tsx scripts/storeOauthSecret.ts get <environment> <provider>",
+          );
           process.exit(1);
         }
 
@@ -267,13 +334,17 @@ async function main(): Promise<void> {
         // Validate environment
         if (!validateEnvironment(environment)) {
           console.error(`❌ Error: Invalid environment '${environment}'`);
-          console.error("   Environment must be lowercase and contain only letters, numbers, and hyphens");
+          console.error(
+            "   Environment must be lowercase and contain only letters, numbers, and hyphens",
+          );
           process.exit(1);
         }
 
         if (!validateProvider(providerId)) {
           console.error(`❌ Error: Invalid provider ID '${providerId}'`);
-          console.error("   Provider ID must contain only letters, numbers, hyphens, and underscores");
+          console.error(
+            "   Provider ID must contain only letters, numbers, hyphens, and underscores",
+          );
           process.exit(1);
         }
 
@@ -294,7 +365,9 @@ async function main(): Promise<void> {
 
       default:
         console.error(`❌ Error: Unknown command '${command}'`);
-        console.error("   Use 'tsx scripts/storeOauthSecret.ts help' for usage information");
+        console.error(
+          "   Use 'tsx scripts/storeOauthSecret.ts help' for usage information",
+        );
         process.exit(1);
     }
   } catch (error) {

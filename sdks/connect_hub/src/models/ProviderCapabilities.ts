@@ -20,13 +20,6 @@ import {
     ProviderAuthToJSON,
     ProviderAuthToJSONTyped,
 } from './ProviderAuth';
-import type { Capability } from './Capability';
-import {
-    CapabilityFromJSON,
-    CapabilityFromJSONTyped,
-    CapabilityToJSON,
-    CapabilityToJSONTyped,
-} from './Capability';
 import type { ProviderKind } from './ProviderKind';
 import {
     ProviderKindFromJSON,
@@ -34,6 +27,13 @@ import {
     ProviderKindToJSON,
     ProviderKindToJSONTyped,
 } from './ProviderKind';
+import type { CapabilitySummary } from './CapabilitySummary';
+import {
+    CapabilitySummaryFromJSON,
+    CapabilitySummaryFromJSONTyped,
+    CapabilitySummaryToJSON,
+    CapabilitySummaryToJSONTyped,
+} from './CapabilitySummary';
 
 /**
  * 
@@ -43,10 +43,10 @@ import {
 export interface ProviderCapabilities {
     /**
      * 
-     * @type {Array<Capability>}
+     * @type {Array<CapabilitySummary>}
      * @memberof ProviderCapabilities
      */
-    capabilities: Array<Capability>;
+    capabilities: Array<CapabilitySummary>;
     /**
      * Provider slug, e.g. slack
      * @type {string}
@@ -117,7 +117,7 @@ export function ProviderCapabilitiesFromJSONTyped(json: any, ignoreDiscriminator
     }
     return {
         
-        'capabilities': ((json['capabilities'] as Array<any>).map(CapabilityFromJSON)),
+        'capabilities': ((json['capabilities'] as Array<any>).map(CapabilitySummaryFromJSON)),
         'id': json['id'],
         'displayName': json['displayName'],
         'description': json['description'],
@@ -139,7 +139,7 @@ export function ProviderCapabilitiesToJSONTyped(value?: ProviderCapabilities | n
 
     return {
         
-        'capabilities': ((value['capabilities'] as Array<any>).map(CapabilityToJSON)),
+        'capabilities': ((value['capabilities'] as Array<any>).map(CapabilitySummaryToJSON)),
         'id': value['id'],
         'displayName': value['displayName'],
         'description': value['description'],

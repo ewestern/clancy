@@ -25,7 +25,10 @@ Responsibilites:
 promptRegistry.getPrompt("agent-grouping");
 
 const llmProvider = new OpenAIProvider(process.env.OPENAI_API_KEY || "");
-const graphCreator = new MultiAgentGraphCreator("http://localhost:3000", llmProvider);
+const graphCreator = new MultiAgentGraphCreator(
+  "http://localhost:3000",
+  llmProvider,
+);
 //const tasks = await graphCreator.decomposeJobDescription(example, "v1.0.0");
 //const integrations = await graphCreator.engineerIntegrations(tasks, "v1.0.0");
 const assessments = await graphCreator.assessCapabilities(example, "v1.0.0");

@@ -20,6 +20,13 @@ import {
     WebhooksSlackPostRequestOneOfAuthorizationsInnerToJSON,
     WebhooksSlackPostRequestOneOfAuthorizationsInnerToJSONTyped,
 } from './WebhooksSlackPostRequestOneOfAuthorizationsInner';
+import type { WebhooksSlackPostRequestOneOfEvent } from './WebhooksSlackPostRequestOneOfEvent';
+import {
+    WebhooksSlackPostRequestOneOfEventFromJSON,
+    WebhooksSlackPostRequestOneOfEventFromJSONTyped,
+    WebhooksSlackPostRequestOneOfEventToJSON,
+    WebhooksSlackPostRequestOneOfEventToJSONTyped,
+} from './WebhooksSlackPostRequestOneOfEvent';
 
 /**
  * 
@@ -47,10 +54,10 @@ export interface WebhooksSlackPostRequestOneOf {
     apiAppId: string;
     /**
      * 
-     * @type {object}
+     * @type {WebhooksSlackPostRequestOneOfEvent}
      * @memberof WebhooksSlackPostRequestOneOf
      */
-    event: object;
+    event: WebhooksSlackPostRequestOneOfEvent;
     /**
      * 
      * @type {string}
@@ -122,7 +129,7 @@ export function WebhooksSlackPostRequestOneOfFromJSONTyped(json: any, ignoreDisc
         'token': json['token'],
         'teamId': json['team_id'],
         'apiAppId': json['api_app_id'],
-        'event': json['event'],
+        'event': WebhooksSlackPostRequestOneOfEventFromJSON(json['event']),
         'type': json['type'],
         'authorizations': ((json['authorizations'] as Array<any>).map(WebhooksSlackPostRequestOneOfAuthorizationsInnerFromJSON)),
         'eventContext': json['event_context'],
@@ -145,7 +152,7 @@ export function WebhooksSlackPostRequestOneOfToJSONTyped(value?: WebhooksSlackPo
         'token': value['token'],
         'team_id': value['teamId'],
         'api_app_id': value['apiAppId'],
-        'event': value['event'],
+        'event': WebhooksSlackPostRequestOneOfEventToJSON(value['event']),
         'type': value['type'],
         'authorizations': ((value['authorizations'] as Array<any>).map(WebhooksSlackPostRequestOneOfAuthorizationsInnerToJSON)),
         'event_context': value['eventContext'],

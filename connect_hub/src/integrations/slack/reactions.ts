@@ -1,5 +1,11 @@
 import { Type, Static } from "@sinclair/typebox";
-import { ExecutionContext, Capability, CapabilityMeta, CapabilityRisk } from "../../providers/types.js";
+import {
+  CapabilityMeta,
+  CapabilityRisk,
+  Capability,
+  ExecutionContext,
+} from "../../providers/types.js";
+import { OwnershipScope } from "../../models/shared.js";
 import { createSlackClient } from "./chat.js";
 
 // ---------------------------------------------------------------------------
@@ -40,7 +46,7 @@ export async function slackReactionAdd(
       ok: response.ok,
     };
   } catch (error: any) {
-    if (error.code === 'slack_webapi_rate_limited') {
+    if (error.code === "slack_webapi_rate_limited") {
       const retryAfter = error.retryAfter || 60;
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
@@ -52,7 +58,10 @@ export async function slackReactionAdd(
 // Capability Factory Functions
 // ---------------------------------------------------------------------------
 
-export function createReactionAddCapability(): Capability<SlackReactionAddParams, SlackReactionAddResult> {
+export function createReactionAddCapability(): Capability<
+  SlackReactionAddParams,
+  SlackReactionAddResult
+> {
   const meta: CapabilityMeta = {
     id: "reaction.add",
     displayName: "Add Reaction",
@@ -61,11 +70,12 @@ export function createReactionAddCapability(): Capability<SlackReactionAddParams
     paramsSchema: reactionAddParamsSchema,
     resultSchema: reactionAddResultSchema,
     requiredScopes: ["reactions:write"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.MEDIUM,
   };
-  
+
   return {
     meta,
     execute: slackReactionAdd,
   };
-} 
+}

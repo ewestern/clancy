@@ -4,10 +4,12 @@ import { SecretsManager } from "@aws-sdk/client-secrets-manager";
 import dotenv from "dotenv";
 dotenv.config();
 
-async function getProviderMetadata(providerId: string): Promise<Record<string, any> | undefined> {
+async function getProviderMetadata(
+  providerId: string,
+): Promise<Record<string, any> | undefined> {
   const secretsManager = new SecretsManager({
     region: "us-east-1",
-    profile: "clancy"
+    profile: "clancy",
   });
   const secret = await secretsManager.getSecretValue({
     SecretId: `clancy/oauth/${process.env.ENVIRONMENT}/${providerId}`,
@@ -20,7 +22,9 @@ async function getProviderMetadata(providerId: string): Promise<Record<string, a
 const registerOauthProviders: FastifyPluginAsync = async (fastify) => {
   // create function to get the provider metadata, as well as a cache of the metadata
   const providerMetadataCache = new Map<string, Record<string, any>>();
-  const getCachedProviderMetadata = async (providerId: string): Promise<Record<string, any> | undefined> => {
+  const getCachedProviderMetadata = async (
+    providerId: string,
+  ): Promise<Record<string, any> | undefined> => {
     if (providerMetadataCache.has(providerId)) {
       return providerMetadataCache.get(providerId);
     }
@@ -30,7 +34,7 @@ const registerOauthProviders: FastifyPluginAsync = async (fastify) => {
     }
     return metadata;
   };
-  fastify.decorate("getProviderMetadata", getCachedProviderMetadata);
+  fastify.decorate("getProviderSecrets", getCachedProviderMetadata);
 };
 
 export default fp(registerOauthProviders, {

@@ -95,6 +95,72 @@ export const gmailSearchResultSchema = Type.Object({
 });
 
 // ---------------------------------------------------------------------------
+// Gmail Messages Get Schemas
+// ---------------------------------------------------------------------------
+
+export const gmailMessagesGetParamsSchema = Type.Object({
+  id: Type.String({ description: "The ID of the message to retrieve" }),
+  format: Type.Optional(
+    Type.Union(
+      [
+        Type.Literal("minimal"),
+        Type.Literal("full"),
+        Type.Literal("raw"),
+        Type.Literal("metadata"),
+      ],
+      { description: "The format to return the message in" },
+    ),
+  ),
+  metadataHeaders: Type.Optional(
+    Type.Array(
+      Type.String({
+        description: "When format is METADATA, only include headers specified",
+      }),
+    ),
+  ),
+});
+
+export const gmailMessagesGetResultSchema = Type.Object(
+  {
+    id: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    threadId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    labelIds: Type.Optional(
+      Type.Union([Type.Array(Type.String()), Type.Null()]),
+    ),
+    snippet: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    historyId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    internalDate: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+    payload: Type.Optional(gmailMessagePayloadSchema),
+    sizeEstimate: Type.Optional(Type.Union([Type.Number(), Type.Null()])),
+    raw: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  },
+  {
+    examples: [
+      {
+        id: "1234567890abcdef",
+        threadId: "1234567890abcdef",
+        labelIds: ["INBOX", "IMPORTANT", "CATEGORY_PERSONAL"],
+        snippet: "Hey there! Just wanted to follow up on our meeting...",
+        historyId: "987654321",
+        internalDate: "1609459200000",
+        payload: {
+          headers: [
+            { name: "From", value: "sender@example.com" },
+            { name: "To", value: "recipient@example.com" },
+            { name: "Subject", value: "Meeting Follow-up" },
+          ],
+          body: {
+            size: 123,
+            data: "SGV5IHRoZXJlISBKdXN0IHdhbnRlZCB0byBmb2xsb3cgdXAuLi4=",
+          },
+        },
+        sizeEstimate: 2048,
+      },
+    ],
+  },
+);
+
+// ---------------------------------------------------------------------------
 // Gmail Labels Schemas
 // ---------------------------------------------------------------------------
 
@@ -375,6 +441,13 @@ export type GmailSendResult = Static<typeof gmailSendResultSchema>;
 export type GmailSearchParams = Static<typeof gmailSearchParamsSchema>;
 export type GmailSearchResult = Static<typeof gmailSearchResultSchema>;
 
+export type GmailMessagesGetParams = Static<
+  typeof gmailMessagesGetParamsSchema
+>;
+export type GmailMessagesGetResult = Static<
+  typeof gmailMessagesGetResultSchema
+>;
+
 export type GmailLabelsCreateParams = Static<
   typeof gmailLabelsCreateParamsSchema
 >;
@@ -464,6 +537,30 @@ export async function gmailSearch(
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
     throw new Error(`Gmail search error: ${error.message}`);
+  }
+}
+
+export async function gmailMessagesGet(
+  params: GmailMessagesGetParams,
+  ctx: ExecutionContext,
+): Promise<GmailMessagesGetResult> {
+  const gmail = createGmailClient(ctx);
+
+  try {
+    const response = await gmail.users.messages.get({
+      userId: "me",
+      id: params.id,
+      format: params.format,
+      metadataHeaders: params.metadataHeaders,
+    });
+
+    return response.data;
+  } catch (error: any) {
+    if (error.code === 429) {
+      const retryAfter = error.response?.headers?.["retry-after"] ?? "60";
+      throw new Error(`Rate limited; retry after ${retryAfter}s`);
+    }
+    throw new Error(`Gmail messages get error: ${error.message}`);
   }
 }
 

@@ -16,17 +16,20 @@
 import * as runtime from '../runtime';
 import type {
   OauthLaunchProviderGet400Response,
+  ProxyProviderIdCapabilityIdPostRequest,
 } from '../models/index';
 import {
     OauthLaunchProviderGet400ResponseFromJSON,
     OauthLaunchProviderGet400ResponseToJSON,
+    ProxyProviderIdCapabilityIdPostRequestFromJSON,
+    ProxyProviderIdCapabilityIdPostRequestToJSON,
 } from '../models/index';
 
-export interface ProxyProviderIdCapabilityIdPostRequest {
+export interface ProxyProviderIdCapabilityIdPostOperationRequest {
     orgId: string;
     providerId: string;
     capabilityId: string;
-    body?: any | null;
+    proxyProviderIdCapabilityIdPostRequest: ProxyProviderIdCapabilityIdPostRequest;
 }
 
 /**
@@ -37,7 +40,7 @@ export class ProxyApi extends runtime.BaseAPI {
     /**
      * Proxies action requests
      */
-    async proxyProviderIdCapabilityIdPostRaw(requestParameters: ProxyProviderIdCapabilityIdPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+    async proxyProviderIdCapabilityIdPostRaw(requestParameters: ProxyProviderIdCapabilityIdPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
         if (requestParameters['orgId'] == null) {
             throw new runtime.RequiredError(
                 'orgId',
@@ -59,6 +62,13 @@ export class ProxyApi extends runtime.BaseAPI {
             );
         }
 
+        if (requestParameters['proxyProviderIdCapabilityIdPostRequest'] == null) {
+            throw new runtime.RequiredError(
+                'proxyProviderIdCapabilityIdPostRequest',
+                'Required parameter "proxyProviderIdCapabilityIdPostRequest" was null or undefined when calling proxyProviderIdCapabilityIdPost().'
+            );
+        }
+
         const queryParameters: any = {};
 
         if (requestParameters['orgId'] != null) {
@@ -74,7 +84,7 @@ export class ProxyApi extends runtime.BaseAPI {
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: requestParameters['body'] as any,
+            body: ProxyProviderIdCapabilityIdPostRequestToJSON(requestParameters['proxyProviderIdCapabilityIdPostRequest']),
         }, initOverrides);
 
         if (this.isJsonMime(response.headers.get('content-type'))) {
@@ -87,7 +97,7 @@ export class ProxyApi extends runtime.BaseAPI {
     /**
      * Proxies action requests
      */
-    async proxyProviderIdCapabilityIdPost(requestParameters: ProxyProviderIdCapabilityIdPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+    async proxyProviderIdCapabilityIdPost(requestParameters: ProxyProviderIdCapabilityIdPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
         const response = await this.proxyProviderIdCapabilityIdPostRaw(requestParameters, initOverrides);
         return await response.value();
     }

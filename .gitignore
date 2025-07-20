@@ -1,1 +1,7 @@
 .terraform
+.terraform.lock.hcl
+.npmrc
+terraform.tfstate.backup
+terraform.tfstate
+.env
+.env.json

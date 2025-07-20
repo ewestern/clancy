@@ -44,9 +44,9 @@ export type FastifyReplyTypeBox<TSchema extends FastifySchema> = FastifyReply<
 declare module "fastify" {
   export interface FastifyInstance {
     // Core services
-    getProviderMetadata: (providerId: string) => Promise<Record<string, any> | undefined>;
-    wsService: WebSocketService;
-    baseUrl: string;
+    getProviderSecrets: (
+      providerId: string,
+    ) => Promise<Record<string, any> | undefined>;
     // Configuration
     config: {
       nodeEnv: string;

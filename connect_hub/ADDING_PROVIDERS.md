@@ -15,17 +15,19 @@ ConnectHub uses a provider-based architecture where each external service (Slack
 3. **Schemas**: TypeBox schemas for parameter validation and type safety
 4. **Documentation URLs**: Specific API endpoint documentation links
 5. **Risk Assessment**: Risk level classification for each capability
-6. **OAuth Methods**: Token management and scope validation (for external providers)
-7. **Service Modules**: Separate files for different services within a provider
+6. **Ownership Scope**: Token ownership classification (user vs organization)
+7. **OAuth Methods**: Token management and scope validation (for external providers)
+8. **Service Modules**: Separate files for different services within a provider
 
 ### Webhook and Trigger System (optional)
 
 If your provider exposes inbound webhooks (e.g. Slack Events API), implement them using the `Webhook<S, E>` and `ProviderRuntime<S, E>` types. The webhook system includes a trigger mechanism for event-driven agent workflows.
 
 **Key Components:**
+
 - **Webhook Event Schemas**: TypeBox schemas defining incoming event structure
 - **Triggers**: Logic to determine which registered triggers should fire for an event
-- **Trigger Registrations**: Database records linking triggers to specific agent workflows  
+- **Trigger Registrations**: Database records linking triggers to specific agent workflows
 - **Event Creation**: Transform webhook events into agent-consumable events
 - **Webhook Verification**: Provider-specific signature verification for security
 
@@ -35,7 +37,7 @@ If your provider exposes inbound webhooks (e.g. Slack Events API), implement the
    - Create TypeBox schemas for all expected webhook event types
    - Define webhook endpoint schema with proper request/response structure
 
-2. **Implement Webhook Handler** 
+2. **Implement Webhook Handler**
    - Verify webhook authenticity using provider-specific signature verification
    - Implement timestamp validation to prevent replay attacks
    - Handle challenge/verification flows (like Slack URL verification)
@@ -55,11 +57,13 @@ If your provider exposes inbound webhooks (e.g. Slack Events API), implement the
    - Expose webhooks via `webhooks` property
 
 **Trigger Registration Pattern:**
+
 - Query database for trigger registrations matching event context
 - Filter by provider, external account, and trigger-specific criteria
 - Return transformed trigger registration objects for agent consumption
 
 **Event Transformation:**
+
 - Convert provider webhook events into standardized agent event format
 - Include partition keys for proper event ordering and processing
 - Maintain correlation between webhook events and agent executions
@@ -166,6 +170,7 @@ import {
   CallbackResult,
 } from "../providers/types.js";
 import { ProviderKind, ProviderAuth } from "../models/capabilities.js";
+import { OwnershipScope } from "../models/shared.js";
 
 // Import service modules
 import {
@@ -189,9 +194,10 @@ function create{Service}{Capability}Capability(): Capability<{Service}{Capabilit
     paramsSchema: {service}{capability}ParamsSchema,
     resultSchema: {service}{capability}ResultSchema,
     requiredScopes: ["scope1", "scope2"],
+    ownershipScope: OwnershipScope.User, // or OwnershipScope.Organization
     risk: CapabilityRisk.MEDIUM, // Assess risk level appropriately
   };
-  
+
   return {
     meta,
     execute: {service}{capability},
@@ -300,10 +306,12 @@ function createGmailSendCapability(): Capability {
     id: "gmail.messages.send",
     displayName: "Send Email",
     description: "Send an email via Gmail",
-    docsUrl: "https://developers.google.com/gmail/api/reference/rest/v1/users.messages/send",
+    docsUrl:
+      "https://developers.google.com/gmail/api/reference/rest/v1/users.messages/send",
     paramsSchema: gmailSendParamsSchema,
     resultSchema: gmailSendResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/gmail.send"],
+    ownershipScope: OwnershipScope.User, // Personal mailbox access
     risk: CapabilityRisk.HIGH, // External communication impact
   };
   return { meta, execute: gmailSend };
@@ -319,6 +327,7 @@ function createSlackConversationCreateCapability(): Capability {
     paramsSchema: convCreateParamsSchema,
     resultSchema: convCreateResultSchema,
     requiredScopes: ["channels:manage"],
+    ownershipScope: OwnershipScope.Organization, // Team workspace access
     risk: CapabilityRisk.MEDIUM, // Creates internal resource
   };
   return { meta, execute: slackConversationCreate };
@@ -330,17 +339,260 @@ function createGmailSearchCapability(): Capability {
     id: "gmail.messages.search",
     displayName: "Search Emails",
     description: "Search for emails using Gmail query syntax",
-    docsUrl: "https://developers.google.com/gmail/api/reference/rest/v1/users.messages/list",
+    docsUrl:
+      "https://developers.google.com/gmail/api/reference/rest/v1/users.messages/list",
     paramsSchema: gmailSearchParamsSchema,
     resultSchema: gmailSearchResultSchema,
     requiredScopes: ["https://www.googleapis.com/auth/gmail.readonly"],
+    ownershipScope: OwnershipScope.User, // Personal mailbox access
     risk: CapabilityRisk.LOW, // Read-only operation
   };
   return { meta, execute: gmailSearch };
 }
 ```
 
-### 4. Schema Design Patterns
+### 4. Ownership Scope Classification
+
+Each capability must specify an `ownershipScope` that determines whether the capability operates on behalf of a specific user or the entire organization. This classification affects how tokens are stored, retrieved, and matched during capability execution.
+
+#### Ownership Scope Types
+
+- **`OwnershipScope.User`**: Capabilities that operate on behalf of a specific user
+  - Personal email access (Gmail, Outlook mailboxes)
+  - Personal calendar access (individual calendars)
+  - Personal file access (user's Drive files)
+  - User profile access
+  - _Token Storage_: Scoped to the specific Auth0 user ID who authorized the connection
+
+- **`OwnershipScope.Organization`**: Capabilities that operate on behalf of the organization
+  - Team communication (Slack channels, team file sharing)
+  - Business operations (QuickBooks accounting, company documents)
+  - Administrative functions (user directories, team management)
+  - Shared resources (organization Drive, team calendars)
+  - Internal services (Clancy email service, knowledge base)
+  - _Token Storage_: Scoped to the Auth0 organization ID
+
+#### Ownership Scope Guidelines
+
+**Choose User Scope When:**
+
+- The capability accesses personal, user-specific data
+- The API operation is performed "as" a specific user
+- Different users in the same org would have different access/data
+- Examples: Reading someone's inbox, accessing personal calendar, personal file uploads
+
+**Choose Organization Scope When:**
+
+- The capability accesses shared, company-wide resources
+- The API operation is performed on behalf of the organization
+- All authorized users in the org would access the same data/resources
+- Service accounts or admin-level access is required
+- Examples: Company accounting data, team channels, shared drives, user directories
+
+#### Ownership Scope Implementation
+
+```typescript
+import { OwnershipScope } from "../models/shared.js";
+
+// USER SCOPE EXAMPLE: Personal email access
+function createGmailSendCapability(): Capability {
+  const meta: CapabilityMeta = {
+    id: "gmail.messages.send",
+    displayName: "Send Email",
+    description: "Send an email via Gmail",
+    docsUrl:
+      "https://developers.google.com/gmail/api/reference/rest/v1/users.messages/send",
+    paramsSchema: gmailSendParamsSchema,
+    resultSchema: gmailSendResultSchema,
+    requiredScopes: ["https://www.googleapis.com/auth/gmail.send"],
+    ownershipScope: OwnershipScope.User, // Personal mailbox access
+    risk: CapabilityRisk.HIGH,
+  };
+  return { meta, execute: gmailSend };
+}
+
+// ORGANIZATION SCOPE EXAMPLE: Team communication
+function createSlackChatPostCapability(): Capability {
+  const meta: CapabilityMeta = {
+    id: "chat.post",
+    displayName: "Post Message",
+    description: "Send a message to a Slack channel",
+    docsUrl: "https://api.slack.com/methods/chat.postMessage",
+    paramsSchema: chatPostParamsSchema,
+    resultSchema: chatPostResultSchema,
+    requiredScopes: ["chat:write"],
+    ownershipScope: OwnershipScope.Organization, // Team workspace access
+    risk: CapabilityRisk.HIGH,
+  };
+  return { meta, execute: slackChatPost };
+}
+
+// ORGANIZATION SCOPE EXAMPLE: Business operations
+function createQuickBooksInvoiceCreateCapability(): Capability {
+  const meta: CapabilityMeta = {
+    id: "invoice.create",
+    displayName: "Create Invoice",
+    description: "Create and email an invoice to a customer",
+    docsUrl:
+      "https://developer.intuit.com/app/developer/qbo/docs/api/accounting/all-entities/invoice#create-an-invoice",
+    paramsSchema: invoiceCreateParamsSchema,
+    resultSchema: invoiceCreateResultSchema,
+    requiredScopes: ["com.intuit.quickbooks.accounting"],
+    ownershipScope: OwnershipScope.Organization, // Company accounting data
+    risk: CapabilityRisk.HIGH,
+  };
+  return { meta, execute: qbInvoiceCreate };
+}
+```
+
+#### Mixed Provider Examples
+
+**Google Workspace Provider:**
+
+- Gmail capabilities: `OwnershipScope.User` (personal mailbox)
+- Calendar capabilities: `OwnershipScope.User` (personal calendar)
+- Drive capabilities: `OwnershipScope.Organization` (shared drives, org documents)
+
+**Microsoft 365 Provider:**
+
+- Mail capabilities: `OwnershipScope.User` (personal mailbox)
+- Calendar capabilities: `OwnershipScope.User` (personal calendar)
+- Users.list capability: `OwnershipScope.Organization` (admin directory access)
+
+#### Token Matching Logic
+
+The ownership scope determines how tokens are matched during capability execution:
+
+1. **User-scoped capabilities** require tokens stored with:
+   - `ownershipScope: "user"`
+   - `ownerId: auth0_user_id` (of the user who authorized)
+
+2. **Organization-scoped capabilities** require tokens stored with:
+   - `ownershipScope: "organization"`
+   - `ownerId: auth0_org_id` (of the organization)
+
+3. **Runtime validation** in the proxy route:
+   - Checks capability's required `ownershipScope`
+   - Queries for tokens matching provider + scope + owner
+   - Validates token has required OAuth scopes
+   - Executes capability with matched token
+
+#### Provider-Specific Scope Information
+
+Many OAuth providers include metadata in their token responses or account information that can help determine the appropriate ownership scope. This information should be extracted during the OAuth callback and used to inform scope decisions.
+
+##### Key Provider Indicators
+
+**Google Workspace:**
+
+- **Hosted Domain (`hd` field)**: Present when user belongs to a Google Workspace organization
+- **Account Type**: Workspace accounts typically indicate organization-level access intent
+- **OAuth Scopes**: Broad scopes like `auth/drive` vs narrow scopes like `auth/drive.file` suggest different access patterns
+
+**Microsoft 365:**
+
+- **Tenant ID**: Azure AD tenant indicates business context
+- **User Profile**: Job title, company name, and business email domains suggest organizational accounts
+- **Graph API Context**: Organization vs personal OneDrive access patterns
+
+**Slack:**
+
+- **Team/Workspace ID**: All Slack OAuth tokens are inherently team-scoped
+- **Enterprise Grid**: Enterprise context for large organizations
+- **Bot vs User Tokens**: Different permission models but both organization-scoped
+
+**QuickBooks:**
+
+- **Company/Realm ID**: Always indicates business/organization context
+- **Subscription Type**: Business subscription levels affect available features
+
+##### Using Provider Metadata for Scope Decisions
+
+The key insight is to extract this information during OAuth callback and use it to make intelligent scope decisions:
+
+1. **Dynamic Scope Assignment**: Instead of hardcoding ownership scope, determine it based on the actual account type and context returned by the provider
+
+2. **Scope Validation**: Validate that the granted OAuth scopes align with the intended ownership scope (e.g., admin scopes suggest organization access)
+
+3. **Account Context Awareness**: Use provider signals like domain membership, tenant affiliation, or subscription type to inform scope decisions
+
+```typescript
+// Key pattern: Extract provider context to inform scope decisions
+async function updateOrCreateConnection(/* params */) {
+  // Determine ownership scope based on provider metadata
+  let ownershipScope: OwnershipScope;
+  let ownerId: string;
+
+  if (providerId === "google") {
+    // Use Google's hosted domain info
+    const isWorkspace = externalAccountMetadata.isWorkspaceAccount;
+    ownershipScope = isWorkspace
+      ? OwnershipScope.Organization
+      : OwnershipScope.User;
+    ownerId = isWorkspace ? orgId : userId!;
+  } else if (providerId === "slack") {
+    // Slack is always team-scoped
+    ownershipScope = OwnershipScope.Organization;
+    ownerId = orgId;
+  }
+  // ... handle other providers
+}
+```
+
+##### OAuth Flow Enhancements
+
+**Pre-Authorization Hints**: Some providers allow you to hint at the desired access scope during authorization URL generation. For example, Google's `hd` parameter can restrict authorization to a specific domain.
+
+**Runtime Scope Validation**: Implement additional validation in capability execution to ensure the token context matches the capability's requirements. This is especially important for mixed providers where the same capability might work differently for personal vs business accounts.
+
+**Scope Analysis Patterns**: Analyze the granted OAuth scopes to infer access patterns. Broad administrative scopes often indicate organization-level access intent, while narrow user-specific scopes suggest personal access.
+
+##### Implementation Strategy
+
+1. **Enhanced OAuth Callback**: Extract and store comprehensive provider metadata during token exchange
+2. **Intelligent Scope Assignment**: Use provider signals rather than simple user/org ID presence to determine ownership scope
+3. **Capability-Level Validation**: Add runtime checks that validate token context against capability requirements
+4. **Graceful Scope Mismatches**: Provide clear error messages and re-authorization flows when scope mismatches occur
+
+This approach leverages the rich contextual information that OAuth providers expose, enabling more accurate and reliable ownership scope decisions while reducing the need for users to re-authorize when scope requirements change.
+
+#### Ownership Scope Decision Tree
+
+```
+Does the capability access personal/user-specific data?
+├─ YES: Does each user have different data/access?
+│  ├─ YES: Use OwnershipScope.User
+│  └─ NO: Consider organization scope
+└─ NO: Does it access shared/company resources?
+   ├─ YES: Use OwnershipScope.Organization
+   └─ NO: Review the capability design
+```
+
+#### Common Ownership Scope Patterns
+
+| Provider Type | Service             | Typical Scope  | Reasoning              |
+| ------------- | ------------------- | -------------- | ---------------------- |
+| Email         | Gmail, Outlook      | User           | Personal mailboxes     |
+| Calendar      | Google Cal, Outlook | User           | Personal calendars     |
+| File Storage  | Drive, OneDrive     | Organization\* | Shared company files   |
+| Team Chat     | Slack, Teams        | Organization   | Team communications    |
+| Accounting    | QuickBooks, Xero    | Organization   | Company financial data |
+| CRM           | Salesforce, HubSpot | Organization   | Company customer data  |
+| Education     | Canvas, Brightspace | Organization   | Institutional courses  |
+| Internal      | Clancy services     | Organization   | Platform services      |
+
+\*Note: File storage can be user-scoped for personal files, org-scoped for shared drives
+
+#### Migration and Backwards Compatibility
+
+When adding ownership scope to existing providers:
+
+1. **Default Behavior**: Existing tokens without ownership scope default to user scope
+2. **Gradual Migration**: Update capability definitions first, then migrate tokens
+3. **Token Re-authorization**: Users may need to re-authorize for organization-scoped capabilities
+4. **Clear Communication**: Inform users about scope changes and re-authorization requirements
+
+### 5. Schema Design Patterns
 
 #### Use TypeBox Static Pattern
 
@@ -442,7 +694,7 @@ export const gmailLabelsGetResultSchema = Type.Object(
 );
 ```
 
-### 5. API Helper Function Patterns
+### 6. API Helper Function Patterns
 
 #### Standard HTTP Client
 
@@ -500,7 +752,7 @@ async function googleFetch<T>(
 }
 ```
 
-### 6. Capability Naming Conventions
+### 7. Capability Naming Conventions
 
 #### Capability IDs
 
@@ -515,7 +767,7 @@ async function googleFetch<T>(
 - Examples: `slackChatPost`, `qbInvoiceCreate`, `gmailSend`
 - Use PascalCase for capability part
 
-### 7. Error Handling Patterns
+### 8. Error Handling Patterns
 
 ```typescript
 // Rate limiting
@@ -537,8 +789,7 @@ if (data.ok === false) {
 }
 ```
 
-
-### 8. OAuth Implementation Patterns
+### 9. OAuth Implementation Patterns
 
 #### OAuth2 with Authorization Code Flow
 
@@ -728,6 +979,7 @@ headers: {
 - [ ] All capabilities implemented with TypeBox schemas
 - [ ] Capability factory functions created
 - [ ] Risk levels assessed for all capabilities
+- [ ] Ownership scopes assigned for all capabilities (User vs Organization)
 - [ ] API helper function with rate limiting and error handling
 - [ ] Capability metadata with documentation URLs
 - [ ] Provider metadata configured correctly
@@ -822,7 +1074,6 @@ The following checklist tracks lightweight providers and starter capabilities th
 - [ ] AppFolio – `unit.list`, `tenant.create`, `maintenance.create`
 - [ ] John Deere Operations Center – `field.list`, `machine.telemetry.list`, `job.create`
 - [ ] Canvas LMS – `course.list`, `assignment.create`, `submission.list`
-
 
 ### links
 

@@ -2,21 +2,39 @@ import Fastify from "fastify";
 import swagger from "@fastify/swagger";
 import apiReference from "@scalar/fastify-api-reference";
 import fastifyWebsocket from "@fastify/websocket";
+import cors from "@fastify/cors";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import packageJson from "../package.json" with { type: "json" };
 import { registerRoutes } from "./routes/index.js";
 import registerOauthProviders from "./plugins/oauth_providers.js";
 import registerDatabase from "./plugins/database.js";
 import fastifyRawBody from "fastify-raw-body";
-import { WebSocketService } from "./services/websocketService.js";
+import { clerkPlugin } from "@clerk/fastify";
 
-export async function createApp(baseUrl: string) {
+export async function createApp() {
   const app = Fastify({
     logger: {
       level: "info",
     },
   }).withTypeProvider<TypeBoxTypeProvider>();
-  app.decorate("baseUrl", baseUrl);
+  await app.register(cors, {
+    origin: true,
+    methods: ["GET", "POST", "HEAD", "PUT", "DELETE", "OPTIONS"],
+  });
+  // Promote ?sessionToken=... to Authorization header so Clerk can validate the request
+  // This must run before the clerkPlugin registration so it executes earlier in the onRequest phase.
+  app.addHook("onRequest", async (request) => {
+    const { sessionToken } = request.query as {
+      sessionToken?: string;
+    };
+    if (sessionToken && !request.headers.authorization) {
+      request.headers.authorization = `Bearer ${sessionToken}`;
+    }
+  });
+  await app.register(clerkPlugin, {
+    publishableKey: process.env.CLERK_PUBLISHABLE_KEY!,
+    secretKey: process.env.CLERK_SECRET_KEY!,
+  });
 
   // Register Swagger for OpenAPI generation
   await app.register(swagger, {
@@ -85,17 +103,6 @@ export async function createApp(baseUrl: string) {
   // Register database
   await app.register(registerDatabase);
   await app.register(registerOauthProviders);
-
-  // Register WebSocket plugin
-  await app.register(fastifyWebsocket, {
-    options: {
-      clientTracking: true,
-    },
-  });
-
-  // Initialize and register WebSocket service
-  const wsService = new WebSocketService();
-  app.decorate("wsService", wsService);
 
   // Register raw body
   await app.register(fastifyRawBody, {

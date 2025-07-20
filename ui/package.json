@@ -12,7 +12,10 @@
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
     "@clancy/agents_core_sdk": "file:../sdks/agents_core",
-    "@clerk/react-router": "^1.7.0",
+    "@clerk/react-router": "^1.8.9",
+    "@ewestern/connect_hub_sdk": "^0.0.6",
+    "@ewestern/events": "^1.0.18",
+    "@fastify/cors": "^11.1.0",
     "@tailwindcss/vite": "^4.1.8",
     "autoprefixer": "^10.4.21",
     "clsx": "^2.1.1",
