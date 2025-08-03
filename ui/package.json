@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
-    "@clancy/agents_core_sdk": "file:../sdks/agents_core",
+    "@ewestern/agents_core_sdk": "^0.0.2",
     "@clerk/react-router": "^1.8.9",
     "@ewestern/connect_hub_sdk": "^0.0.6",
     "@ewestern/events": "^1.0.18",
