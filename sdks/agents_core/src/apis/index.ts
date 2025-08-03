@@ -1,4 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
+export * from './AgentsApi';
 export * from './ApprovalsApi';
-export * from './TriggersApi';
+export * from './EmployeesApi';
+export * from './WebhookApi';

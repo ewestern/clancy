@@ -1,9 +1,8 @@
 {
-  "name": "@clancy/sdk",
-  "version": "1.0.0",
+  "name": "@ewestern/connect_hub_sdk",
+  "version": "0.0.6",
   "description": "Clancy SDK - TypeScript client library",
   "main": "dist/index.js",
-  "module": "dist/index.es.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*"
@@ -11,7 +10,7 @@
   "scripts": {
     "build": "tsc",
     "build:tsc": "tsc",
-    "clean": "rimraf dist",
+    "clean": "rm -rf dist",
     "dev": "tsc --watch",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",

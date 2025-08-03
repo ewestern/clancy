@@ -322,3 +322,56 @@ type ExecutionResult = {
 These details should be sufficient for an implementation agent to wire up: (1) the WebSocket gateway, (2) event bus topics, (3) dispatcher logic, and (4) LangGraph worker with HIL support.
 
 This design transforms graph creation from an automated process into a collaborative workflow that systematically leverages human expertise to create effective, organization-specific digital employees. 
+
+## Current Implementation Status (2025-08)
+The **first functional implementation** of the Graph Creator now lives in `lambdas/src/shared/graphCreator.ts`.  While it follows the principles laid out above, several design choices have been streamlined to ship an MVP quickly.  The key points are:
+
+1.  LangGraph structure
+    * **Root graph** (`GraphState`) with three data buckets: `workflows`, `agents`, and `unsatisfiedWorkflows`.
+    * Execution starts with **`workflow_breakdown_agent`** which converts the raw job-description into a list of `Workflow` objects using the *WORKFLOW_BREAKDOWN_PROMPT*.
+    * For **each** workflow a **sub-graph** (`SubgraphState`) is spawned (`workflow_subgraph_agent`).  This sub-graph contains:
+      1. **`workflow_matcher_agent`** – calls two tool wrappers to the Connect-Hub SDK: `get_capabilities` and `get_triggers`.  It tries to map the workflow onto concrete provider capability IDs + a trigger.  If a mapping is impossible it emits an `unsatisfiedWorkflow` instead.
+      2. **`workflow_agent_creator_agent`** – once a valid mapping exists, this node produces the final `Agent` spec (including a behaviour prompt) via the *AGENT_CREATOR_PROMPT*.
+    * A simple **join** node aggregates the outputs of all sub-graphs and the run terminates.
+
+2.  Prompt & tool usage
+    * Prompts are plain-text strings co-located in the source file for quick iteration.
+    * The only active tools are:
+        * `get_capabilities` – GET `/capabilities` from Connect Hub.
+        * `get_triggers` – GET `/triggers` from Connect Hub.
+    * A `human_input` tool exists but is **commented out**; no interrupt/resume loop is yet wired in.
+
+3.  Checkpointing & streaming
+    * A `PostgresSaver` checkpointer is configured at construction time so every state transition is written to Postgres.
+    * `start()` and `resume()` are thin wrappers around `graph.stream()` enabling incremental UI updates in *streamMode: "updates"*.
+
+4.  Type safety
+    * All structured responses are validated with `@sinclair/typebox` Schema objects (`WorkflowSchema`, `AgentSchema`, etc.).  Invalid LLM output fails fast.
+
+5.  Gaps vs. original design
+    * No explicit *Gap-Identification* / *Human-Interaction* loop – this is implicitly handled by returning `unsatisfiedWorkflow` items without pausing for user input.
+    * No persisted conversation history; only LangGraph checkpoints are stored.
+    * Trigger parameter resolution is **best-effort** and does not yet validate against provider-supplied JSON Schema.
+
+## Future Improvement Opportunities
+1. **Human-in-the-Loop Resumption**  
+   Re-enable the `human_input` tool and leverage `interrupt()` to ask clarifying questions whenever `workflow_matcher_agent` cannot satisfy a workflow.
+2. **Rich Gap Analysis**  
+   Replace the binary *satisfied / unsatisfied* outcome with categorised gap reasons (missing integration, ambiguous requirement, etc.) matching the design doc table.
+3. **Trigger Parameter Validation**  
+   Fetch JSON Schemas from Connect Hub and validate user-supplied parameters before finalising an `Agent` spec.
+4. **Sub-Agent Composition**  
+   Allow an `Agent` to include nested sub-agents for complex workflows instead of a flat list.
+5. **Scalability & Performance**  
+   • Cache capability/trigger look-ups per organisation.  
+   • Parallelise sub-graph execution more aggressively.
+6. **Extended Checkpointing Strategy**  
+   Support pluggable stores (e.g., DynamoDB, Redis) and add automatic cleanup of old execution data.
+7. **Testing & Evaluation Harness**  
+   Create a golden-set of job descriptions with expected outputs to measure recall/precision of workflow extraction and capability matching over time.
+8. **UI Enhancements**  
+   Surface progress indicators (% complete, current phase) and let users answer clarifying questions directly in the dashboard.
+9. **Security & Multi-Tenancy Hardening**  
+   Enforce `orgId` scoping on every Connect Hub call and when reading/writing checkpoints.
+10. **Advanced Optimisation**  
+   Investigate using retrieval-augmented generation or fine-tuned models to improve the quality of workflow breakdown and matching. 

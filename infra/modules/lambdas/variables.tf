@@ -85,3 +85,17 @@ variable "lambdas_path" {
   description = "Path to the lambdas directory"
   type        = string
 }
+variable "openai_api_key_secret_arn" {
+  description = "ARN of the OpenAI API key secret"
+  type        = string
+}
+
+variable "anthropic_api_key_secret_arn" {
+  description = "ARN of the Anthropic API key secret"
+  type        = string
+}
+
+variable "checkpointer_db_url" {
+  description = "URL of the Checkpointer database"
+  type        = string
+}

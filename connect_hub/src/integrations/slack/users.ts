@@ -1,5 +1,11 @@
 import { Type, Static } from "@sinclair/typebox";
-import { ExecutionContext, Capability, CapabilityMeta, CapabilityRisk } from "../../providers/types.js";
+import {
+  CapabilityMeta,
+  CapabilityRisk,
+  Capability,
+  ExecutionContext,
+} from "../../providers/types.js";
+import { OwnershipScope } from "../../models/shared.js";
 import { createSlackClient } from "./chat.js";
 
 // ---------------------------------------------------------------------------
@@ -15,9 +21,11 @@ export const usersListParamsSchema = Type.Object({
 export const usersListResultSchema = Type.Object({
   ok: Type.Boolean(),
   members: Type.Array(Type.Any()),
-  response_metadata: Type.Optional(Type.Object({
-    next_cursor: Type.Optional(Type.String()),
-  })),
+  response_metadata: Type.Optional(
+    Type.Object({
+      next_cursor: Type.Optional(Type.String()),
+    }),
+  ),
 });
 
 export type SlackUsersListParams = Static<typeof usersListParamsSchema>;
@@ -46,7 +54,7 @@ export async function slackUsersList(
       response_metadata: response.response_metadata,
     };
   } catch (error: any) {
-    if (error.code === 'slack_webapi_rate_limited') {
+    if (error.code === "slack_webapi_rate_limited") {
       const retryAfter = error.retryAfter || 60;
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
@@ -92,7 +100,7 @@ export async function slackUsersInfo(
       user: response.user,
     };
   } catch (error: any) {
-    if (error.code === 'slack_webapi_rate_limited') {
+    if (error.code === "slack_webapi_rate_limited") {
       const retryAfter = error.retryAfter || 60;
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
@@ -113,8 +121,12 @@ export const usersLookupByEmailResultSchema = Type.Object({
   user: Type.Optional(Type.Any()),
 });
 
-export type SlackUsersLookupByEmailParams = Static<typeof usersLookupByEmailParamsSchema>;
-export type SlackUsersLookupByEmailResult = Static<typeof usersLookupByEmailResultSchema>;
+export type SlackUsersLookupByEmailParams = Static<
+  typeof usersLookupByEmailParamsSchema
+>;
+export type SlackUsersLookupByEmailResult = Static<
+  typeof usersLookupByEmailResultSchema
+>;
 
 export async function slackUsersLookupByEmail(
   params: SlackUsersLookupByEmailParams,
@@ -136,7 +148,7 @@ export async function slackUsersLookupByEmail(
       user: response.user,
     };
   } catch (error: any) {
-    if (error.code === 'slack_webapi_rate_limited') {
+    if (error.code === "slack_webapi_rate_limited") {
       const retryAfter = error.retryAfter || 60;
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
@@ -148,7 +160,10 @@ export async function slackUsersLookupByEmail(
 // Capability Factory Functions
 // ---------------------------------------------------------------------------
 
-export function createUsersListCapability(): Capability<SlackUsersListParams, SlackUsersListResult> {
+export function createUsersListCapability(): Capability<
+  SlackUsersListParams,
+  SlackUsersListResult
+> {
   const meta: CapabilityMeta = {
     id: "users.list",
     displayName: "List Users",
@@ -157,6 +172,7 @@ export function createUsersListCapability(): Capability<SlackUsersListParams, Sl
     paramsSchema: usersListParamsSchema,
     resultSchema: usersListResultSchema,
     requiredScopes: ["users:read"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
 
@@ -166,7 +182,10 @@ export function createUsersListCapability(): Capability<SlackUsersListParams, Sl
   };
 }
 
-export function createUsersInfoCapability(): Capability<SlackUsersInfoParams, SlackUsersInfoResult> {
+export function createUsersInfoCapability(): Capability<
+  SlackUsersInfoParams,
+  SlackUsersInfoResult
+> {
   const meta: CapabilityMeta = {
     id: "users.info",
     displayName: "Get User Info",
@@ -175,6 +194,7 @@ export function createUsersInfoCapability(): Capability<SlackUsersInfoParams, Sl
     paramsSchema: usersInfoParamsSchema,
     resultSchema: usersInfoResultSchema,
     requiredScopes: ["users:read"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
 
@@ -184,7 +204,10 @@ export function createUsersInfoCapability(): Capability<SlackUsersInfoParams, Sl
   };
 }
 
-export function createUsersLookupByEmailCapability(): Capability<SlackUsersLookupByEmailParams, SlackUsersLookupByEmailResult> {
+export function createUsersLookupByEmailCapability(): Capability<
+  SlackUsersLookupByEmailParams,
+  SlackUsersLookupByEmailResult
+> {
   const meta: CapabilityMeta = {
     id: "users.lookupByEmail",
     displayName: "Lookup User by Email",
@@ -193,6 +216,7 @@ export function createUsersLookupByEmailCapability(): Capability<SlackUsersLooku
     paramsSchema: usersLookupByEmailParamsSchema,
     resultSchema: usersLookupByEmailResultSchema,
     requiredScopes: ["users:read.email"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
 
@@ -200,4 +224,4 @@ export function createUsersLookupByEmailCapability(): Capability<SlackUsersLooku
     meta,
     execute: slackUsersLookupByEmail,
   };
-} 
+}

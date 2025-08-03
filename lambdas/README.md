@@ -5,35 +5,39 @@ This project contains source code and supporting files for Clancy's agent execut
 ## Lambda Functions
 
 ### AgentEnrichment
+
 - **Purpose**: EventBridge pipe enrichment step that adds agent metadata to events
 - **Trigger**: EventBridge events with `run_intent` or `resume_intent`
 - **Function**: Retrieves agent metadata from agents_core and enriches events
 - **Output**: Publishes enriched events to Kinesis for further processing
 
-### GraphCreatorExecutor  
+### GraphCreatorExecutor
+
 - **Purpose**: Executes graph creator agent workflows
 - **Trigger**: EventBridge events for graph creator agents (routed by EventBridge rules)
 - **Function**: Handles graph creation workflows using connect_hub capabilities
 - **Output**: Publishes execution status and results to Kinesis
 
 ### MainAgentExecutor
+
 - **Purpose**: Executes general agent workflows (non-graph-creator)
 - **Trigger**: EventBridge events for all other agents (routed by EventBridge rules)
 - **Function**: Handles standard agent execution using connect_hub capabilities
 - **Output**: Publishes execution status and results to Kinesis
 
 ### HelloWorldFunction (Reference)
+
 - **Purpose**: Example function for API Gateway testing
 - **Trigger**: API Gateway `/hello` endpoint
 - **Function**: Returns a simple "hello world" response
 
 ## Project Structure
 
-```
+````
 lambdas/
 ├── src/
 │   ├── agent-enrichment/     # AgentEnrichment lambda
-│   ├── graph-creator-executor/ # GraphCreatorExecutor lambda  
+│   ├── graph-creator-executor/ # GraphCreatorExecutor lambda
 │   ├── main-agent-executor/   # MainAgentExecutor lambda
 │   ├── hello-world/          # HelloWorldFunction (reference)
 │   └── shared/              # Shared types and utilities
@@ -79,7 +83,7 @@ The lambdas require these environment variables:
 
 ```bash
 npm install
-```
+````
 
 ### Build All Functions
 
@@ -91,7 +95,7 @@ npm run build
 
 ```bash
 npm run build:agent-enrichment
-npm run build:graph-creator-executor  
+npm run build:graph-creator-executor
 npm run build:main-agent-executor
 npm run build:hello-world
 ```
@@ -133,7 +137,7 @@ sam local invoke MainAgentExecutorFunction \
   --event events/enriched-run-intent-event.json \
   --env-vars '{
     "MainAgentExecutorFunction": {
-      "CONNECT_HUB_API_URL": "http://localhost:3002", 
+      "CONNECT_HUB_API_URL": "http://localhost:3002",
       "KINESIS_STREAM_NAME": "test-stream"
     }
   }'
@@ -146,7 +150,7 @@ sam local invoke MainAgentExecutorFunction \
 The `events/` directory contains sample EventBridge events for testing:
 
 - `run-intent-event.json` - Basic RunIntent event for AgentEnrichment
-- `resume-intent-event.json` - ResumeIntent event for AgentEnrichment  
+- `resume-intent-event.json` - ResumeIntent event for AgentEnrichment
 - `enriched-run-intent-event.json` - Enriched event for MainAgentExecutor
 - `graph-creator-run-intent-event.json` - Graph creator event for GraphCreatorExecutor
 
@@ -190,7 +194,7 @@ npm test
 The lambda functions are deployed via Terraform in the `infra/` directory. The Terraform configuration references the built functions from this project.
 
 1. Build the functions: `npm run build`
-2. Navigate to `infra/` directory  
+2. Navigate to `infra/` directory
 3. Run Terraform deployment
 
 ## Monitoring
@@ -198,7 +202,7 @@ The lambda functions are deployed via Terraform in the `infra/` directory. The T
 All lambda functions publish events to Kinesis for monitoring and observability:
 
 - **Run Started**: When agent execution begins
-- **Run Completed**: When agent execution finishes successfully  
+- **Run Completed**: When agent execution finishes successfully
 - **Run Failed**: When agent execution fails
 - **HIL Requested**: When human input is required
 

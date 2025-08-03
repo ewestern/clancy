@@ -3,13 +3,13 @@
 ## 1. Overview & Scope
 
 ### What Agent-Core Does
-- **Graph Creation**: Generate hierarchical "Digital Employee" graphs from natural language job descriptions
-- **Employee Lifecycle Management**: Create, activate, and manage persistent digital employee identities
-- **Supervisor Orchestration**: Route triggers to appropriate skill nodes within digital employees  
+- **Graph Creation**: Generate hierarchical "AI Employee" graphs from natural language job descriptions
+- **Employee Lifecycle Management**: Create, activate, and manage persistent ai employee identities
+- **Supervisor Orchestration**: Route triggers to appropriate skill nodes within ai employees  
 - **Hierarchical Coordination**: Handle skill-to-skill communication and workflow dependencies
 - **Event Projection**: Maintain runtime checkpoint store from global event stream
 - **Intent Emission**: Publish `runIntent` events to execution queue for Agent Workers
-- **Capabilities Infrastructure**: Provide fundamental access to ConnectHub CapabilitiesApi for all digital employees
+- **Capabilities Infrastructure**: Provide fundamental access to ConnectHub CapabilitiesApi for all ai employees
 - **HIL Coordination**: Manage Human-in-the-Loop workflows through specialized subgraphs
 
 ### What Agent-Core Does NOT Do
@@ -41,7 +41,7 @@
 │                                                             │
 │  ┌─────────────────────────────────────────────────────────┐ │
 │  │            Hierarchical Graph Creator                   │ │
-│  │         (Digital Employee Builder)                     │ │
+│  │         (AI Employee Builder)                     │ │
 │  └─────────────────────────────────────────────────────────┘ │
 │                                                             │
 │  ┌─────────────┐  ┌─────────────────────────────────────────┐ │
@@ -71,11 +71,11 @@
 ## 3. Core Components
 
 ### 3.1 Supervisor Router
-**Purpose**: Route incoming triggers to appropriate digital employees and skill nodes within an organization
+**Purpose**: Route incoming triggers to appropriate ai employees and skill nodes within an organization
 
 **Responsibilities**:
 - Parse and classify incoming triggers (direct, schedule, external, internal)
-- Determine which digital employees should handle each trigger
+- Determine which ai employees should handle each trigger
 - Emit `runIntent` events to Agent Workers with hierarchical context
 - Handle skill-to-skill coordination within employee graphs
 
@@ -87,7 +87,7 @@ async emitRunIntent(employeeId: string, trigger: Trigger, context: EmployeeConte
 ```
 
 ### 3.2 Employee Registry
-**Purpose**: Maintain persistent digital employee identities and hierarchical graph structures within organizations
+**Purpose**: Maintain persistent ai employee identities and hierarchical graph structures within organizations
 
 **Responsibilities**:
 - Store employee metadata (identity, role, organization, skill composition)
@@ -97,7 +97,7 @@ async emitRunIntent(employeeId: string, trigger: Trigger, context: EmployeeConte
 
 **Key Data**:
 ```typescript
-interface DigitalEmployee {
+interface AIEmployee {
     employeeId: string;
     organizationId: string;
     role: string;
@@ -128,7 +128,7 @@ async getOrganizationalKnowledge(orgId: string): Promise<Record<string, any>>
 ```
 
 ### 3.4 Hierarchical Graph Creator  
-**Purpose**: Generate hierarchical "Digital Employee" graphs from job descriptions through an **interactive, gap-driven workflow**. The Graph Creator itself is a digital employee that dog-foods the same architecture it produces.
+**Purpose**: Generate hierarchical "AI Employee" graphs from job descriptions through an **interactive, gap-driven workflow**. The Graph Creator itself is a ai employee that dog-foods the same architecture it produces.
 
 **High-level loop**
 1. Job description received  
@@ -153,7 +153,7 @@ For the complete design—including skill breakdown, event shapes, and sequence 
 **Purpose**: Provide fundamental infrastructure for capability discovery and Human-in-the-Loop workflows
 
 **Responsibilities**:
-- Maintain CapabilitiesApi client for all digital employees (fundamental infrastructure, not a capability)
+- Maintain CapabilitiesApi client for all ai employees (fundamental infrastructure, not a capability)
 - Coordinate HIL workflows through specialized subgraphs
 - Route HIL prompts through ConnectHub capabilities (Slack, email, etc.)
 - Manage HIL state and response correlation
@@ -167,7 +167,7 @@ async correlateHILResponse(response: HILResponse): Promise<void>
 ```
 
 **HIL Subgraph Pattern**:
-Every digital employee automatically receives a specialized HIL subgraph that:
+Every ai employee automatically receives a specialized HIL subgraph that:
 - Listens for HIL events on the event bus
 - Routes prompts through appropriate ConnectHub capabilities (Slack, email, SMS)
 - Manages response correlation and state transitions
@@ -194,8 +194,8 @@ async trackExecution(executionId: string, status: ExecutionStatus): Promise<void
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| POST | /v1/organizations/graphs | Create a digital-employee graph from a job description |
-| GET  | /v1/organizations/agents | List digital employees in an organisation |
+| POST | /v1/organizations/graphs | Create a ai-employee graph from a job description |
+| GET  | /v1/organizations/agents | List ai employees in an organisation |
 | GET  | /v1/agents/{agentId} | Retrieve employee details |
 | PUT  | /v1/agents/{agentId} | Update employee metadata |
 | POST | /v1/executions | trigger a new execution |
@@ -222,7 +222,7 @@ POST /v1/triggers
 | AuthClient | getCapabilityToken(agentId, capability)<br/>verifyToken(token) |
 | EventBusClient | emitEvent(event)<br/>getEvents(orgId, agentId?, since?)<br/>subscribeToEvents(eventTypes, handler) |
 
-**Note**: The CapabilitiesApi is fundamental infrastructure, not a capability. Every digital employee has automatic access to capability discovery without needing to declare it as a capability dependency.
+**Note**: The CapabilitiesApi is fundamental infrastructure, not a capability. Every ai employee has automatic access to capability discovery without needing to declare it as a capability dependency.
 
 ## 5. Domain Models
 
@@ -231,7 +231,7 @@ POST /v1/triggers
 | Entity | Key Attributes | Notes |
 |--------|----------------|-------|
 | Trigger | type, organizationId, payload, source | Enumerated trigger types: direct, schedule, external, internal |
-| DigitalEmployee | employeeId, orgId, role, graphId, version, skillNodes[] | Persisted in `digital_employees` table |
+| AIEmployee | employeeId, orgId, role, graphId, version, skillNodes[] | Persisted in `ai_employees` table |
 | RunIntentEvent | eventId, orgId, employeeId, executionId, trigger, context, graphSpec | Published on `run_intent` topic |
 | ExecutionResultEvent | eventId, orgId, executionId, status, result/error | Correlates with RunIntentEvent for completion |
 
@@ -239,7 +239,7 @@ POST /v1/triggers
 
 | Table | Purpose | Notable Columns |
 |-------|---------|-----------------|
-| digital_employees | Persist employee identity & graph reference | employee_id (PK), org_id, role, graph_id, version |
+| ai_employees | Persist employee identity & graph reference | employee_id (PK), org_id, role, graph_id, version |
 | graph_registry | Versioned storage of employee & skill graphs | graph_id (PK), org_id, type, version, spec (JSON) |
 | executions | Track lifecycle of each run | execution_id (PK), employee_id, run_id, status, started_at, completed_at |
 | event_projections | Event-sourced projection store | event_id (PK), org_id, run_id, event_type, payload |
@@ -251,7 +251,7 @@ POST /v1/triggers
 ### 6.1 Direct Command Flow
 ```
 1. POST /v1/triggers (type: "direct_command")
-2. Supervisor parses command and identifies target digital employees
+2. Supervisor parses command and identifies target ai employees
 3. For each employee:
    a. Load employee context from event projections
    b. Generate hierarchical run_id (emp:graphId:timestamp)
@@ -283,7 +283,7 @@ POST /v1/triggers
 5. Employee Graph Assembly: GraphBuilder → Employee supervisor graph linking skill nodes
 6. HIL Integration: Attach specialized HIL subgraph for human interaction workflows
 7. Persist & Version: Save to graphRegistry with hierarchical relationships + HIL specs
-8. Register digital employee in employee registry
+8. Register ai employee in employee registry
 9. Emit GraphDefined event to FactStream
 10. Return created employee specification with HIL capabilities
 ```
@@ -291,11 +291,11 @@ POST /v1/triggers
 ## 7. Key Architectural Decisions
 
 ### 7.1 CapabilitiesApi as Fundamental Infrastructure
-**Decision**: The CapabilitiesApi is NOT a capability but fundamental infrastructure available to every digital employee.
+**Decision**: The CapabilitiesApi is NOT a capability but fundamental infrastructure available to every ai employee.
 
 **Rationale**: 
 - Treating capability discovery as a capability creates a chicken-egg problem
-- Every digital employee needs to discover available capabilities
+- Every ai employee needs to discover available capabilities
 - CapabilitiesApi access should be as fundamental as memory or logging
 
 **Implementation**:
@@ -304,7 +304,7 @@ POST /v1/triggers
 - No need to declare "capabilities.list" as a capability dependency
 
 ### 7.2 HIL as Specialized Subgraph
-**Decision**: Human-in-the-Loop is implemented as a specialized subgraph that every digital employee receives automatically.
+**Decision**: Human-in-the-Loop is implemented as a specialized subgraph that every ai employee receives automatically.
 
 **Rationale**:
 - Maintains architectural consistency (everything is a graph)
@@ -313,7 +313,7 @@ POST /v1/triggers
 - Avoids special-case infrastructure
 
 **Implementation**:
-- Every digital employee gets an auto-generated HIL subgraph
+- Every ai employee gets an auto-generated HIL subgraph
 - HIL subgraph listens for HIL events on the event bus
 - Uses ConnectHub capabilities for actual message delivery
 - Manages response correlation and state transitions
@@ -361,119 +361,7 @@ Agent-Core is built as a modular Fastify application written in TypeScript 5+.  
 - **Multi-agent coordination**: Test agent handoffs and communication
 - **Database projections**: Test event sourcing and state rebuilding
 
-### 9.3 Test Structure
-```
-tests/
-├── unit/
-│   ├── supervisor.test.ts
-│   ├── memory.test.ts
-│   ├── graphCreator.test.ts
-│   ├── registry.test.ts
-│   └── intentEmitter.test.ts
-├── integration/
-│   ├── endToEnd.test.ts
-│   ├── multiAgent.test.ts
-│   └── eventProjections.test.ts
-├── mocks/
-│   ├── connectHub.ts
-│   ├── auth.ts
-│   └── eventBus.ts
-└── fixtures/
-    ├── sampleAgents.ts
-    ├── sampleEvents.ts
-    └── sampleTriggers.ts
-```
 
-## 10. Development Setup
-
-### 10.1 Dependencies
-```json
-{
-  "dependencies": {
-    "fastify": "^4.24.0",
-    "drizzle-orm": "^0.29.0",
-    "postgres": "^3.4.0",
-    "@fastify/cors": "^8.4.0",
-    "@fastify/helmet": "^11.1.0",
-    "openai": "^4.20.0",
-    "uuid": "^9.0.0",
-    "zod": "^3.22.0",
-    "ioredis": "^5.3.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@types/uuid": "^9.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^0.34.0",
-    "drizzle-kit": "^0.20.0"
-  }
-}
-```
-
-### 10.2 Project Structure
-```
-agent-core/
-├── src/
-│   ├── index.ts                # Application entry point
-│   ├── app.ts                  # Fastify app configuration
-│   ├── supervisor.ts           # Supervisor agent
-│   ├── registry.ts             # Agent registry
-│   ├── memory.ts              # Memory system
-│   ├── graphCreator.ts        # Multi-agent graph creation
-│   ├── intentEmitter.ts       # Event emission
-│   ├── types/                 # TypeScript type definitions
-│   ├── routes/                # API route handlers
-│   ├── clients/               # External service clients
-│   ├── database/              # Database schema and migrations
-│   └── utils/                 # Utility functions
-├── tests/                     # Test suite
-├── migrations/                # Database migrations
-├── docker/
-│   └── Dockerfile
-├── package.json
-├── tsconfig.json
-├── drizzle.config.ts
-└── README.md
-```
-
-## 11. Deployment & Infrastructure
-
-### 11.1 Docker Configuration
-```dockerfile
-FROM node:18-alpine
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci --only=production
-
-COPY . .
-RUN npm run build
-
-EXPOSE 3000
-
-CMD ["npm", "start"]
-```
-
-### 11.2 Environment Variables
-```bash
-# Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/agent_core
-
-# External Services
-CONNECT_HUB_URL=http://connect-hub:3001
-AUTH_SERVICE_URL=http://auth:3002
-
-# Event Bus
-REDIS_URL=redis://localhost:6379
-
-# LLM
-OPENAI_API_KEY=sk-...
-
-# Application
-NODE_ENV=production
-PORT=3000
-```
 
 This design document reflects the updated architecture where Agent-Core serves as a control plane, orchestrating agent workflows by emitting execution intents to separate Agent Worker services. The Node.js + TypeScript + Fastify + Drizzle ORM stack provides excellent developer experience and performance for the coordination and API responsibilities.
 

@@ -15,12 +15,19 @@
 
 import * as runtime from '../runtime';
 import type {
+  WebhooksInternalPostRequest,
   WebhooksSlackPostRequest,
 } from '../models/index';
 import {
+    WebhooksInternalPostRequestFromJSON,
+    WebhooksInternalPostRequestToJSON,
     WebhooksSlackPostRequestFromJSON,
     WebhooksSlackPostRequestToJSON,
 } from '../models/index';
+
+export interface WebhooksInternalPostOperationRequest {
+    webhooksInternalPostRequest?: WebhooksInternalPostRequest;
+}
 
 export interface WebhooksSlackPostOperationRequest {
     webhooksSlackPostRequest?: WebhooksSlackPostRequest;
@@ -30,6 +37,34 @@ export interface WebhooksSlackPostOperationRequest {
  * 
  */
 export class WebhooksApi extends runtime.BaseAPI {
+
+    /**
+     * Internal webhook
+     */
+    async webhooksInternalPostRaw(requestParameters: WebhooksInternalPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        const response = await this.request({
+            path: `/webhooks/internal`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: WebhooksInternalPostRequestToJSON(requestParameters['webhooksInternalPostRequest']),
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Internal webhook
+     */
+    async webhooksInternalPost(requestParameters: WebhooksInternalPostOperationRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.webhooksInternalPostRaw(requestParameters, initOverrides);
+    }
 
     /**
      * Slack Events API callback

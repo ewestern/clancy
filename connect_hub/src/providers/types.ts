@@ -1,19 +1,26 @@
 import { FastifySchema } from "fastify";
-import { ProviderAuth, ProviderKind } from "../models/capabilities.js";
-import { Static, TSchema } from "@sinclair/typebox";
+import {
+  ProviderAuth,
+  ProviderKind,
+  ProviderMetadata,
+} from "../models/providers.js";
+import { Static, Type, TSchema } from "@sinclair/typebox";
 import { Database } from "../plugins/database.js";
-import { FastifyRequestTypeBox, FastifyReplyTypeBox } from "../types/fastify.js";
+import {
+  FastifyRequestTypeBox,
+  FastifyReplyTypeBox,
+} from "../types/fastify.js";
 import { TriggerRegistration } from "../models/triggers.js";
-
+import { OwnershipScopeType } from "../models/shared.js";
 
 /**
  * Risk level assessment for capabilities.
  * Used to categorize the potential impact of capability execution.
  */
 export enum CapabilityRisk {
-  LOW = "LOW",       // Read-only operations, minimal risk
+  LOW = "LOW", // Read-only operations, minimal risk
   MEDIUM = "MEDIUM", // Data modification with limited external impact
-  HIGH = "HIGH",     // Significant business impact, external communication
+  HIGH = "HIGH", // Significant business impact, external communication
 }
 
 /**
@@ -27,15 +34,18 @@ export interface CapabilityMeta {
   paramsSchema: TSchema;
   resultSchema: TSchema;
   requiredScopes: string[];
+  ownershipScope: OwnershipScopeType;
   risk: CapabilityRisk;
 }
-
 
 /**
  * Factory function type for creating capabilities.
  * Used to populate the dispatch table during provider construction.
  */
-export type CapabilityFactory<P = unknown, R = unknown> = () => Capability<P, R>;
+export type CapabilityFactory<P = unknown, R = unknown> = () => Capability<
+  P,
+  R
+>;
 
 export interface EventMeta {
   name: string;
@@ -49,15 +59,15 @@ export interface CallbackResult {
   externalAccountMetadata: Record<string, unknown>;
 }
 
-export interface ProviderMetadata {
-  id: string;
-  displayName: string;
-  description: string;
-  icon: string;
-  docsUrl?: string;
-  kind: ProviderKind;
-  auth: ProviderAuth;
-}
+//export interface ProviderMetadata {
+//  id: string;
+//  displayName: string;
+//  description: string;
+//  icon: string;
+//  docsUrl?: string;
+//  kind: ProviderKind;
+//  auth: ProviderAuth;
+//}
 
 export interface EventContext {
   orgId: string;
@@ -104,9 +114,7 @@ export interface OAuthCallbackParams {
 export interface OAuthContext {
   orgId: string;
   provider: string;
-  clientId: string;
-  clientSecret: string;
-  signingSecret?: string;
+  providerSecrets: Record<string, unknown>;
   redirectUri: string;
   /** Optional PKCE code verifier for enhanced security */
   codeVerifier?: string;
@@ -126,6 +134,10 @@ export interface ScopeValidationResult {
 export interface Trigger<E = unknown> {
   id: string;
   /**
+   * JSON schema defining the parameters required when registering this trigger.
+   */
+  paramsSchema: TSchema;
+  /**
    * Retrieve trigger registrations applicable for the incoming event.
    */
   getTriggerRegistrations: (
@@ -133,16 +145,23 @@ export interface Trigger<E = unknown> {
     triggerId: string,
     event: E,
   ) => Promise<TriggerRegistration[]>;
+
   /**
    * Create the event payload that will be dispatched to the run-intent bus.
    */
   createEvents: (
     event: E,
     triggerRegistration: TriggerRegistration,
-  ) => Promise<{
-    event: Record<string, unknown>;
-    partitionKey: string;
-  }[]>;
+  ) => Promise<
+    {
+      event: Record<string, unknown>;
+      partitionKey: string;
+    }[]
+  >;
+  renderTriggerDefinition?: (
+    trigger: Trigger<E>,
+    triggerRegistration: TriggerRegistration,
+  ) => string;
 
   description: string;
 
@@ -155,6 +174,14 @@ export interface Webhook<S extends FastifySchema = FastifySchema, E = unknown> {
    */
   eventSchema: S;
   validateRequest: (request: FastifyRequestTypeBox<S>) => Promise<boolean>;
+  /**
+   * Optional hook to modify the reply before it is sent to the client.
+   * This is useful for providers that need to add additional headers or other metadata to the reply.
+   */
+  replyHook?: (
+    request: FastifyRequestTypeBox<S>,
+    reply: FastifyReplyTypeBox<S>,
+  ) => Promise<void>;
 
   /**
    * Triggers evaluated for each incoming event.
@@ -162,17 +189,29 @@ export interface Webhook<S extends FastifySchema = FastifySchema, E = unknown> {
   triggers: Trigger<E>[];
 }
 
+export interface WebhookEvent {
+  type: string;
+  [key: string]: any;
+}
 
 /**
  * Runtime surface that every provider must implement.
  */
-export interface ProviderRuntime<S extends FastifySchema = FastifySchema, E = unknown> {
-  links?: string[]
+export interface ProviderRuntime<
+  WebhookSchema extends FastifySchema = FastifySchema,
+  E extends WebhookEvent = WebhookEvent,
+> {
+  links?: string[];
   /** Retrieve a capability implementation by id (e.g. "chat.post") */
-  getCapability<P, R>(capabilityId: string): Capability<P, R> | undefined;
+  getCapability<P, R>(capabilityId: string): Capability<P, R>;
 
   /** List all capability metadata for this provider (no network calls) */
   listCapabilities(): CapabilityMeta[];
+
+  listTriggers(): Trigger<E>[];
+
+  getTrigger?(triggerId: string): Trigger<E> | undefined;
+  registerTrigger?(triggerId: string, trigger: Trigger<E>): void;
 
   /** Static metadata about the provider (excluding capabilities array) */
   metadata: ProviderMetadata;
@@ -183,21 +222,26 @@ export interface ProviderRuntime<S extends FastifySchema = FastifySchema, E = un
    */
   scopeMapping: Record<string, string[]>;
 
-  webhooks?: Webhook<S, E>[];
+  webhooks?: Webhook<WebhookSchema, E>[];
 
   /**
    * Generate the authorization URL for the OAuth flow.
    * Only required for providers with kind === "external".
    */
-  generateAuthUrl?(params: OAuthAuthUrlParams, ctx: OAuthContext): string;
+  generateAuthUrl?(
+    params: OAuthAuthUrlParams,
+    ctx: OAuthContext,
+    instanceDomain?: string,
+  ): string;
 
   /**
    * Handle the OAuth callback and exchange authorization code for tokens.
    * Only required for providers with kind === "external".
    */
   handleCallback?(
-    callbackParams: OAuthCallbackParams,
+    params: OAuthCallbackParams,
     ctx: OAuthContext,
+    instanceDomain?: string,
   ): Promise<CallbackResult>;
 
   /**
@@ -207,8 +251,8 @@ export interface ProviderRuntime<S extends FastifySchema = FastifySchema, E = un
   refreshToken?(
     tokenPayload: Record<string, unknown>,
     ctx: OAuthContext,
+    instanceDomain?: string,
   ): Promise<Record<string, unknown>>;
-
 
   /**
    * Check if a token is still valid (not expired, not revoked).

@@ -1,5 +1,11 @@
 import { Type, Static } from "@sinclair/typebox";
-import { ExecutionContext, Capability, CapabilityMeta, CapabilityRisk } from "../../providers/types.js";
+import {
+  CapabilityMeta,
+  CapabilityRisk,
+  Capability,
+  ExecutionContext,
+} from "../../providers/types.js";
+import { OwnershipScope } from "../../models/shared.js";
 import { createSlackClient } from "./chat.js";
 
 // ---------------------------------------------------------------------------
@@ -16,13 +22,19 @@ export const conversationsListParamsSchema = Type.Object({
 export const conversationsListResultSchema = Type.Object({
   ok: Type.Boolean(),
   channels: Type.Array(Type.Any()),
-  response_metadata: Type.Optional(Type.Object({
-    next_cursor: Type.Optional(Type.String()),
-  })),
+  response_metadata: Type.Optional(
+    Type.Object({
+      next_cursor: Type.Optional(Type.String()),
+    }),
+  ),
 });
 
-export type SlackConversationsListParams = Static<typeof conversationsListParamsSchema>;
-export type SlackConversationsListResult = Static<typeof conversationsListResultSchema>;
+export type SlackConversationsListParams = Static<
+  typeof conversationsListParamsSchema
+>;
+export type SlackConversationsListResult = Static<
+  typeof conversationsListResultSchema
+>;
 
 export async function slackConversationsList(
   params: SlackConversationsListParams,
@@ -48,7 +60,7 @@ export async function slackConversationsList(
       response_metadata: response.response_metadata,
     };
   } catch (error: any) {
-    if (error.code === 'slack_webapi_rate_limited') {
+    if (error.code === "slack_webapi_rate_limited") {
       const retryAfter = error.retryAfter || 60;
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
@@ -70,8 +82,12 @@ export const conversationCreateResultSchema = Type.Object({
   channel: Type.Optional(Type.Any()),
 });
 
-export type SlackConversationCreateParams = Static<typeof conversationCreateParamsSchema>;
-export type SlackConversationCreateResult = Static<typeof conversationCreateResultSchema>;
+export type SlackConversationCreateParams = Static<
+  typeof conversationCreateParamsSchema
+>;
+export type SlackConversationCreateResult = Static<
+  typeof conversationCreateResultSchema
+>;
 
 export async function slackConversationCreate(
   params: SlackConversationCreateParams,
@@ -94,7 +110,7 @@ export async function slackConversationCreate(
       channel: response.channel,
     };
   } catch (error: any) {
-    if (error.code === 'slack_webapi_rate_limited') {
+    if (error.code === "slack_webapi_rate_limited") {
       const retryAfter = error.retryAfter || 60;
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
@@ -119,13 +135,19 @@ export const conversationsHistoryResultSchema = Type.Object({
   ok: Type.Boolean(),
   messages: Type.Array(Type.Any()),
   has_more: Type.Optional(Type.Boolean()),
-  response_metadata: Type.Optional(Type.Object({
-    next_cursor: Type.Optional(Type.String()),
-  })),
+  response_metadata: Type.Optional(
+    Type.Object({
+      next_cursor: Type.Optional(Type.String()),
+    }),
+  ),
 });
 
-export type SlackConversationsHistoryParams = Static<typeof conversationsHistoryParamsSchema>;
-export type SlackConversationsHistoryResult = Static<typeof conversationsHistoryResultSchema>;
+export type SlackConversationsHistoryParams = Static<
+  typeof conversationsHistoryParamsSchema
+>;
+export type SlackConversationsHistoryResult = Static<
+  typeof conversationsHistoryResultSchema
+>;
 
 export async function slackConversationsHistory(
   params: SlackConversationsHistoryParams,
@@ -154,7 +176,7 @@ export async function slackConversationsHistory(
       response_metadata: response.response_metadata,
     };
   } catch (error: any) {
-    if (error.code === 'slack_webapi_rate_limited') {
+    if (error.code === "slack_webapi_rate_limited") {
       const retryAfter = error.retryAfter || 60;
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
@@ -175,13 +197,19 @@ export const conversationsMembersParamsSchema = Type.Object({
 export const conversationsMembersResultSchema = Type.Object({
   ok: Type.Boolean(),
   members: Type.Array(Type.String()),
-  response_metadata: Type.Optional(Type.Object({
-    next_cursor: Type.Optional(Type.String()),
-  })),
+  response_metadata: Type.Optional(
+    Type.Object({
+      next_cursor: Type.Optional(Type.String()),
+    }),
+  ),
 });
 
-export type SlackConversationsMembersParams = Static<typeof conversationsMembersParamsSchema>;
-export type SlackConversationsMembersResult = Static<typeof conversationsMembersResultSchema>;
+export type SlackConversationsMembersParams = Static<
+  typeof conversationsMembersParamsSchema
+>;
+export type SlackConversationsMembersResult = Static<
+  typeof conversationsMembersResultSchema
+>;
 
 export async function slackConversationsMembers(
   params: SlackConversationsMembersParams,
@@ -206,7 +234,7 @@ export async function slackConversationsMembers(
       response_metadata: response.response_metadata,
     };
   } catch (error: any) {
-    if (error.code === 'slack_webapi_rate_limited') {
+    if (error.code === "slack_webapi_rate_limited") {
       const retryAfter = error.retryAfter || 60;
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
@@ -226,13 +254,19 @@ export const conversationsJoinResultSchema = Type.Object({
   ok: Type.Boolean(),
   channel: Type.Optional(Type.Any()),
   warning: Type.Optional(Type.String()),
-  response_metadata: Type.Optional(Type.Object({
-    warnings: Type.Optional(Type.Array(Type.String())),
-  })),
+  response_metadata: Type.Optional(
+    Type.Object({
+      warnings: Type.Optional(Type.Array(Type.String())),
+    }),
+  ),
 });
 
-export type SlackConversationsJoinParams = Static<typeof conversationsJoinParamsSchema>;
-export type SlackConversationsJoinResult = Static<typeof conversationsJoinResultSchema>;
+export type SlackConversationsJoinParams = Static<
+  typeof conversationsJoinParamsSchema
+>;
+export type SlackConversationsJoinResult = Static<
+  typeof conversationsJoinResultSchema
+>;
 
 export async function slackConversationsJoin(
   params: SlackConversationsJoinParams,
@@ -256,7 +290,7 @@ export async function slackConversationsJoin(
       response_metadata: response.response_metadata,
     };
   } catch (error: any) {
-    if (error.code === 'slack_webapi_rate_limited') {
+    if (error.code === "slack_webapi_rate_limited") {
       const retryAfter = error.retryAfter || 60;
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
@@ -278,8 +312,12 @@ export const conversationsInviteResultSchema = Type.Object({
   channel: Type.Optional(Type.Any()),
 });
 
-export type SlackConversationsInviteParams = Static<typeof conversationsInviteParamsSchema>;
-export type SlackConversationsInviteResult = Static<typeof conversationsInviteResultSchema>;
+export type SlackConversationsInviteParams = Static<
+  typeof conversationsInviteParamsSchema
+>;
+export type SlackConversationsInviteResult = Static<
+  typeof conversationsInviteResultSchema
+>;
 
 export async function slackConversationsInvite(
   params: SlackConversationsInviteParams,
@@ -302,7 +340,7 @@ export async function slackConversationsInvite(
       channel: response.channel,
     };
   } catch (error: any) {
-    if (error.code === 'slack_webapi_rate_limited') {
+    if (error.code === "slack_webapi_rate_limited") {
       const retryAfter = error.retryAfter || 60;
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
@@ -314,7 +352,10 @@ export async function slackConversationsInvite(
 // Capability Factory Functions
 // ---------------------------------------------------------------------------
 
-export function createConversationsListCapability(): Capability<SlackConversationsListParams, SlackConversationsListResult> {
+export function createConversationsListCapability(): Capability<
+  SlackConversationsListParams,
+  SlackConversationsListResult
+> {
   const meta: CapabilityMeta = {
     id: "conversations.list",
     displayName: "List Conversations",
@@ -323,6 +364,7 @@ export function createConversationsListCapability(): Capability<SlackConversatio
     paramsSchema: conversationsListParamsSchema,
     resultSchema: conversationsListResultSchema,
     requiredScopes: ["channels:read", "groups:read"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
 
@@ -332,7 +374,10 @@ export function createConversationsListCapability(): Capability<SlackConversatio
   };
 }
 
-export function createConversationCreateCapability(): Capability<SlackConversationCreateParams, SlackConversationCreateResult> {
+export function createConversationCreateCapability(): Capability<
+  SlackConversationCreateParams,
+  SlackConversationCreateResult
+> {
   const meta: CapabilityMeta = {
     id: "conversation.create",
     displayName: "Create Conversation",
@@ -341,16 +386,20 @@ export function createConversationCreateCapability(): Capability<SlackConversati
     paramsSchema: conversationCreateParamsSchema,
     resultSchema: conversationCreateResultSchema,
     requiredScopes: ["channels:manage"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.MEDIUM,
   };
-  
+
   return {
     meta,
     execute: slackConversationCreate,
   };
 }
 
-export function createConversationsHistoryCapability(): Capability<SlackConversationsHistoryParams, SlackConversationsHistoryResult> {
+export function createConversationsHistoryCapability(): Capability<
+  SlackConversationsHistoryParams,
+  SlackConversationsHistoryResult
+> {
   const meta: CapabilityMeta = {
     id: "conversations.history",
     displayName: "Get Conversation History",
@@ -359,6 +408,7 @@ export function createConversationsHistoryCapability(): Capability<SlackConversa
     paramsSchema: conversationsHistoryParamsSchema,
     resultSchema: conversationsHistoryResultSchema,
     requiredScopes: ["channels:history", "groups:history"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
 
@@ -368,7 +418,10 @@ export function createConversationsHistoryCapability(): Capability<SlackConversa
   };
 }
 
-export function createConversationsMembersCapability(): Capability<SlackConversationsMembersParams, SlackConversationsMembersResult> {
+export function createConversationsMembersCapability(): Capability<
+  SlackConversationsMembersParams,
+  SlackConversationsMembersResult
+> {
   const meta: CapabilityMeta = {
     id: "conversations.members",
     displayName: "Get Conversation Members",
@@ -377,6 +430,7 @@ export function createConversationsMembersCapability(): Capability<SlackConversa
     paramsSchema: conversationsMembersParamsSchema,
     resultSchema: conversationsMembersResultSchema,
     requiredScopes: ["channels:read", "groups:read"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.LOW,
   };
 
@@ -386,7 +440,10 @@ export function createConversationsMembersCapability(): Capability<SlackConversa
   };
 }
 
-export function createConversationsJoinCapability(): Capability<SlackConversationsJoinParams, SlackConversationsJoinResult> {
+export function createConversationsJoinCapability(): Capability<
+  SlackConversationsJoinParams,
+  SlackConversationsJoinResult
+> {
   const meta: CapabilityMeta = {
     id: "conversations.join",
     displayName: "Join Conversation",
@@ -395,6 +452,7 @@ export function createConversationsJoinCapability(): Capability<SlackConversatio
     paramsSchema: conversationsJoinParamsSchema,
     resultSchema: conversationsJoinResultSchema,
     requiredScopes: ["channels:join"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.MEDIUM,
   };
 
@@ -404,7 +462,10 @@ export function createConversationsJoinCapability(): Capability<SlackConversatio
   };
 }
 
-export function createConversationsInviteCapability(): Capability<SlackConversationsInviteParams, SlackConversationsInviteResult> {
+export function createConversationsInviteCapability(): Capability<
+  SlackConversationsInviteParams,
+  SlackConversationsInviteResult
+> {
   const meta: CapabilityMeta = {
     id: "conversations.invite",
     displayName: "Invite to Conversation",
@@ -413,6 +474,7 @@ export function createConversationsInviteCapability(): Capability<SlackConversat
     paramsSchema: conversationsInviteParamsSchema,
     resultSchema: conversationsInviteResultSchema,
     requiredScopes: ["channels:manage"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.MEDIUM,
   };
 
@@ -420,4 +482,4 @@ export function createConversationsInviteCapability(): Capability<SlackConversat
     meta,
     execute: slackConversationsInvite,
   };
-} 
+}

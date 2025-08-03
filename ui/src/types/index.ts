@@ -1,3 +1,5 @@
+import type { Event } from "@ewestern/events";
+
 export interface AIEmployee {
   id: string;
   name: string;
@@ -45,7 +47,7 @@ export interface WorkflowTask {
 // Enhanced types for collaborative wizard
 export interface WorkflowUpdate {
   id: string;
-  action: 'add' | 'modify' | 'remove';
+  action: "add" | "modify" | "remove";
   description: string;
   affectedSteps: string[];
   timestamp: Date;
@@ -53,14 +55,17 @@ export interface WorkflowUpdate {
 
 export interface ChatMessage {
   id: string;
-  sender: 'user' | 'agent';
+  sender: "user" | "agent";
   content: string;
   timestamp: Date;
   workflowUpdates?: WorkflowUpdate[];
 }
 
 export interface EnhancedWorkflow extends WorkflowTask {
-  connectionStatus: 'requires_connection' | 'partially_connected' | 'fully_connected';
+  connectionStatus:
+    | "requires_connection"
+    | "partially_connected"
+    | "fully_connected";
   requiredProviders: string[];
   lastUpdated: Date;
   changeHighlight?: boolean;
@@ -70,15 +75,14 @@ export interface ProviderCard {
   id: string;
   name: string;
   logo: string;
+  oauthUrl: string;
   category: string; // 'email', 'calendar', 'accounting', etc.
-  connectionStatus: 'disconnected' | 'connecting' | 'connected';
+  connectionStatus: "disconnected" | "connecting" | "connected";
   accountInfo?: {
     email?: string;
     accountName?: string;
   };
   requiredScopes: string[];
-  isExplicitlyMentioned: boolean;
-  capabilities: string[];
 }
 
 export interface Integration {
@@ -126,12 +130,13 @@ export interface HiringWizardData {
 
 // New collaborative wizard data structure
 export interface CollaborativeWizardData {
+  executionId?: string; // Added to track graph creator execution
   jobDescription: string;
   chatHistory: ChatMessage[];
   enhancedWorkflows: EnhancedWorkflow[];
   availableProviders: ProviderCard[];
   connectedProviders: ProviderCard[];
-  phase: 'job_description' | 'collaboration' | 'completion';
+  phase: "job_description" | "workflows" | "connect" | "ready" | "completed"; // Updated: changed "mapping" to "connect"
   canComplete: boolean;
   notifications: NotificationSettings;
   requireApproval: boolean;
@@ -139,15 +144,42 @@ export interface CollaborativeWizardData {
   pinToDashboard: boolean;
 }
 
-// WebSocket message types for wizard collaboration
-export interface WizardWebSocketMessage {
-  type: 'workflow_update' | 'provider_connected' | 'chat_message' | 'completion_check' | 'job_analysis';
-  payload: {
-    workflowUpdates?: WorkflowUpdate[];
-    connectedProvider?: ProviderCard;
-    chatMessage?: ChatMessage;
-    availableProviders?: ProviderCard[];
-    enhancedWorkflows?: EnhancedWorkflow[];
-    canComplete?: boolean;
+export interface EventMessage {
+  type: "event";
+  timestamp: string;
+  event: Event;
+}
+
+export interface ErrorMessage {
+  type: "error";
+  timestamp: string;
+  data: {
+    message: string;
+    code: string;
   };
 }
+
+export interface StatusUpdateMessage {
+  type: "status_update";
+  timestamp: string;
+  data: {
+    status: string;
+    details: Record<string, unknown>;
+  };
+}
+
+export interface NotificationMessage {
+  type: "notification";
+  timestamp: string;
+  data: {
+    title: string;
+    message: string;
+    priority: "low" | "medium" | "high";
+  };
+}
+
+export type WebsocketMessage =
+  | EventMessage
+  | ErrorMessage
+  | StatusUpdateMessage
+  | NotificationMessage;

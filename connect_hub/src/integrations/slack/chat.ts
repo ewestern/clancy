@@ -1,5 +1,11 @@
 import { Type, Static } from "@sinclair/typebox";
-import { ExecutionContext, Capability, CapabilityMeta, CapabilityRisk } from "../../providers/types.js";
+import {
+  ExecutionContext,
+  Capability,
+  CapabilityMeta,
+  CapabilityRisk,
+} from "../../providers/types.js";
+import { OwnershipScope } from "../../models/shared.js";
 import { WebClient } from "@slack/web-api";
 
 // ---------------------------------------------------------------------------
@@ -8,7 +14,7 @@ import { WebClient } from "@slack/web-api";
 
 export function createSlackClient(ctx: ExecutionContext): WebClient {
   const accessToken = ctx.tokenPayload?.access_token;
-  if (!accessToken || typeof accessToken !== 'string') {
+  if (!accessToken || typeof accessToken !== "string") {
     throw new Error("Slack access token is missing from execution context");
   }
 
@@ -61,7 +67,7 @@ export async function slackChatPost(
       message: response.message,
     };
   } catch (error: any) {
-    if (error.code === 'slack_webapi_rate_limited') {
+    if (error.code === "slack_webapi_rate_limited") {
       const retryAfter = error.retryAfter || 60;
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
@@ -79,7 +85,9 @@ export const chatUpdateParamsSchema = Type.Object({
   text: Type.Optional(Type.String()),
   blocks: Type.Optional(Type.Array(Type.Any())),
   attachments: Type.Optional(Type.Array(Type.Any())),
-  parse: Type.Optional(Type.Union([Type.Literal("full"), Type.Literal("none")])),
+  parse: Type.Optional(
+    Type.Union([Type.Literal("full"), Type.Literal("none")]),
+  ),
   link_names: Type.Optional(Type.Boolean()),
   file_ids: Type.Optional(Type.Array(Type.String())),
 });
@@ -111,7 +119,8 @@ export async function slackChatUpdate(
     if (params.blocks) updateArgs.blocks = params.blocks;
     if (params.attachments) updateArgs.attachments = params.attachments;
     if (params.parse) updateArgs.parse = params.parse;
-    if (params.link_names !== undefined) updateArgs.link_names = params.link_names;
+    if (params.link_names !== undefined)
+      updateArgs.link_names = params.link_names;
     if (params.file_ids) updateArgs.file_ids = params.file_ids;
 
     const response = await client.chat.update(updateArgs);
@@ -128,7 +137,7 @@ export async function slackChatUpdate(
       message: response.message,
     };
   } catch (error: any) {
-    if (error.code === 'slack_webapi_rate_limited') {
+    if (error.code === "slack_webapi_rate_limited") {
       const retryAfter = error.retryAfter || 60;
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
@@ -146,7 +155,9 @@ export const chatScheduleMessageParamsSchema = Type.Object({
   text: Type.Optional(Type.String()),
   blocks: Type.Optional(Type.Array(Type.Any())),
   attachments: Type.Optional(Type.Array(Type.Any())),
-  parse: Type.Optional(Type.Union([Type.Literal("full"), Type.Literal("none")])),
+  parse: Type.Optional(
+    Type.Union([Type.Literal("full"), Type.Literal("none")]),
+  ),
   link_names: Type.Optional(Type.Boolean()),
   unfurl_links: Type.Optional(Type.Boolean()),
   unfurl_media: Type.Optional(Type.Boolean()),
@@ -161,8 +172,12 @@ export const chatScheduleMessageResultSchema = Type.Object({
   message: Type.Optional(Type.Any()),
 });
 
-export type SlackChatScheduleMessageParams = Static<typeof chatScheduleMessageParamsSchema>;
-export type SlackChatScheduleMessageResult = Static<typeof chatScheduleMessageResultSchema>;
+export type SlackChatScheduleMessageParams = Static<
+  typeof chatScheduleMessageParamsSchema
+>;
+export type SlackChatScheduleMessageResult = Static<
+  typeof chatScheduleMessageResultSchema
+>;
 
 export async function slackChatScheduleMessage(
   params: SlackChatScheduleMessageParams,
@@ -180,9 +195,12 @@ export async function slackChatScheduleMessage(
     if (params.blocks) scheduleArgs.blocks = params.blocks;
     if (params.attachments) scheduleArgs.attachments = params.attachments;
     if (params.parse) scheduleArgs.parse = params.parse;
-    if (params.link_names !== undefined) scheduleArgs.link_names = params.link_names;
-    if (params.unfurl_links !== undefined) scheduleArgs.unfurl_links = params.unfurl_links;
-    if (params.unfurl_media !== undefined) scheduleArgs.unfurl_media = params.unfurl_media;
+    if (params.link_names !== undefined)
+      scheduleArgs.link_names = params.link_names;
+    if (params.unfurl_links !== undefined)
+      scheduleArgs.unfurl_links = params.unfurl_links;
+    if (params.unfurl_media !== undefined)
+      scheduleArgs.unfurl_media = params.unfurl_media;
     if (params.thread_ts) scheduleArgs.thread_ts = params.thread_ts;
 
     const response = await client.chat.scheduleMessage(scheduleArgs);
@@ -199,7 +217,7 @@ export async function slackChatScheduleMessage(
       message: response.message,
     };
   } catch (error: any) {
-    if (error.code === 'slack_webapi_rate_limited') {
+    if (error.code === "slack_webapi_rate_limited") {
       const retryAfter = error.retryAfter || 60;
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
@@ -211,7 +229,10 @@ export async function slackChatScheduleMessage(
 // Capability Factory Functions
 // ---------------------------------------------------------------------------
 
-export function createChatPostCapability(): Capability<SlackChatPostParams, SlackChatPostResult> {
+export function createChatPostCapability(): Capability<
+  SlackChatPostParams,
+  SlackChatPostResult
+> {
   const meta: CapabilityMeta = {
     id: "chat.post",
     displayName: "Post Message",
@@ -220,6 +241,7 @@ export function createChatPostCapability(): Capability<SlackChatPostParams, Slac
     paramsSchema: chatPostParamsSchema,
     resultSchema: chatPostResultSchema,
     requiredScopes: ["chat:write"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.HIGH,
   };
 
@@ -229,7 +251,10 @@ export function createChatPostCapability(): Capability<SlackChatPostParams, Slac
   };
 }
 
-export function createChatUpdateCapability(): Capability<SlackChatUpdateParams, SlackChatUpdateResult> {
+export function createChatUpdateCapability(): Capability<
+  SlackChatUpdateParams,
+  SlackChatUpdateResult
+> {
   const meta: CapabilityMeta = {
     id: "chat.update",
     displayName: "Update Message",
@@ -238,6 +263,7 @@ export function createChatUpdateCapability(): Capability<SlackChatUpdateParams, 
     paramsSchema: chatUpdateParamsSchema,
     resultSchema: chatUpdateResultSchema,
     requiredScopes: ["chat:write"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.MEDIUM,
   };
 
@@ -247,7 +273,10 @@ export function createChatUpdateCapability(): Capability<SlackChatUpdateParams, 
   };
 }
 
-export function createChatScheduleMessageCapability(): Capability<SlackChatScheduleMessageParams, SlackChatScheduleMessageResult> {
+export function createChatScheduleMessageCapability(): Capability<
+  SlackChatScheduleMessageParams,
+  SlackChatScheduleMessageResult
+> {
   const meta: CapabilityMeta = {
     id: "chat.scheduleMessage",
     displayName: "Schedule Message",
@@ -256,6 +285,7 @@ export function createChatScheduleMessageCapability(): Capability<SlackChatSched
     paramsSchema: chatScheduleMessageParamsSchema,
     resultSchema: chatScheduleMessageResultSchema,
     requiredScopes: ["chat:write"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.HIGH,
   };
 
@@ -263,4 +293,4 @@ export function createChatScheduleMessageCapability(): Capability<SlackChatSched
     meta,
     execute: slackChatScheduleMessage,
   };
-} 
+}

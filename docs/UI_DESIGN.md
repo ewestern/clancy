@@ -33,63 +33,106 @@ Clancy is a platform for hiring AI employees. This document describes a frontend
 
 ---
 
-## 2 "Hire an AI Employee" wizard (now adaptive & iterative)
+## 2 "Hire an AI Employee" wizard (collaborative & iterative)
 
-_The wizard remains a full-width modal (<960 px) but steps can **repeat** or **fork** based on Graph-Creator prompts.  A persistent **progress meter** shows overall completeness._
+_The wizard is a full-width modal (max-w-7xl) with a **two-pane layout** that adapts to different phases. The left pane maintains persistent chat with the AI assistant, while the right pane shows phase-specific content._
 
-### Step 1 · Job description (unchanged)
-* Paste box + verb cloud side panel.
-* On "Continue" the backend _(Graph Creator)_ analyses JD and either:
-  * jumps directly to **Tool Choices** if information is sufficient, or
-  * returns one or more **Clarification Prompts** (see below).
+### Overall Structure
+* **Full-screen modal** with rounded corners and shadow
+* **Two-pane layout:**
+  * **Left pane (1/3 width):** Chat interface with AI assistant for questions and feedback
+  * **Right pane (2/3 width):** Dynamic content based on current phase
+* **Header:** Title, description, and close button
+* **Footer:** Connection status and completion button
 
-### Step 2 · Clarification Prompts  *(_iterates until gaps resolved_)*
-Two prompt modes, rendered by the same **Clarification Panel** component that slides in from the right 30 % of modal width.
+### Phase 1 · Job Description
+* **Single-pane layout** for initial input
+* Large textarea with placeholder examples
+* Character count indicator (minimum 20 characters)
+* **"Generate Workflows"** button with loading state
+* On submit, transitions to workflows phase and initiates Graph Creator analysis
 
-| Prompt kind | UI widget | Example |
-|-------------|-----------|---------|
-| `options`   | Radio/Checkbox card group, one per option, with description tooltip. <br/>Optional "Why we ask" link shows reasoning note. | "Select the CRM your company uses" ‹Salesforce› ‹HubSpot› ‹Zoho› ‹Other› |
-| `questions` | Stacked textareas, each labelled question; supports markdown.  Placeholder shows example answer. | "Describe the approval chain for invoices." |
+### Phase 2 · Workflows
+* **Two-pane layout** begins here
+* **Left pane:** Chat interface appears for user-AI collaboration
+* **Right pane:** Shows workflow analysis results
+  * **Loading state:** Progress indicator with animated icons and tips
+  * **Results state:** Simple workflow cards showing:
+    * Workflow description
+    * Numbered steps list
+    * Activation conditions
+* Graph Creator analyzes job description and returns structured workflows
 
-*Buttons:* **Continue** (validates schema) · **Skip** (saves `null`/default) · **Cancel hiring**.
-*After submit* the panel closes → JD parse re-runs → either new prompts are queued or wizard advances to Tool Choices.
+### Phase 3 · Connect
+* **Left pane:** Continued chat for refinement and questions
+* **Right pane:** Agent overview display
+  * **Provider cards** generated from OAuth audit results:
+    * Provider name and icon
+    * Connection status (disconnected/connecting/connected)
+    * **"Connect"** button opens OAuth flow in new tab
+  * **Agent cards** with:
+    * Agent description (human-readable)
+    * Visual flow diagram instead of technical capabilities
+    * Provider logos representing integrations needed
+  * **Unsatisfied workflows** (if any) with explanations
+* **Auto-triggers OAuth audit:** When agents are received, system calls `/oauth/audit` to identify required connections
+* Transitions to ready phase when all providers are connected.
 
-> **Progress meter** (top of modal): "Information completeness • ███░░ 60 %".  Updates after each iteration.
+### Phase 4 · Ready
+* **Left pane:** Chat continues for final adjustments
+* **Right pane:** 
+  * **Final Inputs:** Provide a name for the AI Employee
+  * **Agent Cards:** Continue displaying Agent Cards
+  * **Completion logic:** Can proceed when name is provided.
 
-### Step 3 · Tool Choices  *(formerly Step 2)*
-* Same category-driven cards but now **pre-filled** with any selections made in Clarification Prompts.
-* A subtle badge "auto-suggested" marks choices recommended by the LLM.
-* Primary button renamed **"Next → Workflow"**.
+### Interactive Elements
+* **Chat interface:** 
+  * Message bubbles (user vs agent styling)
+  * Input field with send button
+  * Processing indicator during AI responses
+  * Handles Graph Creator resume events for iterative refinement
 
-### Step 4 · Proposed Workflow  *(formerly Step 3)*
-* Unchanged card stack.
-* If user clicks "Back", they may re-enter Tool Choices **or** Clarification Prompts depending on what changed.
+* **Provider connections:**
+  * OAuth flows open in new tabs.
+  * Real-time connection status updates
+  * Account information display after successful connection
 
-### Step 5 · Permissions & Integrations  *(formerly Step 4)*
-### Step 6 · Communication & Oversight  *(formerly Step 5)*
-### Step 7 · Review & Hire  *(formerly Step 6)*
+* **Footer status:**
+  * Shows number of connected providers
+  * **"🎉 Hire AI Employee"** button (enabled when requirements met)
 
-_The numeric labels are for narrative only; the UI displays dynamic breadcrumbs: "Job Description → Clarifications (2) → Tools → Workflow → ..."._
+### Backend Integration
+* **Graph Creator events:** Handles `AiEmployeeStateUpdate` events with different phases
+* **OAuth audit:** Automatic capability analysis for required provider connections
+* **WebSocket communication:** Real-time updates for connection status and AI responses
+* **Resume capability:** Users can provide feedback to refine agent configuration
+
+### Progress Flow
+1. **Job Description** → User describes role requirements
+2. **Workflows** → AI analyzes and breaks down into automated processes  
+3. **Connect** → Shows agent flow diagrams + identifies required integrations
+4. **Ready** → User connects required providers via OAuth
+5. **Complete** → AI employee is hired and activated
+
+_The wizard emphasizes **human-AI collaboration** through persistent chat, **visual clarity** through flow diagrams instead of technical jargon, and **seamless integration setup** through automated OAuth audit and connection flows._
 
 ---
 
-### New Shared Component · Clarification Panel
-* **Open state:** overlays wizard content with 30 % slide-in; darkens rest of modal.
-* **Header:** icon (light-bulb for questions, sliders for options) + title ("Help us fill in the blanks").
-* **Body:** dynamically renders form controls from `inputSchema`.
-* **Footer buttons:** _Skip_ · _Cancel_ (secondary)  _Continue_ (primary).
-* **Validation:** client-side JSON-Schema check; errors inline under fields.
+### Wizard Component Architecture
+* **HiringWizard** - Main modal container with phase management
+* **ChatInterface** - Persistent left-pane chat with AI assistant
+* **SimpleWorkflowDisplay** - Shows initial workflow breakdown cards
+* **AgentConnectDisplay** - Visual agent flow diagrams with provider integration
+* **PhaseProgressIndicator** - Loading states with contextual tips
+* **ProviderCards** - OAuth connection interface for required integrations
 
-When the wizard reopens the panel (next iteration) previously answered prompts show check-marks; unanswered prompt count appears in breadcrumb ("Clarifications (1 left)").
+### Integration with Backend Systems
+* **Graph Creator:** Drives wizard progression through WebSocket events
+* **Connect Hub:** OAuth audit and provider connection management  
+* **Agents Core:** Final AI employee deployment and activation
+* **Real-time updates:** WebSocket communication for seamless user experience
 
 ---
-
-### Impact on Chat & Approval Drawer
-* During later HITL pauses (after employee deployed) the drawer reuses the **Clarification Panel** component so users see the *same* UX pattern for approvals and refinements.
-
----
-
-_No other dashboard sections change.  Wizard logic is now driven by Graph-Creator responses, making the UI flexible for future skill prompts without redesign._
 
 ## 3 AI Employee Profile Page
 

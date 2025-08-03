@@ -69,4 +69,3 @@ resource "aws_s3_bucket_public_access_block" "lb_logs_pab" {
   restrict_public_buckets = true
 }
 
-data "aws_caller_identity" "current" {}

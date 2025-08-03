@@ -15,12 +15,18 @@
 
 import * as runtime from '../runtime';
 import type {
+  OauthAuditPost200ResponseInner,
+  OauthAuditPostRequest,
   OauthCallbackProviderGet200Response,
   OauthCallbackProviderGet400Response,
   OauthLaunchProviderGet302Response,
   OauthLaunchProviderGet400Response,
 } from '../models/index';
 import {
+    OauthAuditPost200ResponseInnerFromJSON,
+    OauthAuditPost200ResponseInnerToJSON,
+    OauthAuditPostRequestFromJSON,
+    OauthAuditPostRequestToJSON,
     OauthCallbackProviderGet200ResponseFromJSON,
     OauthCallbackProviderGet200ResponseToJSON,
     OauthCallbackProviderGet400ResponseFromJSON,
@@ -30,6 +36,11 @@ import {
     OauthLaunchProviderGet400ResponseFromJSON,
     OauthLaunchProviderGet400ResponseToJSON,
 } from '../models/index';
+
+export interface OauthAuditPostOperationRequest {
+    orgId: string;
+    oauthAuditPostRequest: OauthAuditPostRequest;
+}
 
 export interface OauthCallbackProviderGetRequest {
     code: string;
@@ -50,6 +61,51 @@ export interface OauthLaunchProviderGetRequest {
  * 
  */
 export class OAuthApi extends runtime.BaseAPI {
+
+    /**
+     */
+    async oauthAuditPostRaw(requestParameters: OauthAuditPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<OauthAuditPost200ResponseInner>>> {
+        if (requestParameters['orgId'] == null) {
+            throw new runtime.RequiredError(
+                'orgId',
+                'Required parameter "orgId" was null or undefined when calling oauthAuditPost().'
+            );
+        }
+
+        if (requestParameters['oauthAuditPostRequest'] == null) {
+            throw new runtime.RequiredError(
+                'oauthAuditPostRequest',
+                'Required parameter "oauthAuditPostRequest" was null or undefined when calling oauthAuditPost().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['orgId'] != null) {
+            queryParameters['orgId'] = requestParameters['orgId'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        const response = await this.request({
+            path: `/oauth/audit`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: OauthAuditPostRequestToJSON(requestParameters['oauthAuditPostRequest']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(OauthAuditPost200ResponseInnerFromJSON));
+    }
+
+    /**
+     */
+    async oauthAuditPost(requestParameters: OauthAuditPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<OauthAuditPost200ResponseInner>> {
+        const response = await this.oauthAuditPostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Handle OAuth callback from provider

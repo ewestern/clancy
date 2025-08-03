@@ -12,7 +12,7 @@ import {
   Trigger,
 } from "../providers/types.js";
 
-import { ProviderAuth, ProviderKind } from "../models/capabilities.js";
+import { ProviderAuth, ProviderKind } from "../models/providers.js";
 import { WebClient } from "@slack/web-api";
 import crypto from "crypto";
 import { Database } from "../plugins/database.js";
@@ -39,21 +39,19 @@ import {
   createUsersLookupByEmailCapability,
 } from "./slack/users.js";
 
-import {
-  createFilesUploadCapability,
-} from "./slack/files.js";
+import { createFilesUploadCapability } from "./slack/files.js";
 
-import {
-  createReactionAddCapability,
-} from "./slack/reactions.js";
-import { Static, Type } from "@sinclair/typebox";
+import { createReactionAddCapability } from "./slack/reactions.js";
+import { Type, Static } from "@sinclair/typebox";
 import { Nullable, UnionOneOf } from "../models/shared.js";
-import { FastifyRequestTypeBox, FastifyReplyTypeBox } from "../types/fastify.js";
+import {
+  FastifyRequestTypeBox,
+  FastifyReplyTypeBox,
+} from "../types/fastify.js";
 import { TriggerRegistration } from "../models/triggers.js";
 import { connections, triggerRegistrations } from "../database/schema.js";
 import { and, eq, sql } from "drizzle-orm";
 const __dirname = import.meta.dirname;
-
 
 const WebhookEventSchema = Type.Object({
   token: Type.String(),
@@ -69,7 +67,7 @@ const WebhookEventSchema = Type.Object({
       enterprise_id: Type.Optional(Type.String()),
       team_id: Type.Optional(Type.String()),
       user_id: Type.Optional(Type.String()),
-    })
+    }),
   ),
   event_context: Type.String(),
   event_id: Type.String(),
@@ -86,84 +84,148 @@ const WebhookEndpoint = {
   tags: ["webhooks"],
   description: "Slack Events API callback",
   body: UnionOneOf([WebhookEventSchema, WebhookChallengeSchema]),
-}
+};
 
 export type WebhookEvent = Static<typeof WebhookEventSchema>;
 export type WebhookChallenge = Static<typeof WebhookChallengeSchema>;
 
-
-
-async function validateWebhook(request: FastifyRequestTypeBox<typeof WebhookEndpoint>) {
-  const providerMetadata = await request.server.getProviderMetadata("slack");
-  return verifySlackRequest(request.headers, request.rawBody as string, providerMetadata?.signingSecret);
-  //if (!verified) {
-  //  reply.status(401).send({
-  //    status: "unauthorized",
-  //  });
-  //  return;
-  //}
-  //switch (request.body.type) {
-  //  case "url_verification":
-  //    reply.status(200).send({
-  //      challenge: request.body.challenge,
-  //    });
-  //    break;
-  //  default:
-  //    reply.status(200).send({
-  //      status: "ok",
-  //    });
-  //    break;
-  //}
+async function validateWebhook(
+  request: FastifyRequestTypeBox<typeof WebhookEndpoint>,
+) {
+  const providerSecrets = await request.server.getProviderSecrets("slack");
+  return verifySlackRequest(
+    request.headers,
+    request.rawBody as string,
+    providerSecrets?.signingSecret,
+  );
 }
+async function replyHook(
+  request: FastifyRequestTypeBox<typeof WebhookEndpoint>,
+  reply: FastifyReplyTypeBox<typeof WebhookEndpoint>,
+) {
+  if (request.body.type === "url_verification") {
+    reply.status(200).send({
+      challenge: request.body.challenge,
+    });
+  }
+}
+// Parameter schema for message.created trigger
+const messageCreatedParamsSchema = Type.Object({
+  channelFilter: Type.Optional(
+    Type.Object({
+      channels: Type.Optional(
+        Type.Array(Type.String(), {
+          description:
+            "List of channel IDs to monitor. If not specified, monitors all channels.",
+        }),
+      ),
+      excludeChannels: Type.Optional(
+        Type.Array(Type.String(), {
+          description: "List of channel IDs to exclude from monitoring.",
+        }),
+      ),
+    }),
+  ),
+  messageFilter: Type.Optional(
+    Type.Object({
+      keywords: Type.Optional(
+        Type.Array(Type.String(), {
+          description:
+            "Keywords that must be present in the message to trigger the event.",
+        }),
+      ),
+      fromUsers: Type.Optional(
+        Type.Array(Type.String(), {
+          description:
+            "List of user IDs whose messages should trigger the event.",
+        }),
+      ),
+      excludeUsers: Type.Optional(
+        Type.Array(Type.String(), {
+          description: "List of user IDs whose messages should be ignored.",
+        }),
+      ),
+    }),
+  ),
+});
+
 // need to support multiple triggrs per webhook
-const triggers = [{
-      id: "message.created",
-      description: "A message was created",
-      eventSatisfies: (event: WebhookEvent) => {
-        return event.event.type == "message";
-      },
-      getTriggerRegistrations: async (db: Database, triggerId: string, event: WebhookEvent) => {
-        const authorization = event.authorizations[0];
-        const registrations = await db.select({
+const triggers: Trigger<WebhookEvent>[] = [
+  {
+    id: "message.created",
+    description: "A message was created",
+    paramsSchema: messageCreatedParamsSchema,
+    eventSatisfies: (event: WebhookEvent) => {
+      return event.event.type == "message";
+    },
+    getTriggerRegistrations: async (
+      db: Database,
+      triggerId: string,
+      event: WebhookEvent,
+    ) => {
+      const authorization = event.authorizations[0];
+      if (!authorization) {
+        return [];
+      }
+      const registrations = await db
+        .select({
           triggerRegistration: triggerRegistrations,
           connection: connections,
         })
         .from(triggerRegistrations)
-        .innerJoin(connections, eq(triggerRegistrations.connectionId, connections.id))
-        .where(and(eq(triggerRegistrations.triggerId, triggerId), eq(connections.providerId, "slack"), eq(sql`${connections.externalAccountMetadata}->>'team'->>'id'`, authorization.team_id)));
-        return registrations.map(
-          (r) => ({
-            id: r.triggerRegistration.id,
-            agentId: r.triggerRegistration.agentId,
-            connectionId: r.triggerRegistration.connectionId!,
-            connection: {
-              id: r.connection.id,
-              orgId: r.connection.orgId,
-              providerId: r.connection.providerId,
-              externalAccountMetadata: r.connection.externalAccountMetadata,
-              status: r.connection.status,
-            },
-            triggerId: r.triggerRegistration.triggerId,
-            metadata: r.triggerRegistration.metadata,
-            expiresAt: r.triggerRegistration.expiresAt.toISOString(),
-            createdAt: r.triggerRegistration.createdAt.toISOString(),
-            updatedAt: r.triggerRegistration.updatedAt?.toISOString(),
-          })
+        .innerJoin(
+          connections,
+          eq(triggerRegistrations.connectionId, connections.id),
+        )
+        .where(
+          and(
+            eq(triggerRegistrations.triggerId, triggerId),
+            eq(connections.providerId, "slack"),
+            eq(
+              sql`${connections.externalAccountMetadata}->>'team'->>'id'`,
+              authorization.team_id,
+            ),
+          ),
         );
-      },
-      createEvents: async (event: WebhookEvent, triggerRegistration: TriggerRegistration) => {
-        return [{
+      return registrations.map((r) => ({
+        id: r.triggerRegistration.id,
+        agentId: r.triggerRegistration.agentId,
+        providerId: r.triggerRegistration.providerId,
+        connectionId: r.triggerRegistration.connectionId!,
+        connection: {
+          id: r.connection.id,
+          orgId: r.connection.orgId,
+          providerId: r.connection.providerId,
+          externalAccountMetadata: r.connection.externalAccountMetadata,
+          status: r.connection.status,
+        },
+        triggerId: r.triggerRegistration.triggerId,
+        params: r.triggerRegistration.params,
+        expiresAt: r.triggerRegistration.expiresAt.toISOString(),
+        createdAt: r.triggerRegistration.createdAt.toISOString(),
+        updatedAt: r.triggerRegistration.updatedAt?.toISOString(),
+      }));
+    },
+    createEvents: async (
+      event: WebhookEvent,
+      triggerRegistration: TriggerRegistration,
+    ) => {
+      return [
+        {
           event: event,
           partitionKey: triggerRegistration.id!,
-        }];
-      },
-    }]
+        },
+      ];
+    },
+  },
+];
 
 const webhooks = [
   {
     eventSchema: WebhookEndpoint,
     triggers: triggers,
     validateRequest: validateWebhook,
+    replyHook: replyHook,
   },
 ];
 
@@ -233,28 +295,12 @@ export function verifySlackRequest(
   return crypto.timingSafeEqual(expectedBuffer, providedBuffer);
 }
 
-
-interface ExternalAccountMetadata {
-  bot_user_id: string;
-  app_id: string;
-  team: {
-    id: string;
-    name: string;
-  };
-  enterprise: {
-    id: string;
-  } | null;
-  authed_user: {
-    id: string;
-  };
-}
-
-export class SlackProvider implements ProviderRuntime<typeof WebhookEndpoint, WebhookEvent> {
+export class SlackProvider
+  implements ProviderRuntime<typeof WebhookEndpoint, WebhookEvent>
+{
   private readonly dispatchTable = new Map<string, Capability<any, any>>();
   public readonly scopeMapping: Record<string, string[]>;
-  links = [
-    "https://api.slack.com/apps/A095CEPRBGW/general"
-  ]
+  links = ["https://api.slack.com/apps/A095CEPRBGW/general"];
 
   public readonly metadata = {
     id: "slack",
@@ -297,7 +343,7 @@ export class SlackProvider implements ProviderRuntime<typeof WebhookEndpoint, We
         if (!this.scopeMapping[scope]) {
           this.scopeMapping[capabilityId] = [];
         }
-        this.scopeMapping[capabilityId].push(scope);
+        this.scopeMapping[capabilityId]!.push(scope);
       }
     }
   }
@@ -315,6 +361,12 @@ export class SlackProvider implements ProviderRuntime<typeof WebhookEndpoint, We
   listCapabilities(): CapabilityMeta[] {
     return Array.from(this.dispatchTable.values()).map((c) => c.meta);
   }
+  getTrigger(triggerId: string): Trigger<WebhookEvent> {
+    return triggers.find((t) => t.id === triggerId)!;
+  }
+  listTriggers(): Trigger<WebhookEvent>[] {
+    return triggers;
+  }
 
   // ---------------------------------------------------------------------------
   // OAuth Implementation
@@ -323,7 +375,10 @@ export class SlackProvider implements ProviderRuntime<typeof WebhookEndpoint, We
   generateAuthUrl(params: OAuthAuthUrlParams, ctx: OAuthContext): string {
     // Build Slack OAuth 2.0 authorization URL
     const authUrl = new URL("https://slack.com/oauth/v2/authorize");
-    authUrl.searchParams.append("client_id", ctx.clientId);
+    authUrl.searchParams.append(
+      "client_id",
+      ctx.providerSecrets.clientId as string,
+    );
     authUrl.searchParams.append("scope", params.scopes.join(","));
     authUrl.searchParams.append("state", params.state);
     authUrl.searchParams.append("redirect_uri", ctx.redirectUri);
@@ -335,7 +390,9 @@ export class SlackProvider implements ProviderRuntime<typeof WebhookEndpoint, We
     ctx: OAuthContext,
   ): Promise<CallbackResult> {
     if (callbackParams.error) {
-      throw new Error(`Slack OAuth error: ${callbackParams.error_description || callbackParams.error}`);
+      throw new Error(
+        `Slack OAuth error: ${callbackParams.error_description || callbackParams.error}`,
+      );
     }
 
     if (!callbackParams.code) {
@@ -349,8 +406,8 @@ export class SlackProvider implements ProviderRuntime<typeof WebhookEndpoint, We
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        client_id: ctx.clientId,
-        client_secret: ctx.clientSecret,
+        client_id: ctx.providerSecrets.clientId as string,
+        client_secret: ctx.providerSecrets.clientSecret as string,
         code: callbackParams.code,
         redirect_uri: ctx.redirectUri,
       }),
@@ -358,11 +415,13 @@ export class SlackProvider implements ProviderRuntime<typeof WebhookEndpoint, We
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
-      throw new Error(`Slack token exchange failed: ${tokenResponse.status} ${errorText}`);
+      throw new Error(
+        `Slack token exchange failed: ${tokenResponse.status} ${errorText}`,
+      );
     }
 
     const tokenData = await tokenResponse.json();
-    
+
     if (!tokenData.ok) {
       throw new Error(`Slack token exchange error: ${tokenData.error}`);
     }
@@ -372,7 +431,6 @@ export class SlackProvider implements ProviderRuntime<typeof WebhookEndpoint, We
       access_token: tokenData.access_token,
       token_type: tokenData.token_type || "Bearer",
       scope: tokenData.scope,
-
     };
     const externalAccountMetadata = {
       bot_user_id: tokenData.bot_user_id,
@@ -398,13 +456,15 @@ export class SlackProvider implements ProviderRuntime<typeof WebhookEndpoint, We
   ): Promise<Record<string, unknown>> {
     // Slack OAuth v2 typically uses long-lived tokens that don't expire
     // However, if refresh tokens are used, implement here
-    throw new Error("Slack OAuth v2 tokens typically don't require refresh. Long-lived tokens are used.");
+    throw new Error(
+      "Slack OAuth v2 tokens typically don't require refresh. Long-lived tokens are used.",
+    );
   }
 
   async isTokenValid(accessToken: string): Promise<boolean> {
     // Test the token by making a simple API call using the SDK
     try {
-      if (!accessToken || typeof accessToken !== 'string') {
+      if (!accessToken || typeof accessToken !== "string") {
         return false;
       }
       const client = new WebClient(accessToken);

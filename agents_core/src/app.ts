@@ -15,27 +15,13 @@ import { registerDatabase } from "./plugins/database.js";
 import { registerAuth } from "./plugins/auth.js";
 import { registerEventBus } from "./plugins/eventBus.js";
 
-
-import { clerkPlugin } from '@clerk/fastify'
+import { clerkPlugin } from "@clerk/fastify";
 import { registerRoutes } from "./routes/index.js";
+import { WebSocketService } from "./services/websocketService.js";
 
 export async function createApp() {
-  // Get environment variables
-  const nodeEnv = process.env.NODE_ENV || "development";
-  const logLevel = process.env.LOG_LEVEL || "info";
-
   const app = Fastify({
-    logger: {
-      level: logLevel,
-      ...(nodeEnv === "development" && {
-        transport: {
-          target: "pino-pretty",
-          options: {
-            colorize: true,
-          },
-        },
-      }),
-    },
+    logger: true,
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   // Security plugins
@@ -119,7 +105,12 @@ export async function createApp() {
     secretKey: process.env.CLERK_SECRET_KEY!,
   });
 
+  // Initialize and register WebSocket service
+  const wsService = new WebSocketService();
+  app.decorate("wsService", wsService);
+
   // Register plugins
+
   await app.register(registerDatabase);
   await app.register(registerAuth);
   await app.register(registerEventBus);
@@ -176,7 +167,6 @@ export async function createApp() {
   await registerRoutes(app);
 
   return app;
-
 }
 
 export default createApp;

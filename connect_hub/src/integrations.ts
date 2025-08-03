@@ -3,6 +3,7 @@ import { SlackProvider } from "./integrations/slack.js";
 import { ProviderRuntime } from "./providers/types.js";
 import { QuickBooksProvider } from "./integrations/quickbooks.js";
 import { InternalProvider } from "./integrations/internal.js";
+import { MicrosoftProvider } from "./integrations/microsoft.js";
 
 // ---------------------------------------------------------------------------
 // Simple in-memory registry that holds one instance per provider.
@@ -13,6 +14,7 @@ const providers: Record<string, ProviderRuntime<any, any>> = {
   slack: new SlackProvider(),
   google: new GoogleProvider(),
   quickbooks: new QuickBooksProvider(),
+  microsoft: new MicrosoftProvider(),
 };
 
 export const registry = {

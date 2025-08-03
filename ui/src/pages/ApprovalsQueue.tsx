@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Clock, Check, X, MessageSquare, AlertTriangle } from "lucide-react";
-import { ApprovalsApi, ApprovalRequest, ApprovalRequestStatusEnum, Configuration } from "@clancy/agents_core_sdk";
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import {
+  ApprovalsApi,
+  ApprovalRequest,
+  ApprovalRequestStatusEnum,
+  Configuration,
+} from "@ewestern/agents_core_sdk";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 //import updateLocale from 'dayjs/plugin/updateLocale';
 
 dayjs.extend(relativeTime);
@@ -29,7 +34,7 @@ const ApprovalsQueue: React.FC = () => {
       try {
         const response = await client.v1ApprovalsGet({
           status: ApprovalRequestStatusEnum.Pending,
-        })
+        });
         setRequests(response);
       } catch (error) {
         console.error("Failed to load approval requests:", error);

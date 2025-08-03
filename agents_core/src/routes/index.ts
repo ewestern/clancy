@@ -1,16 +1,16 @@
 import { FastifyTypeBox } from "../types/fastify.js";
-import { healthRoutes } from "./health";
-import { agentRoutes } from "./agents";
-import { approvalRoutes } from "./approvals";
-import { triggerRoutes } from "./triggers";
-import { wsRoutes } from "./ws";
-
+import { healthRoutes } from "./health.js";
+import { agentRoutes } from "./agents.js";
+import { approvalRoutes } from "./approvals.js";
+import { webhookRoutes } from "./webhook.js";
+import { websocketRoutes } from "./ws.js";
+import { employeeRoutes } from "./employees.js";
 
 export async function registerRoutes(app: FastifyTypeBox) {
-  console.log("registering routes");
   await app.register(healthRoutes, { prefix: "" });
-  await app.register(triggerRoutes, { prefix: "/v1" });
   await app.register(agentRoutes, { prefix: "/v1" });
+  await app.register(employeeRoutes, { prefix: "/v1" });
   await app.register(approvalRoutes, { prefix: "/v1" });
-  await app.register(wsRoutes, { prefix: "/ws" });
+  await app.register(webhookRoutes, { prefix: "" });
+  await app.register(websocketRoutes, { prefix: "/ws" });
 }

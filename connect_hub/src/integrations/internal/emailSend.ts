@@ -1,9 +1,11 @@
 import { Type, Static } from "@sinclair/typebox";
 import {
+  CapabilityMeta,
+  CapabilityRisk,
   Capability,
   ExecutionContext,
 } from "../../providers/types.js";
-import { CapabilityMeta, CapabilityRisk } from "../../providers/types.js";
+import { OwnershipScope } from "../../models/shared.js";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
 const capabilityId = "email.send";
@@ -90,6 +92,7 @@ export function getEmailSendCapability(): Capability<
     paramsSchema: emailSendParamsSchema,
     resultSchema: emailSendResultSchema,
     requiredScopes: [],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.HIGH,
   };
 

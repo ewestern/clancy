@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { Type } from "@sinclair/typebox";
-import { HealthResponseSchema } from "../models/shared";
+import { HealthResponseSchema } from "../models/shared.js";
 import packageJson from "../../package.json" with { type: "json" };
 import { sql } from "drizzle-orm";
 

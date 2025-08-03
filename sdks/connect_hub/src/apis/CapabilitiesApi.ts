@@ -28,10 +28,6 @@ import {
     ProviderCapabilityToJSON,
 } from '../models/index';
 
-export interface CapabilitiesGetRequest {
-    orgId: string;
-}
-
 export interface CapabilitiesProviderIdCapabilityIdGetRequest {
     orgId: string;
     providerId: string;
@@ -46,19 +42,8 @@ export class CapabilitiesApi extends runtime.BaseAPI {
     /**
      * Returns the catalog of provider capabilities available to the platform.
      */
-    async capabilitiesGetRaw(requestParameters: CapabilitiesGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ProviderCapabilities>>> {
-        if (requestParameters['orgId'] == null) {
-            throw new runtime.RequiredError(
-                'orgId',
-                'Required parameter "orgId" was null or undefined when calling capabilitiesGet().'
-            );
-        }
-
+    async capabilitiesGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ProviderCapabilities>>> {
         const queryParameters: any = {};
-
-        if (requestParameters['orgId'] != null) {
-            queryParameters['orgId'] = requestParameters['orgId'];
-        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -75,8 +60,8 @@ export class CapabilitiesApi extends runtime.BaseAPI {
     /**
      * Returns the catalog of provider capabilities available to the platform.
      */
-    async capabilitiesGet(requestParameters: CapabilitiesGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ProviderCapabilities>> {
-        const response = await this.capabilitiesGetRaw(requestParameters, initOverrides);
+    async capabilitiesGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ProviderCapabilities>> {
+        const response = await this.capabilitiesGetRaw(initOverrides);
         return await response.value();
     }
 

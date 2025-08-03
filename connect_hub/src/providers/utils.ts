@@ -41,9 +41,7 @@ export function prettyFormat(
         TypeGuard.IsSymbol(propSchema) ||
         TypeGuard.IsTuple(propSchema)
       ) {
-        lines.push(
-          `${pad(indent)}- ${title}: ${value}`,
-        );
+        lines.push(`${pad(indent)}- ${title}: ${value}`);
       }
 
       if (TypeGuard.IsUnion(propSchema)) {
@@ -61,7 +59,11 @@ export function prettyFormat(
       if (TypeGuard.IsObject(propSchema) && typeof value === "object") {
         lines.push(`${pad(indent)}- ${title}:`);
         lines.push(
-          prettyFormat(propSchema, value as Record<string, unknown>, indent + 2),
+          prettyFormat(
+            propSchema,
+            value as Record<string, unknown>,
+            indent + 2,
+          ),
         );
       }
 
@@ -69,9 +71,7 @@ export function prettyFormat(
       if (TypeGuard.IsArray(propSchema) && Array.isArray(value)) {
         lines.push(`${pad(indent)}- ${title}:`);
         value.forEach((item, i) =>
-          lines.push(
-            `${pad(indent + 2)}• ${JSON.stringify(item)}`,
-          ),
+          lines.push(`${pad(indent + 2)}• ${JSON.stringify(item)}`),
         );
       }
     }
@@ -79,3 +79,25 @@ export function prettyFormat(
   return lines.join("\n");
 }
 
+/**
+ * Converts a base64 encoded string to a File object.
+ *
+ * @param base64 - The base64 encoded string.
+ * @param contentType - The MIME type of the file.
+ * @param fileName - The name of the file.
+ * @returns A Promise that resolves to a File object.
+ */
+export async function fileFromBase64(
+  base64: string,
+  contentType: string,
+  fileName: string,
+): Promise<File> {
+  const byteCharacters = atob(base64);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  const blob = new Blob([byteArray], { type: contentType });
+  return new File([blob], fileName, { type: contentType });
+}

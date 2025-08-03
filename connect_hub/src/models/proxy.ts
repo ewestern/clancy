@@ -1,4 +1,6 @@
 import { Type } from "@sinclair/typebox";
+import { Ref } from "./shared.js";
+import { OwnershipScopeSchema } from "./capabilities.js";
 
 export const ProxyEndpointSchema = {
   tags: ["Proxy"],
@@ -10,7 +12,11 @@ export const ProxyEndpointSchema = {
   querystring: Type.Object({
     orgId: Type.String(),
   }),
-  body: Type.Any(),
+  body: Type.Object({
+    ownershipScope: Ref(OwnershipScopeSchema),
+    ownerId: Type.String(),
+    params: Type.Any(),
+  }),
   response: {
     200: Type.Any(),
     400: Type.Object({

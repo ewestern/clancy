@@ -1,5 +1,11 @@
 import { Type, Static } from "@sinclair/typebox";
-import { ExecutionContext, Capability, CapabilityMeta, CapabilityRisk } from "../../providers/types.js";
+import {
+  CapabilityMeta,
+  CapabilityRisk,
+  Capability,
+  ExecutionContext,
+} from "../../providers/types.js";
+import { OwnershipScope } from "../../models/shared.js";
 import { createSlackClient } from "./chat.js";
 
 // ---------------------------------------------------------------------------
@@ -42,7 +48,7 @@ export async function slackFilesUpload(
       file: response.file,
     };
   } catch (error: any) {
-    if (error.code === 'slack_webapi_rate_limited') {
+    if (error.code === "slack_webapi_rate_limited") {
       const retryAfter = error.retryAfter || 60;
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
@@ -54,7 +60,10 @@ export async function slackFilesUpload(
 // Capability Factory Functions
 // ---------------------------------------------------------------------------
 
-export function createFilesUploadCapability(): Capability<SlackFilesUploadParams, SlackFilesUploadResult> {
+export function createFilesUploadCapability(): Capability<
+  SlackFilesUploadParams,
+  SlackFilesUploadResult
+> {
   const meta: CapabilityMeta = {
     id: "files.upload",
     displayName: "Upload File",
@@ -63,11 +72,12 @@ export function createFilesUploadCapability(): Capability<SlackFilesUploadParams
     paramsSchema: filesUploadParamsSchema,
     resultSchema: filesUploadResultSchema,
     requiredScopes: ["files:write"],
+    ownershipScope: OwnershipScope.Organization,
     risk: CapabilityRisk.MEDIUM,
   };
-  
+
   return {
     meta,
     execute: slackFilesUpload,
   };
-} 
+}

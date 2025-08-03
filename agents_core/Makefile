@@ -1,8 +1,9 @@
 # Check if NVM is installed by looking for either the NVM script or directory
 NVM_INSTALLED := $(shell command -v nvm >/dev/null 2>&1 || [ -d "$$HOME/.nvm" ] && echo "yes" || echo "no")
 DB_NAME := agents_core
-IMAGE_NAME := foo
-IMAGE_REPO := 123.dkr.ecr.us-west-2.amazonaws.com/$(IMAGE_NAME)
+IMAGE_NAME := clancy/agents-core
+IMAGE_REPO := 702853186114.dkr.ecr.us-east-1.amazonaws.com/$(IMAGE_NAME)
+PROFILE := clancy
 
 .PHONY: setup-nvm
 setup-nvm:
@@ -53,15 +54,14 @@ PROFILE ?= default
 
 login:
 	@if [ "$(PROFILE)" = "default" ]; then \
-		aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 098573017733.dkr.ecr.us-west-2.amazonaws.com; \
+		aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 702853186114.dkr.ecr.us-east-1.amazonaws.com; \
 	else \
-		aws ecr get-login-password --region us-west-2 --profile $(PROFILE) | docker login --username AWS --password-stdin 098573017733.dkr.ecr.us-west-2.amazonaws.com; \
+		aws ecr get-login-password --region us-east-1 --profile $(PROFILE) | docker login --username AWS --password-stdin 702853186114.dkr.ecr.us-east-1.amazonaws.com; \
 	fi
 
 push-image: login
 	@echo "Retrieving NPM token from .npmrc..."
-	NPM_TOKEN=$(shell grep '//npm.pkg.github.com/:_authToken=' sample.npmrc | cut -d'=' -f2)
-	docker build --build-arg NPM_TOKEN=$$NPM_TOKEN -t $(IMAGE_NAME):latest .
+	docker build --build-arg NPM_TOKEN=$$(grep '//npm.pkg.github.com/:_authToken=' .npmrc | cut -d'=' -f2) -t $(IMAGE_NAME):latest .
 	docker tag $(IMAGE_NAME):latest $(IMAGE_REPO):latest
 	docker push $(IMAGE_REPO):latest
 
