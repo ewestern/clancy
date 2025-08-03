@@ -5,7 +5,7 @@ import {
   ApprovalRequest,
   ApprovalRequestStatusEnum,
   Configuration,
-} from "@clancy/agents_core_sdk";
+} from "@ewestern/agents_core_sdk";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 //import updateLocale from 'dayjs/plugin/updateLocale';
