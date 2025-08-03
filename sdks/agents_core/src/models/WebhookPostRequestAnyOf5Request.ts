@@ -12,27 +12,68 @@
  * Do not edit the class manually.
  */
 
-import type { WebhookPostRequestAnyOf5RequestOneOf } from './WebhookPostRequestAnyOf5RequestOneOf';
+import { mapValues } from '../runtime';
+import type { WebhookPostRequestAnyOf5RequestAnyOf1 } from './WebhookPostRequestAnyOf5RequestAnyOf1';
 import {
-    instanceOfWebhookPostRequestAnyOf5RequestOneOf,
-    WebhookPostRequestAnyOf5RequestOneOfFromJSON,
-    WebhookPostRequestAnyOf5RequestOneOfFromJSONTyped,
-    WebhookPostRequestAnyOf5RequestOneOfToJSON,
-} from './WebhookPostRequestAnyOf5RequestOneOf';
-import type { WebhookPostRequestAnyOf5RequestOneOf1 } from './WebhookPostRequestAnyOf5RequestOneOf1';
+    WebhookPostRequestAnyOf5RequestAnyOf1FromJSON,
+    WebhookPostRequestAnyOf5RequestAnyOf1FromJSONTyped,
+    WebhookPostRequestAnyOf5RequestAnyOf1ToJSON,
+    WebhookPostRequestAnyOf5RequestAnyOf1ToJSONTyped,
+} from './WebhookPostRequestAnyOf5RequestAnyOf1';
+import type { WebhookPostRequestAnyOf5RequestAnyOf } from './WebhookPostRequestAnyOf5RequestAnyOf';
 import {
-    instanceOfWebhookPostRequestAnyOf5RequestOneOf1,
-    WebhookPostRequestAnyOf5RequestOneOf1FromJSON,
-    WebhookPostRequestAnyOf5RequestOneOf1FromJSONTyped,
-    WebhookPostRequestAnyOf5RequestOneOf1ToJSON,
-} from './WebhookPostRequestAnyOf5RequestOneOf1';
+    WebhookPostRequestAnyOf5RequestAnyOfFromJSON,
+    WebhookPostRequestAnyOf5RequestAnyOfFromJSONTyped,
+    WebhookPostRequestAnyOf5RequestAnyOfToJSON,
+    WebhookPostRequestAnyOf5RequestAnyOfToJSONTyped,
+} from './WebhookPostRequestAnyOf5RequestAnyOf';
 
 /**
- * @type WebhookPostRequestAnyOf5Request
  * 
  * @export
+ * @interface WebhookPostRequestAnyOf5Request
  */
-export type WebhookPostRequestAnyOf5Request = WebhookPostRequestAnyOf5RequestOneOf | WebhookPostRequestAnyOf5RequestOneOf1;
+export interface WebhookPostRequestAnyOf5Request {
+    /**
+     * 
+     * @type {string}
+     * @memberof WebhookPostRequestAnyOf5Request
+     */
+    type: WebhookPostRequestAnyOf5RequestTypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof WebhookPostRequestAnyOf5Request
+     */
+    text: string;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof WebhookPostRequestAnyOf5Request
+     */
+    options: Array<string>;
+}
+
+
+/**
+ * @export
+ */
+export const WebhookPostRequestAnyOf5RequestTypeEnum = {
+    Text: 'text',
+    Options: 'options'
+} as const;
+export type WebhookPostRequestAnyOf5RequestTypeEnum = typeof WebhookPostRequestAnyOf5RequestTypeEnum[keyof typeof WebhookPostRequestAnyOf5RequestTypeEnum];
+
+
+/**
+ * Check if a given object implements the WebhookPostRequestAnyOf5Request interface.
+ */
+export function instanceOfWebhookPostRequestAnyOf5Request(value: object): value is WebhookPostRequestAnyOf5Request {
+    if (!('type' in value) || value['type'] === undefined) return false;
+    if (!('text' in value) || value['text'] === undefined) return false;
+    if (!('options' in value) || value['options'] === undefined) return false;
+    return true;
+}
 
 export function WebhookPostRequestAnyOf5RequestFromJSON(json: any): WebhookPostRequestAnyOf5Request {
     return WebhookPostRequestAnyOf5RequestFromJSONTyped(json, false);
@@ -42,17 +83,15 @@ export function WebhookPostRequestAnyOf5RequestFromJSONTyped(json: any, ignoreDi
     if (json == null) {
         return json;
     }
-    if (instanceOfWebhookPostRequestAnyOf5RequestOneOf(json)) {
-        return WebhookPostRequestAnyOf5RequestOneOfFromJSONTyped(json, true);
-    }
-    if (instanceOfWebhookPostRequestAnyOf5RequestOneOf1(json)) {
-        return WebhookPostRequestAnyOf5RequestOneOf1FromJSONTyped(json, true);
-    }
-
-    return {} as any;
+    return {
+        
+        'type': json['type'],
+        'text': json['text'],
+        'options': json['options'],
+    };
 }
 
-export function WebhookPostRequestAnyOf5RequestToJSON(json: any): any {
+export function WebhookPostRequestAnyOf5RequestToJSON(json: any): WebhookPostRequestAnyOf5Request {
     return WebhookPostRequestAnyOf5RequestToJSONTyped(json, false);
 }
 
@@ -61,13 +100,11 @@ export function WebhookPostRequestAnyOf5RequestToJSONTyped(value?: WebhookPostRe
         return value;
     }
 
-    if (instanceOfWebhookPostRequestAnyOf5RequestOneOf(value)) {
-        return WebhookPostRequestAnyOf5RequestOneOfToJSON(value as WebhookPostRequestAnyOf5RequestOneOf);
-    }
-    if (instanceOfWebhookPostRequestAnyOf5RequestOneOf1(value)) {
-        return WebhookPostRequestAnyOf5RequestOneOf1ToJSON(value as WebhookPostRequestAnyOf5RequestOneOf1);
-    }
-
-    return {};
+    return {
+        
+        'type': value['type'],
+        'text': value['text'],
+        'options': value['options'],
+    };
 }
 

@@ -38,77 +38,83 @@ import {
 /**
  * 
  * @export
- * @interface Agent
+ * @interface T0
  */
-export interface Agent {
+export interface T0 {
     /**
      * 
      * @type {string}
-     * @memberof Agent
+     * @memberof T0
      */
     id?: string;
     /**
      * 
      * @type {string}
-     * @memberof Agent
+     * @memberof T0
      */
     orgId: string;
     /**
      * 
      * @type {string}
-     * @memberof Agent
+     * @memberof T0
      */
     name: string;
     /**
      * 
      * @type {string}
-     * @memberof Agent
+     * @memberof T0
      */
     description: string;
     /**
      * 
      * @type {AgentScope}
-     * @memberof Agent
+     * @memberof T0
      */
     scope: AgentScope;
     /**
      * 
      * @type {string}
-     * @memberof Agent
+     * @memberof T0
      */
     ownerId: string;
     /**
      * 
      * @type {AgentStatus}
-     * @memberof Agent
+     * @memberof T0
      */
     status: AgentStatus;
     /**
      * 
      * @type {Array<V1AgentsIdPutRequestCapabilitiesInner>}
-     * @memberof Agent
+     * @memberof T0
      */
     capabilities: Array<V1AgentsIdPutRequestCapabilitiesInner>;
     /**
      * 
      * @type {V1AgentsIdPutRequestCapabilitiesInner}
-     * @memberof Agent
+     * @memberof T0
      */
     trigger: V1AgentsIdPutRequestCapabilitiesInner;
     /**
      * 
      * @type {string}
-     * @memberof Agent
+     * @memberof T0
      */
     prompt: string;
+    /**
+     * 
+     * @type {Array<T0>}
+     * @memberof T0
+     */
+    subagents?: Array<T0>;
 }
 
 
 
 /**
- * Check if a given object implements the Agent interface.
+ * Check if a given object implements the T0 interface.
  */
-export function instanceOfAgent(value: object): value is Agent {
+export function instanceOfT0(value: object): value is T0 {
     if (!('orgId' in value) || value['orgId'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
     if (!('description' in value) || value['description'] === undefined) return false;
@@ -121,11 +127,11 @@ export function instanceOfAgent(value: object): value is Agent {
     return true;
 }
 
-export function AgentFromJSON(json: any): Agent {
-    return AgentFromJSONTyped(json, false);
+export function T0FromJSON(json: any): T0 {
+    return T0FromJSONTyped(json, false);
 }
 
-export function AgentFromJSONTyped(json: any, ignoreDiscriminator: boolean): Agent {
+export function T0FromJSONTyped(json: any, ignoreDiscriminator: boolean): T0 {
     if (json == null) {
         return json;
     }
@@ -141,14 +147,15 @@ export function AgentFromJSONTyped(json: any, ignoreDiscriminator: boolean): Age
         'capabilities': ((json['capabilities'] as Array<any>).map(V1AgentsIdPutRequestCapabilitiesInnerFromJSON)),
         'trigger': V1AgentsIdPutRequestCapabilitiesInnerFromJSON(json['trigger']),
         'prompt': json['prompt'],
+        'subagents': json['subagents'] == null ? undefined : ((json['subagents'] as Array<any>).map(T0FromJSON)),
     };
 }
 
-export function AgentToJSON(json: any): Agent {
-    return AgentToJSONTyped(json, false);
+export function T0ToJSON(json: any): T0 {
+    return T0ToJSONTyped(json, false);
 }
 
-export function AgentToJSONTyped(value?: Agent | null, ignoreDiscriminator: boolean = false): any {
+export function T0ToJSONTyped(value?: T0 | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
@@ -165,6 +172,7 @@ export function AgentToJSONTyped(value?: Agent | null, ignoreDiscriminator: bool
         'capabilities': ((value['capabilities'] as Array<any>).map(V1AgentsIdPutRequestCapabilitiesInnerToJSON)),
         'trigger': V1AgentsIdPutRequestCapabilitiesInnerToJSON(value['trigger']),
         'prompt': value['prompt'],
+        'subagents': value['subagents'] == null ? undefined : ((value['subagents'] as Array<any>).map(T0ToJSON)),
     };
 }
 

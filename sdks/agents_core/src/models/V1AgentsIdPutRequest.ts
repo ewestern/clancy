@@ -27,6 +27,13 @@ import {
     AgentScopeToJSON,
     AgentScopeToJSONTyped,
 } from './AgentScope';
+import type { T0 } from './T0';
+import {
+    T0FromJSON,
+    T0FromJSONTyped,
+    T0ToJSON,
+    T0ToJSONTyped,
+} from './T0';
 import type { V1AgentsIdPutRequestCapabilitiesInner } from './V1AgentsIdPutRequestCapabilitiesInner';
 import {
     V1AgentsIdPutRequestCapabilitiesInnerFromJSON,
@@ -95,6 +102,12 @@ export interface V1AgentsIdPutRequest {
      * @memberof V1AgentsIdPutRequest
      */
     prompt?: string;
+    /**
+     * 
+     * @type {Array<T0>}
+     * @memberof V1AgentsIdPutRequest
+     */
+    subagents?: Array<T0>;
 }
 
 
@@ -125,6 +138,7 @@ export function V1AgentsIdPutRequestFromJSONTyped(json: any, ignoreDiscriminator
         'capabilities': json['capabilities'] == null ? undefined : ((json['capabilities'] as Array<any>).map(V1AgentsIdPutRequestCapabilitiesInnerFromJSON)),
         'trigger': json['trigger'] == null ? undefined : V1AgentsIdPutRequestCapabilitiesInnerFromJSON(json['trigger']),
         'prompt': json['prompt'] == null ? undefined : json['prompt'],
+        'subagents': json['subagents'] == null ? undefined : ((json['subagents'] as Array<any>).map(T0FromJSON)),
     };
 }
 
@@ -148,6 +162,7 @@ export function V1AgentsIdPutRequestToJSONTyped(value?: V1AgentsIdPutRequest | n
         'capabilities': value['capabilities'] == null ? undefined : ((value['capabilities'] as Array<any>).map(V1AgentsIdPutRequestCapabilitiesInnerToJSON)),
         'trigger': V1AgentsIdPutRequestCapabilitiesInnerToJSON(value['trigger']),
         'prompt': value['prompt'],
+        'subagents': value['subagents'] == null ? undefined : ((value['subagents'] as Array<any>).map(T0ToJSON)),
     };
 }
 

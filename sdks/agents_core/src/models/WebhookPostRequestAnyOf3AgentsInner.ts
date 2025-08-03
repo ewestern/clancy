@@ -13,13 +13,20 @@
  */
 
 import { mapValues } from '../runtime';
-import type { WebhookPostRequestAnyOf3AgentsInnerWorkflow } from './WebhookPostRequestAnyOf3AgentsInnerWorkflow';
+import type { WebhookPostRequestAnyOf3AgentsInnerTrigger } from './WebhookPostRequestAnyOf3AgentsInnerTrigger';
 import {
-    WebhookPostRequestAnyOf3AgentsInnerWorkflowFromJSON,
-    WebhookPostRequestAnyOf3AgentsInnerWorkflowFromJSONTyped,
-    WebhookPostRequestAnyOf3AgentsInnerWorkflowToJSON,
-    WebhookPostRequestAnyOf3AgentsInnerWorkflowToJSONTyped,
-} from './WebhookPostRequestAnyOf3AgentsInnerWorkflow';
+    WebhookPostRequestAnyOf3AgentsInnerTriggerFromJSON,
+    WebhookPostRequestAnyOf3AgentsInnerTriggerFromJSONTyped,
+    WebhookPostRequestAnyOf3AgentsInnerTriggerToJSON,
+    WebhookPostRequestAnyOf3AgentsInnerTriggerToJSONTyped,
+} from './WebhookPostRequestAnyOf3AgentsInnerTrigger';
+import type { V1AgentsIdPutRequestCapabilitiesInner } from './V1AgentsIdPutRequestCapabilitiesInner';
+import {
+    V1AgentsIdPutRequestCapabilitiesInnerFromJSON,
+    V1AgentsIdPutRequestCapabilitiesInnerFromJSONTyped,
+    V1AgentsIdPutRequestCapabilitiesInnerToJSON,
+    V1AgentsIdPutRequestCapabilitiesInnerToJSONTyped,
+} from './V1AgentsIdPutRequestCapabilitiesInner';
 
 /**
  * 
@@ -32,34 +39,48 @@ export interface WebhookPostRequestAnyOf3AgentsInner {
      * @type {string}
      * @memberof WebhookPostRequestAnyOf3AgentsInner
      */
-    prompt?: string;
+    id?: string;
     /**
      * 
-     * @type {Array<string>}
+     * @type {string}
      * @memberof WebhookPostRequestAnyOf3AgentsInner
      */
-    capabilities: Array<string>;
+    name: string;
     /**
      * 
-     * @type {Array<string>}
+     * @type {string}
      * @memberof WebhookPostRequestAnyOf3AgentsInner
      */
-    triggers: Array<string>;
+    description: string;
     /**
      * 
-     * @type {WebhookPostRequestAnyOf3AgentsInnerWorkflow}
+     * @type {Array<V1AgentsIdPutRequestCapabilitiesInner>}
      * @memberof WebhookPostRequestAnyOf3AgentsInner
      */
-    workflow: WebhookPostRequestAnyOf3AgentsInnerWorkflow;
+    capabilities: Array<V1AgentsIdPutRequestCapabilitiesInner>;
+    /**
+     * 
+     * @type {WebhookPostRequestAnyOf3AgentsInnerTrigger}
+     * @memberof WebhookPostRequestAnyOf3AgentsInner
+     */
+    trigger: WebhookPostRequestAnyOf3AgentsInnerTrigger;
+    /**
+     * 
+     * @type {string}
+     * @memberof WebhookPostRequestAnyOf3AgentsInner
+     */
+    prompt: string;
 }
 
 /**
  * Check if a given object implements the WebhookPostRequestAnyOf3AgentsInner interface.
  */
 export function instanceOfWebhookPostRequestAnyOf3AgentsInner(value: object): value is WebhookPostRequestAnyOf3AgentsInner {
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('description' in value) || value['description'] === undefined) return false;
     if (!('capabilities' in value) || value['capabilities'] === undefined) return false;
-    if (!('triggers' in value) || value['triggers'] === undefined) return false;
-    if (!('workflow' in value) || value['workflow'] === undefined) return false;
+    if (!('trigger' in value) || value['trigger'] === undefined) return false;
+    if (!('prompt' in value) || value['prompt'] === undefined) return false;
     return true;
 }
 
@@ -73,10 +94,12 @@ export function WebhookPostRequestAnyOf3AgentsInnerFromJSONTyped(json: any, igno
     }
     return {
         
-        'prompt': json['prompt'] == null ? undefined : json['prompt'],
-        'capabilities': json['capabilities'],
-        'triggers': json['triggers'],
-        'workflow': WebhookPostRequestAnyOf3AgentsInnerWorkflowFromJSON(json['workflow']),
+        'id': json['id'] == null ? undefined : json['id'],
+        'name': json['name'],
+        'description': json['description'],
+        'capabilities': ((json['capabilities'] as Array<any>).map(V1AgentsIdPutRequestCapabilitiesInnerFromJSON)),
+        'trigger': WebhookPostRequestAnyOf3AgentsInnerTriggerFromJSON(json['trigger']),
+        'prompt': json['prompt'],
     };
 }
 
@@ -91,10 +114,12 @@ export function WebhookPostRequestAnyOf3AgentsInnerToJSONTyped(value?: WebhookPo
 
     return {
         
+        'id': value['id'],
+        'name': value['name'],
+        'description': value['description'],
+        'capabilities': ((value['capabilities'] as Array<any>).map(V1AgentsIdPutRequestCapabilitiesInnerToJSON)),
+        'trigger': WebhookPostRequestAnyOf3AgentsInnerTriggerToJSON(value['trigger']),
         'prompt': value['prompt'],
-        'capabilities': value['capabilities'],
-        'triggers': value['triggers'],
-        'workflow': WebhookPostRequestAnyOf3AgentsInnerWorkflowToJSON(value['workflow']),
     };
 }
 

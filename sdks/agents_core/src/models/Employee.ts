@@ -13,13 +13,6 @@
  */
 
 import { mapValues } from '../runtime';
-import type { Agent } from './Agent';
-import {
-    AgentFromJSON,
-    AgentFromJSONTyped,
-    AgentToJSON,
-    AgentToJSONTyped,
-} from './Agent';
 import type { EmployeeStatus } from './EmployeeStatus';
 import {
     EmployeeStatusFromJSON,
@@ -27,6 +20,13 @@ import {
     EmployeeStatusToJSON,
     EmployeeStatusToJSONTyped,
 } from './EmployeeStatus';
+import type { T0 } from './T0';
+import {
+    T0FromJSON,
+    T0FromJSONTyped,
+    T0ToJSON,
+    T0ToJSONTyped,
+} from './T0';
 
 /**
  * 
@@ -66,10 +66,10 @@ export interface Employee {
     status: EmployeeStatus;
     /**
      * 
-     * @type {Array<Agent>}
+     * @type {Array<T0>}
      * @memberof Employee
      */
-    agents: Array<Agent>;
+    agents: Array<T0>;
 }
 
 
@@ -101,7 +101,7 @@ export function EmployeeFromJSONTyped(json: any, ignoreDiscriminator: boolean): 
         'name': json['name'],
         'summary': json['summary'],
         'status': EmployeeStatusFromJSON(json['status']),
-        'agents': ((json['agents'] as Array<any>).map(AgentFromJSON)),
+        'agents': ((json['agents'] as Array<any>).map(T0FromJSON)),
     };
 }
 
@@ -121,7 +121,7 @@ export function EmployeeToJSONTyped(value?: Employee | null, ignoreDiscriminator
         'name': value['name'],
         'summary': value['summary'],
         'status': EmployeeStatusToJSON(value['status']),
-        'agents': ((value['agents'] as Array<any>).map(AgentToJSON)),
+        'agents': ((value['agents'] as Array<any>).map(T0ToJSON)),
     };
 }
 

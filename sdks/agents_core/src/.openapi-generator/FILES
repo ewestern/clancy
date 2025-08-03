@@ -5,12 +5,12 @@ apis/EmployeesApi.ts
 apis/WebhookApi.ts
 apis/index.ts
 index.ts
-models/Agent.ts
 models/AgentScope.ts
 models/AgentStatus.ts
 models/ApprovalRequest.ts
 models/Employee.ts
 models/EmployeeStatus.ts
+models/T0.ts
 models/V1AgentsIdPutRequest.ts
 models/V1AgentsIdPutRequestCapabilitiesInner.ts
 models/V1AgentsPost400Response.ts
@@ -22,7 +22,7 @@ models/WebhookPostRequestAnyOf1.ts
 models/WebhookPostRequestAnyOf2.ts
 models/WebhookPostRequestAnyOf3.ts
 models/WebhookPostRequestAnyOf3AgentsInner.ts
-models/WebhookPostRequestAnyOf3AgentsInnerWorkflow.ts
+models/WebhookPostRequestAnyOf3AgentsInnerTrigger.ts
 models/WebhookPostRequestAnyOf3Phase.ts
 models/WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInner.ts
 models/WebhookPostRequestAnyOf3WorkflowsInner.ts
@@ -30,11 +30,9 @@ models/WebhookPostRequestAnyOf3WorkflowsInnerStepsInner.ts
 models/WebhookPostRequestAnyOf4.ts
 models/WebhookPostRequestAnyOf4ConnectionStatus.ts
 models/WebhookPostRequestAnyOf5.ts
-models/WebhookPostRequestAnyOf5Kind.ts
 models/WebhookPostRequestAnyOf5Request.ts
-models/WebhookPostRequestAnyOf5RequestOneOf.ts
-models/WebhookPostRequestAnyOf5RequestOneOf1.ts
+models/WebhookPostRequestAnyOf5RequestAnyOf.ts
+models/WebhookPostRequestAnyOf5RequestAnyOf1.ts
 models/WebhookPostRequestAnyOf6.ts
-models/WebhookPostRequestAnyOf7.ts
 models/index.ts
 runtime.ts

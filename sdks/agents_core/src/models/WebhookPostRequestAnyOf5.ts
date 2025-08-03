@@ -20,13 +20,6 @@ import {
     WebhookPostRequestAnyOf5RequestToJSON,
     WebhookPostRequestAnyOf5RequestToJSONTyped,
 } from './WebhookPostRequestAnyOf5Request';
-import type { WebhookPostRequestAnyOf5Kind } from './WebhookPostRequestAnyOf5Kind';
-import {
-    WebhookPostRequestAnyOf5KindFromJSON,
-    WebhookPostRequestAnyOf5KindFromJSONTyped,
-    WebhookPostRequestAnyOf5KindToJSON,
-    WebhookPostRequestAnyOf5KindToJSONTyped,
-} from './WebhookPostRequestAnyOf5Kind';
 
 /**
  * 
@@ -64,12 +57,6 @@ export interface WebhookPostRequestAnyOf5 {
      * @memberof WebhookPostRequestAnyOf5
      */
     executionId?: string;
-    /**
-     * 
-     * @type {WebhookPostRequestAnyOf5Kind}
-     * @memberof WebhookPostRequestAnyOf5
-     */
-    kind?: WebhookPostRequestAnyOf5Kind;
     /**
      * 
      * @type {WebhookPostRequestAnyOf5Request}
@@ -115,7 +102,6 @@ export function WebhookPostRequestAnyOf5FromJSONTyped(json: any, ignoreDiscrimin
         'orgId': json['orgId'],
         'timestamp': json['timestamp'],
         'executionId': json['executionId'] == null ? undefined : json['executionId'],
-        'kind': json['kind'] == null ? undefined : WebhookPostRequestAnyOf5KindFromJSON(json['kind']),
         'request': WebhookPostRequestAnyOf5RequestFromJSON(json['request']),
     };
 }
@@ -136,7 +122,6 @@ export function WebhookPostRequestAnyOf5ToJSONTyped(value?: WebhookPostRequestAn
         'orgId': value['orgId'],
         'timestamp': value['timestamp'],
         'executionId': value['executionId'],
-        'kind': WebhookPostRequestAnyOf5KindToJSON(value['kind']),
         'request': WebhookPostRequestAnyOf5RequestToJSON(value['request']),
     };
 }

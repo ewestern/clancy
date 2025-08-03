@@ -13,14 +13,6 @@
  */
 
 import { mapValues } from '../runtime';
-import type { WebhookPostRequestAnyOf5Kind } from './WebhookPostRequestAnyOf5Kind';
-import {
-    WebhookPostRequestAnyOf5KindFromJSON,
-    WebhookPostRequestAnyOf5KindFromJSONTyped,
-    WebhookPostRequestAnyOf5KindToJSON,
-    WebhookPostRequestAnyOf5KindToJSONTyped,
-} from './WebhookPostRequestAnyOf5Kind';
-
 /**
  * 
  * @export
@@ -38,12 +30,6 @@ export interface WebhookPostRequestAnyOf6 {
      * @type {string}
      * @memberof WebhookPostRequestAnyOf6
      */
-    userId: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WebhookPostRequestAnyOf6
-     */
     orgId: string;
     /**
      * 
@@ -56,19 +42,43 @@ export interface WebhookPostRequestAnyOf6 {
      * @type {string}
      * @memberof WebhookPostRequestAnyOf6
      */
-    executionId?: string;
+    agentId: string;
     /**
      * 
      * @type {string}
      * @memberof WebhookPostRequestAnyOf6
      */
-    promptId?: string;
+    executionId: string;
     /**
      * 
-     * @type {WebhookPostRequestAnyOf5Kind}
+     * @type {string}
      * @memberof WebhookPostRequestAnyOf6
      */
-    kind?: WebhookPostRequestAnyOf5Kind;
+    model: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof WebhookPostRequestAnyOf6
+     */
+    promptTokens: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof WebhookPostRequestAnyOf6
+     */
+    completionTokens: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof WebhookPostRequestAnyOf6
+     */
+    totalTokens: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof WebhookPostRequestAnyOf6
+     */
+    prompt: string;
 }
 
 
@@ -76,7 +86,7 @@ export interface WebhookPostRequestAnyOf6 {
  * @export
  */
 export const WebhookPostRequestAnyOf6TypeEnum = {
-    Humanfeedbackresponse: 'humanfeedbackresponse'
+    Llmusage: 'llmusage'
 } as const;
 export type WebhookPostRequestAnyOf6TypeEnum = typeof WebhookPostRequestAnyOf6TypeEnum[keyof typeof WebhookPostRequestAnyOf6TypeEnum];
 
@@ -86,9 +96,15 @@ export type WebhookPostRequestAnyOf6TypeEnum = typeof WebhookPostRequestAnyOf6Ty
  */
 export function instanceOfWebhookPostRequestAnyOf6(value: object): value is WebhookPostRequestAnyOf6 {
     if (!('type' in value) || value['type'] === undefined) return false;
-    if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('orgId' in value) || value['orgId'] === undefined) return false;
     if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
+    if (!('agentId' in value) || value['agentId'] === undefined) return false;
+    if (!('executionId' in value) || value['executionId'] === undefined) return false;
+    if (!('model' in value) || value['model'] === undefined) return false;
+    if (!('promptTokens' in value) || value['promptTokens'] === undefined) return false;
+    if (!('completionTokens' in value) || value['completionTokens'] === undefined) return false;
+    if (!('totalTokens' in value) || value['totalTokens'] === undefined) return false;
+    if (!('prompt' in value) || value['prompt'] === undefined) return false;
     return true;
 }
 
@@ -103,12 +119,15 @@ export function WebhookPostRequestAnyOf6FromJSONTyped(json: any, ignoreDiscrimin
     return {
         
         'type': json['type'],
-        'userId': json['userId'],
         'orgId': json['orgId'],
         'timestamp': json['timestamp'],
-        'executionId': json['executionId'] == null ? undefined : json['executionId'],
-        'promptId': json['promptId'] == null ? undefined : json['promptId'],
-        'kind': json['kind'] == null ? undefined : WebhookPostRequestAnyOf5KindFromJSON(json['kind']),
+        'agentId': json['agentId'],
+        'executionId': json['executionId'],
+        'model': json['model'],
+        'promptTokens': json['promptTokens'],
+        'completionTokens': json['completionTokens'],
+        'totalTokens': json['totalTokens'],
+        'prompt': json['prompt'],
     };
 }
 
@@ -124,12 +143,15 @@ export function WebhookPostRequestAnyOf6ToJSONTyped(value?: WebhookPostRequestAn
     return {
         
         'type': value['type'],
-        'userId': value['userId'],
         'orgId': value['orgId'],
         'timestamp': value['timestamp'],
+        'agentId': value['agentId'],
         'executionId': value['executionId'],
-        'promptId': value['promptId'],
-        'kind': WebhookPostRequestAnyOf5KindToJSON(value['kind']),
+        'model': value['model'],
+        'promptTokens': value['promptTokens'],
+        'completionTokens': value['completionTokens'],
+        'totalTokens': value['totalTokens'],
+        'prompt': value['prompt'],
     };
 }
 

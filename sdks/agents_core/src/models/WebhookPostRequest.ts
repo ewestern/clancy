@@ -27,13 +27,6 @@ import {
     WebhookPostRequestAnyOf5RequestToJSON,
     WebhookPostRequestAnyOf5RequestToJSONTyped,
 } from './WebhookPostRequestAnyOf5Request';
-import type { WebhookPostRequestAnyOf5Kind } from './WebhookPostRequestAnyOf5Kind';
-import {
-    WebhookPostRequestAnyOf5KindFromJSON,
-    WebhookPostRequestAnyOf5KindFromJSONTyped,
-    WebhookPostRequestAnyOf5KindToJSON,
-    WebhookPostRequestAnyOf5KindToJSONTyped,
-} from './WebhookPostRequestAnyOf5Kind';
 import type { WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInner } from './WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInner';
 import {
     WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInnerFromJSON,
@@ -76,13 +69,6 @@ import {
     WebhookPostRequestAnyOf4ConnectionStatusToJSON,
     WebhookPostRequestAnyOf4ConnectionStatusToJSONTyped,
 } from './WebhookPostRequestAnyOf4ConnectionStatus';
-import type { WebhookPostRequestAnyOf7 } from './WebhookPostRequestAnyOf7';
-import {
-    WebhookPostRequestAnyOf7FromJSON,
-    WebhookPostRequestAnyOf7FromJSONTyped,
-    WebhookPostRequestAnyOf7ToJSON,
-    WebhookPostRequestAnyOf7ToJSONTyped,
-} from './WebhookPostRequestAnyOf7';
 import type { WebhookPostRequestAnyOf4 } from './WebhookPostRequestAnyOf4';
 import {
     WebhookPostRequestAnyOf4FromJSON,
@@ -223,22 +209,10 @@ export interface WebhookPostRequest {
     externalAccountMetadata: { [key: string]: object; };
     /**
      * 
-     * @type {WebhookPostRequestAnyOf5Kind}
-     * @memberof WebhookPostRequest
-     */
-    kind?: WebhookPostRequestAnyOf5Kind;
-    /**
-     * 
      * @type {WebhookPostRequestAnyOf5Request}
      * @memberof WebhookPostRequest
      */
     request: WebhookPostRequestAnyOf5Request;
-    /**
-     * 
-     * @type {string}
-     * @memberof WebhookPostRequest
-     */
-    promptId?: string;
     /**
      * 
      * @type {string}
@@ -282,7 +256,6 @@ export const WebhookPostRequestTypeEnum = {
     Aieemployeestateupdate: 'aieemployeestateupdate',
     Providerconnectioncompleted: 'providerconnectioncompleted',
     Requesthumanfeedback: 'requesthumanfeedback',
-    Humanfeedbackresponse: 'humanfeedbackresponse',
     Llmusage: 'llmusage'
 } as const;
 export type WebhookPostRequestTypeEnum = typeof WebhookPostRequestTypeEnum[keyof typeof WebhookPostRequestTypeEnum];
@@ -342,9 +315,7 @@ export function WebhookPostRequestFromJSONTyped(json: any, ignoreDiscriminator: 
         'connectionStatus': WebhookPostRequestAnyOf4ConnectionStatusFromJSON(json['connectionStatus']),
         'connectionId': json['connectionId'],
         'externalAccountMetadata': json['externalAccountMetadata'],
-        'kind': json['kind'] == null ? undefined : WebhookPostRequestAnyOf5KindFromJSON(json['kind']),
         'request': WebhookPostRequestAnyOf5RequestFromJSON(json['request']),
-        'promptId': json['promptId'] == null ? undefined : json['promptId'],
         'model': json['model'],
         'promptTokens': json['promptTokens'],
         'completionTokens': json['completionTokens'],
@@ -380,9 +351,7 @@ export function WebhookPostRequestToJSONTyped(value?: WebhookPostRequest | null,
         'connectionStatus': WebhookPostRequestAnyOf4ConnectionStatusToJSON(value['connectionStatus']),
         'connectionId': value['connectionId'],
         'externalAccountMetadata': value['externalAccountMetadata'],
-        'kind': WebhookPostRequestAnyOf5KindToJSON(value['kind']),
         'request': WebhookPostRequestAnyOf5RequestToJSON(value['request']),
-        'promptId': value['promptId'],
         'model': value['model'],
         'promptTokens': value['promptTokens'],
         'completionTokens': value['completionTokens'],
