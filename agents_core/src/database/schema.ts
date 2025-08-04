@@ -12,7 +12,7 @@ import {
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { ApprovalRequestStatus } from "../models/approvals.js";
-import { Agent, AgentScope, AgentStatus } from "../models/agents.js";
+import { Agent, AgentStatus } from "../models/agents.js";
 import { EmployeeStatus } from "../models/employees.js";
 
 export const agentStatus = pgEnum("agent_status", [
@@ -24,18 +24,13 @@ export const employeeStatus = pgEnum("employee_status", [
   EmployeeStatus.Active,
   EmployeeStatus.Inactive,
 ]);
-export const agentScope = pgEnum("agent_scope", [
-  AgentScope.Org,
-  AgentScope.User,
-]);
 
 export const agents = pgTable(
   "agents",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     orgId: varchar("org_id", { length: 255 }).notNull(), // should we keep this w/ owner id?
-    scope: agentScope("scope").notNull(),
-    ownerId: varchar("owner_id", { length: 255 }).notNull(),
+    userId: varchar("user_id", { length: 255 }).notNull(),
     name: varchar("name", { length: 255 }).notNull(),
     description: text("description").notNull(),
     prompt: text("prompt").notNull(),
@@ -59,8 +54,8 @@ export const agents = pgTable(
 export const aiEmployees = pgTable("ai_employees", {
   id: uuid("id").primaryKey().defaultRandom(),
   orgId: varchar("org_id", { length: 255 }).notNull(),
+  userId: varchar("user_id", { length: 255 }).notNull(),
   name: text("name").notNull(),
-  summary: text("summary").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

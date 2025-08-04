@@ -16,8 +16,9 @@ export const EmployeeSchema = Type.Object(
   {
     id: Type.ReadonlyOptional(Type.String()),
     orgId: Type.String(),
+    userId: Type.String(),
     name: Type.String(),
-    summary: Type.String(),
+    // summary: Type.String(),
     status: Ref(EmployeeStatusSchema),
     agents: Type.Array(Ref(AgentSchema)),
   },

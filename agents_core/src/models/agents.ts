@@ -9,24 +9,14 @@ export const AgentStatusSchema = StringEnum(
   [AgentStatus.Active, AgentStatus.Inactive],
   { $id: "AgentStatus" },
 );
-export enum AgentScope {
-  Org = "org",
-  User = "user",
-}
 
-export const AgentScopeSchema = StringEnum([AgentScope.Org, AgentScope.User], {
-  $id: "AgentScope",
-});
-
-export const AgentSchema = Type.Recursive((This) =>
-  Type.Object(
+export const AgentSchema = Type.Object(
     {
       id: Type.ReadonlyOptional(Type.String()),
       orgId: Type.String(),
       name: Type.String(),
       description: Type.String(),
-      scope: Ref(AgentScopeSchema),
-      ownerId: Type.String(),
+      userId: Type.String(),
       status: Ref(AgentStatusSchema),
       capabilities: Type.Array(
         Type.Object({
@@ -37,15 +27,14 @@ export const AgentSchema = Type.Recursive((This) =>
       trigger: Type.Object({
         providerId: Type.String(),
         id: Type.String(),
+        triggerParams: Type.Any(),
       }),
       prompt: Type.String(),
-      subagents: Type.Optional(Type.Array(This)),
     },
     {
       $id: "Agent",
     },
-  ),
-);
+  )
 
 export type Agent = Static<typeof AgentSchema>;
 
@@ -92,7 +81,9 @@ export const UpdateAgentEndpoint = {
   params: Type.Object({
     id: Type.String(),
   }),
-  body: Type.Partial(Type.Omit(AgentSchema, ["id"])),
+  body: Type.Partial(Type.Omit(AgentSchema, ["id"]), {
+    $id: "UpdateAgentBody",
+  }),
   response: {
     200: Ref(AgentSchema),
     400: ErrorSchema,
