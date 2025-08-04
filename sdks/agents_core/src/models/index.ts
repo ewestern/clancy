@@ -1,19 +1,20 @@
 /* tslint:disable */
 /* eslint-disable */
-export * from './AgentScope';
+export * from './Agent';
 export * from './AgentStatus';
 export * from './ApprovalRequest';
 export * from './Employee';
 export * from './EmployeeStatus';
-export * from './T0';
 export * from './V1AgentsIdPutRequest';
 export * from './V1AgentsIdPutRequestCapabilitiesInner';
+export * from './V1AgentsIdPutRequestTrigger';
 export * from './V1AgentsPost400Response';
 export * from './V1ApprovalsIdPutRequest';
 export * from './WebhookPost200Response';
 export * from './WebhookPostRequest';
 export * from './WebhookPostRequestAnyOf';
 export * from './WebhookPostRequestAnyOf1';
+export * from './WebhookPostRequestAnyOf10';
 export * from './WebhookPostRequestAnyOf2';
 export * from './WebhookPostRequestAnyOf3';
 export * from './WebhookPostRequestAnyOf3AgentsInner';
@@ -25,7 +26,10 @@ export * from './WebhookPostRequestAnyOf3WorkflowsInnerStepsInner';
 export * from './WebhookPostRequestAnyOf4';
 export * from './WebhookPostRequestAnyOf4ConnectionStatus';
 export * from './WebhookPostRequestAnyOf5';
-export * from './WebhookPostRequestAnyOf5Request';
-export * from './WebhookPostRequestAnyOf5RequestAnyOf';
-export * from './WebhookPostRequestAnyOf5RequestAnyOf1';
 export * from './WebhookPostRequestAnyOf6';
+export * from './WebhookPostRequestAnyOf7';
+export * from './WebhookPostRequestAnyOf7Request';
+export * from './WebhookPostRequestAnyOf7RequestAnyOf';
+export * from './WebhookPostRequestAnyOf7RequestAnyOf1';
+export * from './WebhookPostRequestAnyOf8';
+export * from './WebhookPostRequestAnyOf9';

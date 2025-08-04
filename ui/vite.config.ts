@@ -6,6 +6,9 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   optimizeDeps: {
-    include: ["@clancy/agents_core_sdk"],
+    include: [
+      "@ewestern/agents_core_sdk", // agents core SDK
+      "@ewestern/connect_hub_sdk", // connect hub SDK (CommonJS)
+    ],
   },
 });

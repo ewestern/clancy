@@ -4,11 +4,13 @@ import { KPICard } from "../components/KPICard";
 import { AIEmployeeCard } from "../components/AIEmployeeCard";
 import { fetchKPIData, fetchAIEmployees } from "../api/stubs";
 import type { KPIData, AIEmployee } from "../types";
+import { useUser } from "@clerk/react-router";
 
 export function Dashboard() {
   const [kpiData, setKpiData] = useState<KPIData | null>(null);
   const [employees, setEmployees] = useState<AIEmployee[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useUser();
 
   useEffect(() => {
     const loadData = async () => {
@@ -62,7 +64,9 @@ export function Dashboard() {
       {/* Hero strip */}
       <div className="mb-8">
         <h1 className="text-3xl font-semibold text-gray-900 mb-2">
-          Good morning, Alex—your team at a glance.
+          Good morning, {user?.firstName}
+          <br />
+          Your team at a glance.
         </h1>
       </div>
 

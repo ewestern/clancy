@@ -26,7 +26,6 @@ import {
 } from '../models/index';
 
 export interface ProxyProviderIdCapabilityIdPostOperationRequest {
-    orgId: string;
     providerId: string;
     capabilityId: string;
     proxyProviderIdCapabilityIdPostRequest: ProxyProviderIdCapabilityIdPostRequest;
@@ -41,13 +40,6 @@ export class ProxyApi extends runtime.BaseAPI {
      * Proxies action requests
      */
     async proxyProviderIdCapabilityIdPostRaw(requestParameters: ProxyProviderIdCapabilityIdPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
-        if (requestParameters['orgId'] == null) {
-            throw new runtime.RequiredError(
-                'orgId',
-                'Required parameter "orgId" was null or undefined when calling proxyProviderIdCapabilityIdPost().'
-            );
-        }
-
         if (requestParameters['providerId'] == null) {
             throw new runtime.RequiredError(
                 'providerId',
@@ -70,10 +62,6 @@ export class ProxyApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
-
-        if (requestParameters['orgId'] != null) {
-            queryParameters['orgId'] = requestParameters['orgId'];
-        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 

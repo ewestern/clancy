@@ -20,13 +20,13 @@ import {
     AgentStatusToJSON,
     AgentStatusToJSONTyped,
 } from './AgentStatus';
-import type { AgentScope } from './AgentScope';
+import type { V1AgentsIdPutRequestTrigger } from './V1AgentsIdPutRequestTrigger';
 import {
-    AgentScopeFromJSON,
-    AgentScopeFromJSONTyped,
-    AgentScopeToJSON,
-    AgentScopeToJSONTyped,
-} from './AgentScope';
+    V1AgentsIdPutRequestTriggerFromJSON,
+    V1AgentsIdPutRequestTriggerFromJSONTyped,
+    V1AgentsIdPutRequestTriggerToJSON,
+    V1AgentsIdPutRequestTriggerToJSONTyped,
+} from './V1AgentsIdPutRequestTrigger';
 import type { V1AgentsIdPutRequestCapabilitiesInner } from './V1AgentsIdPutRequestCapabilitiesInner';
 import {
     V1AgentsIdPutRequestCapabilitiesInnerFromJSON,
@@ -38,88 +38,75 @@ import {
 /**
  * 
  * @export
- * @interface T0
+ * @interface Agent
  */
-export interface T0 {
+export interface Agent {
     /**
      * 
      * @type {string}
-     * @memberof T0
+     * @memberof Agent
      */
     id?: string;
     /**
      * 
      * @type {string}
-     * @memberof T0
+     * @memberof Agent
      */
     orgId: string;
     /**
      * 
      * @type {string}
-     * @memberof T0
+     * @memberof Agent
      */
     name: string;
     /**
      * 
      * @type {string}
-     * @memberof T0
+     * @memberof Agent
      */
     description: string;
     /**
      * 
-     * @type {AgentScope}
-     * @memberof T0
-     */
-    scope: AgentScope;
-    /**
-     * 
      * @type {string}
-     * @memberof T0
+     * @memberof Agent
      */
-    ownerId: string;
+    userId: string;
     /**
      * 
      * @type {AgentStatus}
-     * @memberof T0
+     * @memberof Agent
      */
     status: AgentStatus;
     /**
      * 
      * @type {Array<V1AgentsIdPutRequestCapabilitiesInner>}
-     * @memberof T0
+     * @memberof Agent
      */
     capabilities: Array<V1AgentsIdPutRequestCapabilitiesInner>;
     /**
      * 
-     * @type {V1AgentsIdPutRequestCapabilitiesInner}
-     * @memberof T0
+     * @type {V1AgentsIdPutRequestTrigger}
+     * @memberof Agent
      */
-    trigger: V1AgentsIdPutRequestCapabilitiesInner;
+    trigger: V1AgentsIdPutRequestTrigger;
     /**
      * 
      * @type {string}
-     * @memberof T0
+     * @memberof Agent
      */
     prompt: string;
-    /**
-     * 
-     * @type {Array<T0>}
-     * @memberof T0
-     */
-    subagents?: Array<T0>;
 }
 
 
 
 /**
- * Check if a given object implements the T0 interface.
+ * Check if a given object implements the Agent interface.
  */
-export function instanceOfT0(value: object): value is T0 {
+export function instanceOfAgent(value: object): value is Agent {
     if (!('orgId' in value) || value['orgId'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
     if (!('description' in value) || value['description'] === undefined) return false;
-    if (!('scope' in value) || value['scope'] === undefined) return false;
-    if (!('ownerId' in value) || value['ownerId'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('status' in value) || value['status'] === undefined) return false;
     if (!('capabilities' in value) || value['capabilities'] === undefined) return false;
     if (!('trigger' in value) || value['trigger'] === undefined) return false;
@@ -127,11 +114,11 @@ export function instanceOfT0(value: object): value is T0 {
     return true;
 }
 
-export function T0FromJSON(json: any): T0 {
-    return T0FromJSONTyped(json, false);
+export function AgentFromJSON(json: any): Agent {
+    return AgentFromJSONTyped(json, false);
 }
 
-export function T0FromJSONTyped(json: any, ignoreDiscriminator: boolean): T0 {
+export function AgentFromJSONTyped(json: any, ignoreDiscriminator: boolean): Agent {
     if (json == null) {
         return json;
     }
@@ -141,21 +128,19 @@ export function T0FromJSONTyped(json: any, ignoreDiscriminator: boolean): T0 {
         'orgId': json['orgId'],
         'name': json['name'],
         'description': json['description'],
-        'scope': AgentScopeFromJSON(json['scope']),
-        'ownerId': json['ownerId'],
+        'userId': json['userId'],
         'status': AgentStatusFromJSON(json['status']),
         'capabilities': ((json['capabilities'] as Array<any>).map(V1AgentsIdPutRequestCapabilitiesInnerFromJSON)),
-        'trigger': V1AgentsIdPutRequestCapabilitiesInnerFromJSON(json['trigger']),
+        'trigger': V1AgentsIdPutRequestTriggerFromJSON(json['trigger']),
         'prompt': json['prompt'],
-        'subagents': json['subagents'] == null ? undefined : ((json['subagents'] as Array<any>).map(T0FromJSON)),
     };
 }
 
-export function T0ToJSON(json: any): T0 {
-    return T0ToJSONTyped(json, false);
+export function AgentToJSON(json: any): Agent {
+    return AgentToJSONTyped(json, false);
 }
 
-export function T0ToJSONTyped(value?: T0 | null, ignoreDiscriminator: boolean = false): any {
+export function AgentToJSONTyped(value?: Agent | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
@@ -166,13 +151,11 @@ export function T0ToJSONTyped(value?: T0 | null, ignoreDiscriminator: boolean = 
         'orgId': value['orgId'],
         'name': value['name'],
         'description': value['description'],
-        'scope': AgentScopeToJSON(value['scope']),
-        'ownerId': value['ownerId'],
+        'userId': value['userId'],
         'status': AgentStatusToJSON(value['status']),
         'capabilities': ((value['capabilities'] as Array<any>).map(V1AgentsIdPutRequestCapabilitiesInnerToJSON)),
-        'trigger': V1AgentsIdPutRequestCapabilitiesInnerToJSON(value['trigger']),
+        'trigger': V1AgentsIdPutRequestTriggerToJSON(value['trigger']),
         'prompt': value['prompt'],
-        'subagents': value['subagents'] == null ? undefined : ((value['subagents'] as Array<any>).map(T0ToJSON)),
     };
 }
 

@@ -3,16 +3,16 @@ import { Static, Type } from "@sinclair/typebox";
 export enum EventType {
     LLMUsage = "llmusage",
     Cron = "cron",
-    AiEmployeeStateUpdate = "aieemployeestateupdate",
+    EmployeeStateUpdate = "employeestateupdate",
     HumanFeedbackResponse = "humanfeedbackresponse",
     ProviderConnectionCompleted = "providerconnectioncompleted",
     RunIntent = "runintent",
     ResumeIntent = "resumeintent",
     RequestHumanFeedback = "requesthumanfeedback",
-    //RequestHumanFeedbackResponse = "requesthumanfeedbackresponse",
-    StopIntent = "stopintent",
+    EmployeeCreated = "employeecreated",
+    AgentCreated = "agentcreated",
 }
-export const AgentSchema = Type.Recursive(This => Type.Object(
+export const AgentPrototypeSchema = Type.Object(
   {
     id: Type.ReadonlyOptional(Type.String()),
     name: Type.String(),
@@ -31,9 +31,7 @@ export const AgentSchema = Type.Recursive(This => Type.Object(
       }),
     }),
     prompt: Type.String(),
-    //subagents: Type.Array(This),
-  }
-));
+})
 
 export const LLMUsageEventSchema = Type.Object({
     type: Type.Literal(EventType.LLMUsage),
@@ -125,9 +123,9 @@ export const WorkflowSchema = Type.Object({
     activation: Type.String(),
 })
 
-export const AiEmployeeUpdateEventSchema = Type.Object({
+export const EmployeeStateUpdateEventSchema = Type.Object({
     orgId: Type.String(),
-    type: Type.Literal(EventType.AiEmployeeStateUpdate),
+    type: Type.Literal(EventType.EmployeeStateUpdate),
     timestamp: Type.String(),
     /**
      * Optional processing phase for UI/consumers to understand what has been populated.
@@ -145,7 +143,23 @@ export const AiEmployeeUpdateEventSchema = Type.Object({
         description: Type.String(),
         explanation: Type.String(),
     })),
-    agents: Type.Array(AgentSchema),
+    agents: Type.Array(AgentPrototypeSchema),
+})
+
+export const AgentCreatedEventSchema = Type.Object({
+    type: Type.Literal(EventType.AgentCreated),
+    orgId: Type.String(),
+    userId: Type.String(),
+    timestamp: Type.String(),
+    agentId: Type.String(),
+    agent: AgentPrototypeSchema,
+})
+export const EmployeeCreatedEventSchema = Type.Object({
+    type: Type.Literal(EventType.EmployeeCreated),
+    orgId: Type.String(),
+    userId: Type.String(),
+    timestamp: Type.String(),
+    employeeId: Type.String(),
 })
 
 // Trigger
@@ -165,11 +179,15 @@ export const EventSchema = Type.Union([
     // graph creator
     GraphCreatorRunIntentEventSchema,
     GraphCreatorResumeIntentEventSchema,
-    AiEmployeeUpdateEventSchema,
+    EmployeeStateUpdateEventSchema,
     ProviderConnectionCompletedEventSchema,
+    AgentCreatedEventSchema,
+    EmployeeCreatedEventSchema,
 
     RequestHumanFeedbackEventSchema,
     LLMUsageEventSchema,
+    RunIntentEventSchema,
+    ResumeIntentEventSchema,
 ])
 
 
@@ -182,6 +200,6 @@ export type GraphCreatorRunIntentEvent = Static<typeof GraphCreatorRunIntentEven
 export type GraphCreatorResumeIntentEvent = Static<typeof GraphCreatorResumeIntentEventSchema>
 export type RequestHumanFeedbackEvent = Static<typeof RequestHumanFeedbackEventSchema>
 export type ProviderConnectionCompletedEvent= Static<typeof ProviderConnectionCompletedEventSchema>
-export type AiEmployeeUpdateEvent = Static<typeof AiEmployeeUpdateEventSchema>
+export type EmployeeStateUpdateEvent = Static<typeof EmployeeStateUpdateEventSchema>
 export type CronEvent = Static<typeof CronEventSchema>
 export type LLMUsageEvent = Static<typeof LLMUsageEventSchema>

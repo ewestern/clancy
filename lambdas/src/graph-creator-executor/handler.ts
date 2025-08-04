@@ -13,7 +13,7 @@ import {
   GraphCreatorResumeIntentEvent,
   RequestHumanFeedbackEvent,
   LLMUsageEvent,
-  AiEmployeeUpdateEvent,
+  EmployeeStateUpdateEvent,
 } from "@ewestern/events";
 import { LLMResult } from "@langchain/core/outputs.js";
 
@@ -84,8 +84,8 @@ export const lambdaHandler = async (
   for await (const chunk of stream) {
     if (chunk[graphCreator.WORKFLOW_BREAKDOWN_AGENT]) {
       const {workflows} = chunk[graphCreator.WORKFLOW_BREAKDOWN_AGENT];
-      const updateEvent: AiEmployeeUpdateEvent = {
-        type: EventType.AiEmployeeStateUpdate,
+      const updateEvent: EmployeeStateUpdateEvent = {
+        type: EventType.EmployeeStateUpdate,
         orgId: event.orgId,
         timestamp: new Date().toISOString(),
         phase: "workflows",
@@ -94,28 +94,16 @@ export const lambdaHandler = async (
         unsatisfiedWorkflows: [],
       }
       await publishToKinesis(updateEvent, event.executionId);
-    } else if (chunk[graphCreator.WORKFLOW_MATCHER_AGENT]) {
-      const {agents, unsatisfiedWorkflows} = chunk[graphCreator.WORKFLOW_MATCHER_AGENT];
-      const updateEvent: AiEmployeeUpdateEvent = {
-        type: EventType.AiEmployeeStateUpdate,
-        orgId: event.orgId,
-        timestamp: new Date().toISOString(),
-        phase: "mapping",
-        workflows: [],
-        agents: agents,
-        unsatisfiedWorkflows: unsatisfiedWorkflows,
-      }
-      await publishToKinesis(updateEvent, event.executionId);
     } else if (chunk[graphCreator.JOIN]) {
-      const {agents} = chunk[graphCreator.JOIN];
-      const updateEvent: AiEmployeeUpdateEvent = {
-        type: EventType.AiEmployeeStateUpdate,
+      const {agents, unsatisfiedWorkflows} = chunk[graphCreator.JOIN];
+      const updateEvent: EmployeeStateUpdateEvent = {
+        type: EventType.EmployeeStateUpdate,
         orgId: event.orgId,
         timestamp: new Date().toISOString(),
-        phase: "ready",
+        phase: "connect",
         agents: agents,
         workflows: [],
-        unsatisfiedWorkflows: [],
+        unsatisfiedWorkflows: unsatisfiedWorkflows,
       }
       await publishToKinesis(updateEvent, event.executionId);
     }
@@ -136,6 +124,7 @@ export const lambdaHandler = async (
         },
       };
       await publishToKinesis(feedbackEvent, event.executionId);
+      break;
     }
   }
 };

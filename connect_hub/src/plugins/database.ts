@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
 import postgres from "postgres";
 import { schemaAndRelations } from "../database/index.js";
 import fp from "fastify-plugin";
@@ -18,6 +19,7 @@ const registerDatabase: FastifyPluginAsync = async (fastify) => {
 
   // Create Drizzle database instance
   const db = drizzle(queryClient, { schema: schemaAndRelations });
+  await migrate(db, { migrationsFolder: "migrations" });
 
   // Decorate Fastify instance with database
   fastify.decorate("db", db);

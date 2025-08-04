@@ -56,6 +56,7 @@ export const aiEmployees = pgTable("ai_employees", {
   orgId: varchar("org_id", { length: 255 }).notNull(),
   userId: varchar("user_id", { length: 255 }).notNull(),
   name: text("name").notNull(),
+  status: employeeStatus("status").notNull().default(EmployeeStatus.Active),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

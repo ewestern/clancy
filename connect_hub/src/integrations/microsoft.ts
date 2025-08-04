@@ -229,14 +229,14 @@ export class MicrosoftProvider implements ProviderRuntime {
       this.dispatchTable.set(capabilityId, factory());
     }
 
-    // Generate scopeMapping from dispatch table (scope -> capability IDs)
+    // Generate scopeMapping from dispatch table (capability ID -> scopes)
     this.scopeMapping = {};
     for (const [capabilityId, capability] of this.dispatchTable) {
       for (const scope of capability.meta.requiredScopes) {
-        if (!this.scopeMapping[scope]) {
-          this.scopeMapping[scope] = [];
+        if (!this.scopeMapping[capabilityId]) {
+          this.scopeMapping[capabilityId] = [];
         }
-        this.scopeMapping[scope].push(capabilityId);
+        this.scopeMapping[capabilityId].push(scope);
       }
     }
   }

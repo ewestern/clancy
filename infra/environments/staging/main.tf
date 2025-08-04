@@ -37,7 +37,7 @@ resource "google_pubsub_subscription" "clancy_connect_hub_staging" {
   name = "clancy-connect-hub-staging-subscription"
   topic = google_pubsub_topic.clancy_connect_hub_staging.name
   push_config {
-    push_endpoint = "https://clancy-connect-hub-staging.onrender.com/webhook"
+    push_endpoint = "https://connect-hub.staging.clancy.systems/webhooks/google"
   }
 }
 
@@ -50,10 +50,7 @@ resource "aws_ecr_repository" "connect_hub" {
     scan_on_push = true
   }
 }
-import {
-  to = aws_ecr_repository.connect_hub
-  id = "clancy/connect-hub"
-}
+
 resource "aws_ecr_repository" "agents_core" {
   name                 = "clancy/agents-core"
   image_tag_mutability = "MUTABLE"
@@ -62,10 +59,7 @@ resource "aws_ecr_repository" "agents_core" {
     scan_on_push = true
   }
 }
-import {
-  to = aws_ecr_repository.agents_core
-  id = "clancy/agents-core"
-}
+
 
 data "aws_route53_zone" "clancy_domain" {
   name         = "clancy.systems."
@@ -112,7 +106,7 @@ module "connect_hub" {
   lb_zone_id = module.shared.lb_zone_id
   lb_dns_name = module.shared.lb_dns_name
   lb_listener_arn = module.shared.lb_listener_arn
-  image_uri = "${aws_ecr_repository.agents_core.repository_url}:latest"
+  image_uri = "${aws_ecr_repository.connect_hub.repository_url}:latest"
   service_discovery_namespace_arn = module.shared.service_discovery_namespace_arn
   cluster_arn = module.shared.cluster_arn
   clerk_publishable_key = module.shared.clerk_publishable_key

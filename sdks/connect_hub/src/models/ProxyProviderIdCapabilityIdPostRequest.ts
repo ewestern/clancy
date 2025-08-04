@@ -13,14 +13,6 @@
  */
 
 import { mapValues } from '../runtime';
-import type { OwnershipScope } from './OwnershipScope';
-import {
-    OwnershipScopeFromJSON,
-    OwnershipScopeFromJSONTyped,
-    OwnershipScopeToJSON,
-    OwnershipScopeToJSONTyped,
-} from './OwnershipScope';
-
 /**
  * 
  * @export
@@ -29,16 +21,16 @@ import {
 export interface ProxyProviderIdCapabilityIdPostRequest {
     /**
      * 
-     * @type {OwnershipScope}
+     * @type {string}
      * @memberof ProxyProviderIdCapabilityIdPostRequest
      */
-    ownershipScope: OwnershipScope;
+    userId: string;
     /**
      * 
      * @type {string}
      * @memberof ProxyProviderIdCapabilityIdPostRequest
      */
-    ownerId: string;
+    orgId: string;
     /**
      * 
      * @type {any}
@@ -51,8 +43,8 @@ export interface ProxyProviderIdCapabilityIdPostRequest {
  * Check if a given object implements the ProxyProviderIdCapabilityIdPostRequest interface.
  */
 export function instanceOfProxyProviderIdCapabilityIdPostRequest(value: object): value is ProxyProviderIdCapabilityIdPostRequest {
-    if (!('ownershipScope' in value) || value['ownershipScope'] === undefined) return false;
-    if (!('ownerId' in value) || value['ownerId'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
+    if (!('orgId' in value) || value['orgId'] === undefined) return false;
     if (!('params' in value) || value['params'] === undefined) return false;
     return true;
 }
@@ -67,8 +59,8 @@ export function ProxyProviderIdCapabilityIdPostRequestFromJSONTyped(json: any, i
     }
     return {
         
-        'ownershipScope': OwnershipScopeFromJSON(json['ownershipScope']),
-        'ownerId': json['ownerId'],
+        'userId': json['userId'],
+        'orgId': json['orgId'],
         'params': json['params'],
     };
 }
@@ -84,8 +76,8 @@ export function ProxyProviderIdCapabilityIdPostRequestToJSONTyped(value?: ProxyP
 
     return {
         
-        'ownershipScope': OwnershipScopeToJSON(value['ownershipScope']),
-        'ownerId': value['ownerId'],
+        'userId': value['userId'],
+        'orgId': value['orgId'],
         'params': value['params'],
     };
 }

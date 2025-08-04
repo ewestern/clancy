@@ -155,7 +155,10 @@ const triggers: Trigger<WebhookEvent>[] = [
     id: "message.created",
     description: "A message was created",
     paramsSchema: messageCreatedParamsSchema,
-    eventSatisfies: (event: WebhookEvent) => {
+    eventSatisfies: (event: WebhookEvent | WebhookChallenge) => {
+      if (event.type === "url_verification") {
+        return false;
+      }
       return event.event.type == "message";
     },
     getTriggerRegistrations: async (
@@ -195,6 +198,7 @@ const triggers: Trigger<WebhookEvent>[] = [
         connection: {
           id: r.connection.id,
           orgId: r.connection.orgId,
+          userId: r.connection.userId,
           providerId: r.connection.providerId,
           externalAccountMetadata: r.connection.externalAccountMetadata,
           status: r.connection.status,

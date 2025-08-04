@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { Agent } from './Agent';
+import {
+    AgentFromJSON,
+    AgentFromJSONTyped,
+    AgentToJSON,
+    AgentToJSONTyped,
+} from './Agent';
 import type { EmployeeStatus } from './EmployeeStatus';
 import {
     EmployeeStatusFromJSON,
@@ -20,13 +27,6 @@ import {
     EmployeeStatusToJSON,
     EmployeeStatusToJSONTyped,
 } from './EmployeeStatus';
-import type { T0 } from './T0';
-import {
-    T0FromJSON,
-    T0FromJSONTyped,
-    T0ToJSON,
-    T0ToJSONTyped,
-} from './T0';
 
 /**
  * 
@@ -51,13 +51,13 @@ export interface Employee {
      * @type {string}
      * @memberof Employee
      */
-    name: string;
+    userId: string;
     /**
      * 
      * @type {string}
      * @memberof Employee
      */
-    summary: string;
+    name: string;
     /**
      * 
      * @type {EmployeeStatus}
@@ -66,10 +66,10 @@ export interface Employee {
     status: EmployeeStatus;
     /**
      * 
-     * @type {Array<T0>}
+     * @type {Array<Agent>}
      * @memberof Employee
      */
-    agents: Array<T0>;
+    agents: Array<Agent>;
 }
 
 
@@ -79,8 +79,8 @@ export interface Employee {
  */
 export function instanceOfEmployee(value: object): value is Employee {
     if (!('orgId' in value) || value['orgId'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
-    if (!('summary' in value) || value['summary'] === undefined) return false;
     if (!('status' in value) || value['status'] === undefined) return false;
     if (!('agents' in value) || value['agents'] === undefined) return false;
     return true;
@@ -98,10 +98,10 @@ export function EmployeeFromJSONTyped(json: any, ignoreDiscriminator: boolean): 
         
         'id': json['id'] == null ? undefined : json['id'],
         'orgId': json['orgId'],
+        'userId': json['userId'],
         'name': json['name'],
-        'summary': json['summary'],
         'status': EmployeeStatusFromJSON(json['status']),
-        'agents': ((json['agents'] as Array<any>).map(T0FromJSON)),
+        'agents': ((json['agents'] as Array<any>).map(AgentFromJSON)),
     };
 }
 
@@ -118,10 +118,10 @@ export function EmployeeToJSONTyped(value?: Employee | null, ignoreDiscriminator
         
         'id': value['id'],
         'orgId': value['orgId'],
+        'userId': value['userId'],
         'name': value['name'],
-        'summary': value['summary'],
         'status': EmployeeStatusToJSON(value['status']),
-        'agents': ((value['agents'] as Array<any>).map(T0ToJSON)),
+        'agents': ((value['agents'] as Array<any>).map(AgentToJSON)),
     };
 }
 

@@ -36,49 +36,19 @@ export interface WebhookPostRequestAnyOf6 {
      * @type {string}
      * @memberof WebhookPostRequestAnyOf6
      */
+    userId: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof WebhookPostRequestAnyOf6
+     */
     timestamp: string;
     /**
      * 
      * @type {string}
      * @memberof WebhookPostRequestAnyOf6
      */
-    agentId: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WebhookPostRequestAnyOf6
-     */
-    executionId: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WebhookPostRequestAnyOf6
-     */
-    model: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof WebhookPostRequestAnyOf6
-     */
-    promptTokens: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof WebhookPostRequestAnyOf6
-     */
-    completionTokens: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof WebhookPostRequestAnyOf6
-     */
-    totalTokens: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof WebhookPostRequestAnyOf6
-     */
-    prompt: string;
+    employeeId: string;
 }
 
 
@@ -86,7 +56,7 @@ export interface WebhookPostRequestAnyOf6 {
  * @export
  */
 export const WebhookPostRequestAnyOf6TypeEnum = {
-    Llmusage: 'llmusage'
+    Employeecreated: 'employeecreated'
 } as const;
 export type WebhookPostRequestAnyOf6TypeEnum = typeof WebhookPostRequestAnyOf6TypeEnum[keyof typeof WebhookPostRequestAnyOf6TypeEnum];
 
@@ -97,14 +67,9 @@ export type WebhookPostRequestAnyOf6TypeEnum = typeof WebhookPostRequestAnyOf6Ty
 export function instanceOfWebhookPostRequestAnyOf6(value: object): value is WebhookPostRequestAnyOf6 {
     if (!('type' in value) || value['type'] === undefined) return false;
     if (!('orgId' in value) || value['orgId'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
-    if (!('agentId' in value) || value['agentId'] === undefined) return false;
-    if (!('executionId' in value) || value['executionId'] === undefined) return false;
-    if (!('model' in value) || value['model'] === undefined) return false;
-    if (!('promptTokens' in value) || value['promptTokens'] === undefined) return false;
-    if (!('completionTokens' in value) || value['completionTokens'] === undefined) return false;
-    if (!('totalTokens' in value) || value['totalTokens'] === undefined) return false;
-    if (!('prompt' in value) || value['prompt'] === undefined) return false;
+    if (!('employeeId' in value) || value['employeeId'] === undefined) return false;
     return true;
 }
 
@@ -120,14 +85,9 @@ export function WebhookPostRequestAnyOf6FromJSONTyped(json: any, ignoreDiscrimin
         
         'type': json['type'],
         'orgId': json['orgId'],
+        'userId': json['userId'],
         'timestamp': json['timestamp'],
-        'agentId': json['agentId'],
-        'executionId': json['executionId'],
-        'model': json['model'],
-        'promptTokens': json['promptTokens'],
-        'completionTokens': json['completionTokens'],
-        'totalTokens': json['totalTokens'],
-        'prompt': json['prompt'],
+        'employeeId': json['employeeId'],
     };
 }
 
@@ -144,14 +104,9 @@ export function WebhookPostRequestAnyOf6ToJSONTyped(value?: WebhookPostRequestAn
         
         'type': value['type'],
         'orgId': value['orgId'],
+        'userId': value['userId'],
         'timestamp': value['timestamp'],
-        'agentId': value['agentId'],
-        'executionId': value['executionId'],
-        'model': value['model'],
-        'promptTokens': value['promptTokens'],
-        'completionTokens': value['completionTokens'],
-        'totalTokens': value['totalTokens'],
-        'prompt': value['prompt'],
+        'employeeId': value['employeeId'],
     };
 }
 

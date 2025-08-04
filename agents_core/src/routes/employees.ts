@@ -3,6 +3,7 @@ import {
   EmployeeSchema,
   EmployeeStatus,
   EmployeeStatusSchema,
+  GetEmployeeEndpoint,
 } from "../models/employees.js";
 import {
   CreateEmployeeEndpoint,
@@ -18,9 +19,11 @@ import {
   AgentStatusSchema,
 } from "../models/agents.js";
 import { agents, aiEmployees } from "../database/schema.js";
-import { Static } from "@sinclair/typebox";
 import { TriggersApi, Configuration } from "@ewestern/connect_hub_sdk";
 import { getAuth } from "@clerk/fastify";
+import { eq } from "drizzle-orm";
+import { getCurrentTimestamp, publishToKinesis } from "../utils.js";
+import { EventType } from "@ewestern/events";
 
 async function createTriggerRegistration(agent: Agent, token: Promise<string>) {
   const configuration = new Configuration({
@@ -57,6 +60,16 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
     ) => {
       // steps: create employee, create agents, create trigger-registrations, publish event
       const auth = getAuth(request);
+      if (!auth.userId) {
+        return reply.status(401).send({
+          error: "Unauthorized",
+          message: "Unauthorized",
+          statusCode: 401,
+          timestamp: getCurrentTimestamp(),
+        });
+      }
+      
+      const orgId = auth.orgId;
       const { agents: newAgents, ...employee } = request.body;
       return fastify.db.transaction(async (tx) => {
         const [createdEmployee] = await tx
@@ -68,14 +81,20 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
         }
         const createdAgents = await tx
           .insert(agents)
-          .values(
-            newAgents.map((agent: Static<typeof AgentSchema>) => ({
-              ...agent,
-            })),
-          )
+          .values(newAgents)
           .returning();
         const triggerRegistrations = await Promise.all(
           createdAgents.map((agent) => createTriggerRegistration(agent, auth.getToken() as Promise<string>)),
+        );
+        await publishToKinesis(
+          [{
+            type: EventType.EmployeeCreated,
+            orgId: createdEmployee.orgId,
+            userId: createdEmployee.userId,
+            employeeId: createdEmployee.id,
+            timestamp: getCurrentTimestamp(),
+          }],
+          (event) => event.orgId,
         );
         return {
           ...createdEmployee,
@@ -100,11 +119,38 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
         },
       });
       return reply.status(200).send(
-        employees.map((employee) => ({
-          ...employee,
-          status: EmployeeStatus.Active,
-        })),
+        employees,
       );
+    },
+  );
+
+  fastify.get(
+    "/employees/:id",
+    {
+      schema: GetEmployeeEndpoint,
+    },
+    async (
+      request: FastifyRequestTypeBox<typeof GetEmployeeEndpoint>,
+      reply: FastifyReplyTypeBox<typeof GetEmployeeEndpoint>,
+    ) => {
+      const { id } = request.params;
+      const employee = await fastify.db.query.aiEmployees.findFirst({
+        where: eq(aiEmployees.id, id),
+        with: {
+          agents: true,
+        },
+      });
+      if (!employee) {
+        return reply.status(404).send({
+          id: id,
+          orgId: "",
+          userId: "",
+          name: "",
+          status: EmployeeStatus.Inactive,
+          agents: [],
+        });
+      }
+      return reply.status(200).send(employee);
     },
   );
 };

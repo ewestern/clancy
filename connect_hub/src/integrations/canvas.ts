@@ -313,10 +313,10 @@ export class CanvasProvider implements ProviderRuntime {
     this.scopeMapping = {};
     for (const [capabilityId, capability] of this.dispatchTable) {
       for (const scope of capability.meta.requiredScopes) {
-        if (!this.scopeMapping[scope]) {
-          this.scopeMapping[scope] = [];
+        if (!this.scopeMapping[capabilityId]) {
+          this.scopeMapping[capabilityId] = [];
         }
-        this.scopeMapping[scope].push(capabilityId);
+        this.scopeMapping[capabilityId].push(scope);
       }
     }
   }

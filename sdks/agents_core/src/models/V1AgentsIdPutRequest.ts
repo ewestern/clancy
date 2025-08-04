@@ -20,20 +20,13 @@ import {
     AgentStatusToJSON,
     AgentStatusToJSONTyped,
 } from './AgentStatus';
-import type { AgentScope } from './AgentScope';
+import type { V1AgentsIdPutRequestTrigger } from './V1AgentsIdPutRequestTrigger';
 import {
-    AgentScopeFromJSON,
-    AgentScopeFromJSONTyped,
-    AgentScopeToJSON,
-    AgentScopeToJSONTyped,
-} from './AgentScope';
-import type { T0 } from './T0';
-import {
-    T0FromJSON,
-    T0FromJSONTyped,
-    T0ToJSON,
-    T0ToJSONTyped,
-} from './T0';
+    V1AgentsIdPutRequestTriggerFromJSON,
+    V1AgentsIdPutRequestTriggerFromJSONTyped,
+    V1AgentsIdPutRequestTriggerToJSON,
+    V1AgentsIdPutRequestTriggerToJSONTyped,
+} from './V1AgentsIdPutRequestTrigger';
 import type { V1AgentsIdPutRequestCapabilitiesInner } from './V1AgentsIdPutRequestCapabilitiesInner';
 import {
     V1AgentsIdPutRequestCapabilitiesInnerFromJSON,
@@ -68,16 +61,10 @@ export interface V1AgentsIdPutRequest {
     description?: string;
     /**
      * 
-     * @type {AgentScope}
-     * @memberof V1AgentsIdPutRequest
-     */
-    scope?: AgentScope;
-    /**
-     * 
      * @type {string}
      * @memberof V1AgentsIdPutRequest
      */
-    ownerId?: string;
+    userId?: string;
     /**
      * 
      * @type {AgentStatus}
@@ -92,22 +79,16 @@ export interface V1AgentsIdPutRequest {
     capabilities?: Array<V1AgentsIdPutRequestCapabilitiesInner>;
     /**
      * 
-     * @type {V1AgentsIdPutRequestCapabilitiesInner}
+     * @type {V1AgentsIdPutRequestTrigger}
      * @memberof V1AgentsIdPutRequest
      */
-    trigger?: V1AgentsIdPutRequestCapabilitiesInner;
+    trigger?: V1AgentsIdPutRequestTrigger;
     /**
      * 
      * @type {string}
      * @memberof V1AgentsIdPutRequest
      */
     prompt?: string;
-    /**
-     * 
-     * @type {Array<T0>}
-     * @memberof V1AgentsIdPutRequest
-     */
-    subagents?: Array<T0>;
 }
 
 
@@ -132,13 +113,11 @@ export function V1AgentsIdPutRequestFromJSONTyped(json: any, ignoreDiscriminator
         'orgId': json['orgId'] == null ? undefined : json['orgId'],
         'name': json['name'] == null ? undefined : json['name'],
         'description': json['description'] == null ? undefined : json['description'],
-        'scope': json['scope'] == null ? undefined : AgentScopeFromJSON(json['scope']),
-        'ownerId': json['ownerId'] == null ? undefined : json['ownerId'],
+        'userId': json['userId'] == null ? undefined : json['userId'],
         'status': json['status'] == null ? undefined : AgentStatusFromJSON(json['status']),
         'capabilities': json['capabilities'] == null ? undefined : ((json['capabilities'] as Array<any>).map(V1AgentsIdPutRequestCapabilitiesInnerFromJSON)),
-        'trigger': json['trigger'] == null ? undefined : V1AgentsIdPutRequestCapabilitiesInnerFromJSON(json['trigger']),
+        'trigger': json['trigger'] == null ? undefined : V1AgentsIdPutRequestTriggerFromJSON(json['trigger']),
         'prompt': json['prompt'] == null ? undefined : json['prompt'],
-        'subagents': json['subagents'] == null ? undefined : ((json['subagents'] as Array<any>).map(T0FromJSON)),
     };
 }
 
@@ -156,13 +135,11 @@ export function V1AgentsIdPutRequestToJSONTyped(value?: V1AgentsIdPutRequest | n
         'orgId': value['orgId'],
         'name': value['name'],
         'description': value['description'],
-        'scope': AgentScopeToJSON(value['scope']),
-        'ownerId': value['ownerId'],
+        'userId': value['userId'],
         'status': AgentStatusToJSON(value['status']),
         'capabilities': value['capabilities'] == null ? undefined : ((value['capabilities'] as Array<any>).map(V1AgentsIdPutRequestCapabilitiesInnerToJSON)),
-        'trigger': V1AgentsIdPutRequestCapabilitiesInnerToJSON(value['trigger']),
+        'trigger': V1AgentsIdPutRequestTriggerToJSON(value['trigger']),
         'prompt': value['prompt'],
-        'subagents': value['subagents'] == null ? undefined : ((value['subagents'] as Array<any>).map(T0ToJSON)),
     };
 }
 

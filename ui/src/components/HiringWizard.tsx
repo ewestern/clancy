@@ -16,40 +16,41 @@ import type {
   CollaborativeWizardData,
   ChatMessage,
   EventMessage,
-  EnhancedWorkflow,
   ProviderCard,
 } from "../types";
 
 import type {
   Event,
-  AiEmployeeUpdateEvent,
+  EmployeeStateUpdateEvent,
   GraphCreatorRunIntentEvent,
   RequestHumanFeedbackEvent,
   ProviderConnectionCompletedEvent,
   GraphCreatorResumeIntentEvent,
+  AgentPrototypeSchema
 } from "@ewestern/events";
-import { EventType, AgentSchema } from "@ewestern/events";
-import { Static } from "@sinclair/typebox";
+import { EventType } from "@ewestern/events";
 import {
   OAuthApi,
   Configuration,
   CapabilitiesApi,
   TriggersApi,
-  type Trigger,
-  type ProviderCapabilities,
 } from "@ewestern/connect_hub_sdk";
-import type { OauthAuditPostRequest } from "@ewestern/connect_hub_sdk";
+import type {
+  OauthAuditPostRequest,
+  Trigger,
+  ProviderCapabilities,
+} from "@ewestern/connect_hub_sdk";
 import { useWebSocketCtx } from "../context/WebSocketContext";
 import { useUser, useOrganization, useAuth } from "@clerk/react-router";
 import { WebsocketMessage } from "../types";
-
-// Agent type from events
-type Agent = Static<typeof AgentSchema>;
+import { EmployeesApi, Configuration as AgentsCoreConfiguration, EmployeeStatus, AgentStatus, Employee } from "@ewestern/agents_core_sdk";
+import { Static } from "@sinclair/typebox";
+type AgentPrototype = Static<typeof AgentPrototypeSchema>;
 
 interface HiringWizardProps {
   isOpen: boolean;
   onClose: () => void;
-  onComplete: (data: CollaborativeWizardData) => void;
+  onComplete: (data: Employee) => void;
 }
 
 export function HiringWizard({
@@ -57,40 +58,40 @@ export function HiringWizard({
   onClose,
   onComplete,
 }: HiringWizardProps) {
-  const mockAgents: Agent[] = [
-    {
-      id: "agent-1",
-      name: "Invoice Processing Agent",
-      description: "Monthly Invoice Processing",
-      trigger: {
-        id: "cron",
-        providerId: "internal",
-        triggerParams: {},
-      },
-      capabilities: [
-        { id: "drive.drives.list", providerId: "google" },
-        { id: "gmail.messages.list", providerId: "google" },
-      ],
-      prompt:
-        "You are an invoice processing assistant that handles monthly billing tasks.",
-    },
-    {
-      id: "agent-2",
-      name: "Meeting Coordination Agent",
-      description: "Meeting Coordination Assistant",
-      trigger: {
-        id: "message.created",
-        providerId: "slack",
-        triggerParams: {},
-      },
-      capabilities: [
-        { id: "chat.post", providerId: "slack" },
-        { id: "gmail.messages.list", providerId: "google" },
-      ],
-      prompt:
-        "You are a meeting coordination assistant that helps manage calendars and meetings.",
-    },
-  ];
+  //const mockAgents: AgentPrototype[] = [
+  //  {
+  //    id: "agent-1",
+  //    name: "Invoice Processing Agent",
+  //    description: "Monthly Invoice Processing",
+  //    trigger: {
+  //      id: "cron",
+  //      providerId: "internal",
+  //      triggerParams: {},
+  //    },
+  //    capabilities: [
+  //      { id: "drive.drives.list", providerId: "google" },
+  //      { id: "gmail.messages.list", providerId: "google" },
+  //    ],
+  //    prompt:
+  //      "You are an invoice processing assistant that handles monthly billing tasks.",
+  //  },
+  //  {
+  //    id: "agent-2",
+  //    name: "Meeting Coordination Agent",
+  //    description: "Meeting Coordination Assistant",
+  //    trigger: {
+  //      id: "message.created",
+  //      providerId: "slack",
+  //      triggerParams: {},
+  //    },
+  //    capabilities: [
+  //      { id: "chat.post", providerId: "slack" },
+  //      { id: "gmail.messages.list", providerId: "google" },
+  //    ],
+  //    prompt:
+  //      "You are a meeting coordination assistant that helps manage calendars and meetings.",
+  //  },
+  //];
 
   const [wizardData, setWizardData] = useState<CollaborativeWizardData>({
     jobDescription: "",
@@ -114,7 +115,7 @@ export function HiringWizard({
   const [simpleWorkflows, setSimpleWorkflows] = useState<SimpleWorkflow[]>([]);
 
   // Store agents and unsatisfied workflows for the connect phase
-  const [agents, setAgents] = useState<Agent[]>([]);
+  const [agents, setAgents] = useState<AgentPrototype[]>([]);
   const [unsatisfiedWorkflows, setUnsatisfiedWorkflows] = useState<
     UnsatisfiedWorkflow[]
   >([]);
@@ -162,6 +163,15 @@ export function HiringWizard({
     );
   }, [getToken]);
 
+  const getEmployeeApi = useCallback(() => {
+    return new EmployeesApi(
+      new AgentsCoreConfiguration({
+        basePath: import.meta.env.VITE_AGENTS_CORE_URL!,
+        accessToken: getToken() as Promise<string>,
+      }),
+    );
+  }, [getToken]);
+
   // Fetch capability and trigger metadata when component mounts
   useEffect(() => {
     if (!isOpen) return;
@@ -201,17 +211,6 @@ export function HiringWizard({
   useEffect(() => {
     // Reset wizard when modal opens
     if (isOpen) {
-      //setWizardData((prev) => ({
-      //  ...prev,
-      //  jobDescription: "",
-      //  chatHistory: [],
-      //  enhancedWorkflows: [],
-      //  availableProviders: [],
-      //  connectedProviders: [],
-      //  phase: "job_description",
-      //  canComplete: false,
-      //  executionId: undefined,
-      //}));
       setWizardData((prev) => ({
         ...prev,
         jobDescription: "",
@@ -219,19 +218,31 @@ export function HiringWizard({
         enhancedWorkflows: [],
         availableProviders: [],
         connectedProviders: [],
-        phase: "connect",
+        phase: "job_description",
         canComplete: false,
         executionId: undefined,
       }));
+      //setWizardData((prev) => ({
+      //  ...prev,
+      //  jobDescription: "",
+      //  chatHistory: [],
+      //  enhancedWorkflows: [],
+      //  availableProviders: [],
+      //  connectedProviders: [],
+      //  phase: "connect",
+      //  canComplete: false,
+      //  executionId: undefined,
+      //}));
       setSimpleWorkflows([]);
-      setAgents(mockAgents);
+      //setAgents(mockAgents);
+      setAgents([]);
       setUnsatisfiedWorkflows([]);
       setFeedbackRequested(false);
     }
   }, [isOpen]);
 
   const performOAuthAudit = useCallback(
-    async (agents: Agent[]) => {
+    async (agents: AgentPrototype[]) => {
       if (!organization?.id) {
         console.error("No organization ID available for OAuth audit");
         return;
@@ -259,15 +270,12 @@ export function HiringWizard({
           triggers,
         };
 
-        console.log("Performing OAuth audit with request:", auditRequest);
         const oauthApi = getAuditApi();
 
         const auditResults = await oauthApi.oauthAuditPost({
           orgId: organization.id,
           oauthAuditPostRequest: auditRequest,
         });
-
-        console.log("OAuth audit results:", auditResults);
 
         const groupedCapabilities = Object.groupBy(
           capabilities,
@@ -324,7 +332,7 @@ export function HiringWizard({
     }
   }, [agents, wizardData.phase, performOAuthAudit]);
 
-  const handleAiEmployeeUpdate = async (event: AiEmployeeUpdateEvent) => {
+  const handleEmployeeStateUpdate = async (event: EmployeeStateUpdateEvent) => {
     console.log("Received ai employee update:", event);
 
     if (event.phase === "workflows") {
@@ -352,29 +360,7 @@ export function HiringWizard({
         phase: "connect",
       }));
     } else {
-      // For ready phase, convert to enhanced workflows for provider selection
-      const enhancedWorkflows: EnhancedWorkflow[] = event.workflows.map(
-        (workflow, index) => ({
-          id: `workflow-${index}`,
-          title: workflow.description,
-          frequency: workflow.activation, // Use activation as frequency
-          runtime: "Variable", // Default since not provided in event
-          subSteps: workflow.steps.map((step) => step.description),
-          connectionStatus: "requires_connection" as const,
-          requiredProviders: [], // Could be derived from workflow steps or separate logic
-          lastUpdated: new Date(),
-          changeHighlight: true,
-        }),
-      );
-
-      setWizardData((prev) => ({
-        ...prev,
-        phase: "ready", // Always set to ready for this final case
-        enhancedWorkflows,
-        canComplete: prev.availableProviders.every((p) =>
-          prev.connectedProviders.some((cp) => cp.id === p.id),
-        ), // All required providers must be connected (true if no providers needed)
-      }));
+      console.error("Event should never be in phase:", event.phase);
     }
 
     setIsAnalyzing(false);
@@ -395,9 +381,10 @@ export function HiringWizard({
         );
         if (!provider) return prev;
 
-        const updatedProvider: ProviderCard = {
+        const updatedProvider = {
           ...provider,
-          connectionStatus: "connected",
+          connectionStatus: "connected" as const,
+          connectionId: event.connectionId,
         };
 
         const newConnectedProviders = [
@@ -463,8 +450,8 @@ export function HiringWizard({
       const event = eventMessage.event as Event;
 
       switch (event.type) {
-        case EventType.AiEmployeeStateUpdate:
-          handleAiEmployeeUpdate(event as AiEmployeeUpdateEvent);
+        case EventType.EmployeeStateUpdate:
+          handleEmployeeStateUpdate(event as EmployeeStateUpdateEvent);
           break;
         case EventType.ProviderConnectionCompleted:
           handleProviderConnectionCompleted(
@@ -623,16 +610,45 @@ export function HiringWizard({
     });
   };
 
+  const createEmployee = async (): Promise<Employee> => {
+    const employeeApi = getEmployeeApi();
+    return employeeApi.v1EmployeesPost({
+      employee: {
+        name: wizardData.jobDescription,
+        orgId: organization?.id as string,
+        userId: user?.id as string,
+        status: EmployeeStatus.Active,
+        agents: agents.map((agent) => ({
+          name: agent.name,
+          description: agent.description,
+          capabilities: agent.capabilities.map((capability) => ({
+            providerId: capability.providerId,
+            id: capability.id,
+          })),
+          trigger: {
+            providerId: agent.trigger.providerId,
+            id: agent.trigger.id,
+            triggerParams: agent.trigger.triggerParams,
+          },
+          prompt: agent.prompt,
+          orgId: organization?.id as string,
+          userId: user?.id as string,
+          status: AgentStatus.Active,
+        })),
+      },
+    })
+  };
+
   const handleComplete = () => {
-    onComplete(wizardData);
-    onClose();
+    createEmployee().then((employee) => {
+      onComplete(employee);
+      onClose();
+    });
   };
 
   if (!user) {
     return <div>Please sign in to continue</div>;
   }
-  console.log("PHASE", wizardData.phase);
-  console.log("AGENTS", agents);
   // Job Description Phase
   if (wizardData.phase === "job_description") {
     return (
@@ -722,10 +738,6 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
       </div>
     );
   }
-  console.log("PHASE", wizardData.phase);
-  console.log("AVAILABLE PROVIDERS", wizardData.availableProviders);
-  console.log("CONNECTED PROVIDERS", wizardData.connectedProviders);
-
   // Post Job Description Phases
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -752,14 +764,6 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
         <div className="flex flex-1 overflow-hidden">
           {/* Left Pane – Chat */}
           <div className="w-1/3 min-w-[280px] border-r border-gray-200 flex flex-col">
-            <div className="p-4 bg-gray-50 border-b border-gray-200 flex-shrink-0">
-              <h4 className="font-medium text-gray-900">
-                Chat with the AI Employee Designer
-              </h4>
-              <p className="text-sm text-gray-600">
-                Ask questions or provide feedback
-              </p>
-            </div>
             <div className="flex-1 min-h-0">
               <ChatInterface
                 messages={wizardData.chatHistory}
@@ -785,6 +789,16 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
                       requirements.
                     </p>
                     <SimpleWorkflowDisplay workflows={simpleWorkflows} />
+                    
+                    {/* Loading indicator for next phase */}
+                    <div className="mt-8 border-t border-gray-200 pt-6">
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mr-3"></div>
+                        <span className="text-gray-600">
+                          Analyzing integrations and creating AI employees...
+                        </span>
+                      </div>
+                    </div>
                   </>
                 ) : (
                   <PhaseProgressIndicator phase="workflows" />
@@ -840,31 +854,7 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
         {/* Footer */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between flex-shrink-0">
           <div className="text-sm text-gray-600">
-            {wizardData.availableProviders.length > 0 ? (
-              wizardData.canComplete ? (
-                <div className="flex items-center space-x-2 text-green-600">
-                  <CheckCircle size={16} />
-                  <span>
-                    All required integrations connected (
-                    {wizardData.connectedProviders.length}/
-                    {wizardData.availableProviders.length})
-                  </span>
-                </div>
-              ) : (
-                <span>
-                  Connect all required integrations to continue (
-                  {wizardData.connectedProviders.length}/
-                  {wizardData.availableProviders.length})
-                </span>
-              )
-            ) : wizardData.phase === "connect" && wizardData.canComplete ? (
-              <div className="flex items-center space-x-2 text-green-600">
-                <CheckCircle size={16} />
-                <span>No additional integrations required</span>
-              </div>
-            ) : (
-              <span>Analyzing required integrations...</span>
-            )}
+
           </div>
 
           <button

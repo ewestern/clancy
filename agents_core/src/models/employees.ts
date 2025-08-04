@@ -35,6 +35,7 @@ export const CreateEmployeeEndpoint = {
   response: {
     200: Ref(EmployeeSchema),
     400: ErrorSchema,
+    401: ErrorSchema,
   },
 };
 

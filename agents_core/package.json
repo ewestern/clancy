@@ -22,7 +22,7 @@
     "@aws-sdk/client-kinesis": "^3.848.0",
     "@clerk/backend": "^2.4.5",
     "@clerk/fastify": "^2.4.5",
-    "@ewestern/events": "^1.0.20",
+    "@ewestern/events": "^1.0.23",
     "@ewestern/connect_hub_sdk": "^0.0.7",
     "@fastify/cors": "^11.0.1",
     "@fastify/helmet": "^13.0.1",

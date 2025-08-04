@@ -1,14 +1,14 @@
 import { Bot } from "lucide-react";
 import { clsx } from "clsx";
 import { Static } from "@sinclair/typebox";
-import { AgentSchema } from "@ewestern/events";
+import { AgentPrototypeSchema } from "@ewestern/events";
 import { ProviderCapabilities, Trigger } from "@ewestern/connect_hub_sdk";
 
 // Agent type from events
-type Agent = Static<typeof AgentSchema>;
+type AgentPrototype = Static<typeof AgentPrototypeSchema>;
 
 interface AgentCardProps {
-  agent: Agent;
+  agent: AgentPrototype;
   providers?: Record<string, ProviderCapabilities>;
   triggers?: Record<string, Trigger>;
 }
@@ -43,7 +43,7 @@ export function AgentCard({
   };
 
   // Get unique providers for this agent
-  const getUniqueProviders = (agent: Agent) => {
+  const getUniqueProviders = (agent: AgentPrototype) => {
     const uniqueProviderIds = Array.from(
       new Set(agent.capabilities.map((cap) => cap.providerId)),
     );
@@ -53,7 +53,7 @@ export function AgentCard({
   };
 
   // Get trigger description
-  const getTriggerDescription = (agent: Agent) => {
+  const getTriggerDescription = (agent: AgentPrototype) => {
     return triggers[agent.trigger.id]?.description || agent.trigger.id;
   };
 

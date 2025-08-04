@@ -130,7 +130,7 @@ export interface CollaborativeWizardData {
   chatHistory: ChatMessage[];
   enhancedWorkflows: EnhancedWorkflow[];
   availableProviders: ProviderCard[];
-  connectedProviders: ProviderCard[];
+  connectedProviders: (ProviderCard & { connectionId: string })[];
   phase: "job_description" | "workflows" | "connect" | "ready" | "completed"; // Updated: changed "mapping" to "connect"
   canComplete: boolean;
   notifications: NotificationSettings;

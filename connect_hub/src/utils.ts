@@ -3,6 +3,14 @@ import {
   PutRecordCommand,
   PutRecordsCommand,
 } from "@aws-sdk/client-kinesis";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+
+dayjs.extend(utc);
+
+export function getCurrentTimestamp() {
+  return dayjs().utc().format();
+}
 
 export async function publishEvents(
   events: { event: Record<string, unknown>; partitionKey: string }[],
@@ -11,6 +19,13 @@ export async function publishEvents(
     region: process.env.AWS_REGION!,
     profile: process.env.AWS_PROFILE!,
   });
+  let eventsWithTimestamp = events.map((e) => ({
+    ...e,
+    event: {
+      ...e.event,
+      timestamp: getCurrentTimestamp(),
+    },
+  }));
   const command = new PutRecordsCommand({
     Records: events.map((e) => ({
       Data: Buffer.from(JSON.stringify(e.event)),

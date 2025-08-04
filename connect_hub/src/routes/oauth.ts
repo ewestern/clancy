@@ -71,7 +71,6 @@ async function updateOrCreateConnection(
   externalAccountMetadata: Record<string, unknown>,
   orgId: string,
   providerId: string,
-  userId?: string, // Auth0 user ID for user-scoped tokens
 ) {
   await db.transaction(async (tx) => {
     const existingConnectionResponse = await tx
@@ -87,12 +86,7 @@ async function updateOrCreateConnection(
       .limit(1);
     const existingConnection = existingConnectionResponse[0] || null;
 
-    // Determine ownership scope and owner ID
-    // For now, assume user-scoped if userId is provided, otherwise organization-scoped
-    const ownershipScope = userId
-      ? OwnershipScope.User
-      : OwnershipScope.Organization;
-    const ownerId = userId || orgId;
+
 
     if (existingConnection) {
       // Update existing token for this ownership scope/owner combination
@@ -101,15 +95,15 @@ async function updateOrCreateConnection(
         .set({
           tokenPayload: tokenPayload,
           scopes: scopes,
-          ownershipScope: ownershipScope,
-          ownerId: ownerId,
+          ownershipScope: OwnershipScope.User,
+          ownerId: oauthTransaction.userId,
           updatedAt: new Date(),
         })
         .where(
           and(
             eq(tokens.connectionId, existingConnection.id),
-            eq(tokens.ownershipScope, ownershipScope),
-            eq(tokens.ownerId, ownerId),
+            eq(tokens.ownershipScope, OwnershipScope.User),
+            eq(tokens.ownerId, oauthTransaction.userId),
           ),
         );
 
@@ -120,8 +114,8 @@ async function updateOrCreateConnection(
         .where(
           and(
             eq(tokens.connectionId, existingConnection.id),
-            eq(tokens.ownershipScope, ownershipScope),
-            eq(tokens.ownerId, ownerId),
+            eq(tokens.ownershipScope, OwnershipScope.User),
+            eq(tokens.ownerId, oauthTransaction.userId),
           ),
         );
 
@@ -130,8 +124,8 @@ async function updateOrCreateConnection(
           connectionId: existingConnection.id,
           tokenPayload: tokenPayload,
           scopes: scopes,
-          ownershipScope: ownershipScope,
-          ownerId: ownerId,
+          ownershipScope: OwnershipScope.User,
+          ownerId: oauthTransaction.userId,
         });
       }
 
@@ -155,6 +149,7 @@ async function updateOrCreateConnection(
       const [connection] = await tx
         .insert(connections)
         .values({
+          userId: oauthTransaction.userId,
           externalAccountMetadata: externalAccountMetadata,
           orgId: orgId,
           providerId: providerId,
@@ -168,8 +163,8 @@ async function updateOrCreateConnection(
         connectionId: connection.id,
         tokenPayload: tokenPayload,
         scopes: scopes,
-        ownershipScope: ownershipScope,
-        ownerId: ownerId,
+        ownershipScope: OwnershipScope.User,
+        ownerId: oauthTransaction.userId,
       });
       await tx
         .update(oauthTransactions)
@@ -181,51 +176,6 @@ async function updateOrCreateConnection(
     }
   });
 }
-
-/** 
-function sendConnectionNotification(
-  wsService: WebSocketService,
-  userId: string,
-  providerId: string,
-  externalAccountMetadata: Record<string, unknown>,
-  status: "connected" | "failed" = "connected",
-) {
-  const connectionMessage: ProviderConnectionCompletedMessage = {
-    type: "provider_connection_completed",
-    timestamp: new Date().toISOString(),
-    data: {
-      providerId: providerId,
-      connectionStatus: status,
-      ...(status === "connected" && {
-        accountInfo: {
-          email:
-            typeof externalAccountMetadata === "object" &&
-            externalAccountMetadata &&
-            "email" in externalAccountMetadata
-              ? String(externalAccountMetadata.email)
-              : undefined,
-          accountName:
-            typeof externalAccountMetadata === "object" &&
-            externalAccountMetadata &&
-            "name" in externalAccountMetadata
-              ? String(externalAccountMetadata.name)
-              : undefined,
-        },
-      }),
-    },
-  };
-
-  try {
-    wsService.sendToUser(userId, connectionMessage);
-    console.log(
-      `Sent provider connection ${status} message for ${providerId} to user ${userId}`,
-    );
-  } catch (error) {
-    console.error(`Failed to send provider connection message: ${error}`);
-    // Don't fail the OAuth flow if WebSocket message fails
-  }
-}
-*/
 
 // Helper function to handle callback errors
 async function handleCallbackError(
@@ -346,7 +296,8 @@ export async function oauthRoutes(app: FastifyTypeBox) {
     ) => {
       const { orgId, scopes } = request.query;
       const { provider: providerId } = request.params;
-      const baseUrl = process.env.REDIRECT_BASE_URL!;
+      //const baseUrl = process.env.REDIRECT_BASE_URL!;
+      const baseUrl = "https://connect-hub.staging.clancy.systems";
       const { userId } = getAuth(request);
       if (!userId) {
         return reply.status(401).send({
@@ -374,7 +325,7 @@ export async function oauthRoutes(app: FastifyTypeBox) {
         // Map internal Clancy scopes to provider-native scopes using scopeMapping
         const providerScopes = scopes.flatMap((internalScope) => {
           const mappedScopes = provider.scopeMapping[internalScope];
-          return mappedScopes || [internalScope]; // fallback to original scope if no mapping exists
+          return mappedScopes || []; // fallback to original scope if no mapping exists
         });
 
         // Remove duplicates
@@ -474,7 +425,6 @@ export async function oauthRoutes(app: FastifyTypeBox) {
           externalAccountMetadata,
           oauthContext.orgId,
           providerId,
-          oauthTransaction.userId, // Pass userId to updateOrCreateConnection
         );
         publishEvents([
           {
@@ -485,12 +435,13 @@ export async function oauthRoutes(app: FastifyTypeBox) {
               connectionId: oauthTransaction.id,
               externalAccountMetadata: externalAccountMetadata,
               userId: oauthTransaction.userId,
+              orgId: oauthTransaction.orgId,
             },
             partitionKey: oauthTransaction.id,
           },
         ]);
 
-        return reply.redirect(`${process.env.REDIRECT_BASE_URL!}/`);
+        return reply.redirect(`https://app.clancyai.com/`);
       } catch (error) {
         const errorResponse = await handleCallbackError(
           app.db,
@@ -678,14 +629,13 @@ export async function oauthRoutes(app: FastifyTypeBox) {
             continue;
           }
 
-          const scopesParam =
-            scopesToRequestInternal.length > 0
-              ? scopesToRequestInternal.join(",")
-              : "";
+          // Build OAuth launch URL with repeated "scopes" params so Fastify parses them as an array
+          const searchParams = new URLSearchParams({ orgId });
+          for (const capId of scopesToRequestInternal) {
+            searchParams.append("scopes", capId);
+          }
 
-          const oauthUrl = `${baseUrl}/oauth/launch/${providerId}?orgId=${orgId}&scopes=${encodeURIComponent(
-            scopesParam,
-          )}`;
+          const oauthUrl = `${baseUrl}/oauth/launch/${providerId}?${searchParams.toString()}`;
 
           auditResults.push({
             providerId,

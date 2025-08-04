@@ -49,7 +49,7 @@ resource "aws_cloudwatch_event_rule" "agent_core_subscriptions" {
     detail = {
       event = {
         type = [
-          "aieemployeestateupdate",
+          "employeestateupdate",
           "providerconnectioncompleted",
           "requesthumanfeedback"
         ]

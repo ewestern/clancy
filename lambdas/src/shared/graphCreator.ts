@@ -21,7 +21,7 @@ import {
 import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
 import { CompiledStateGraph } from "@langchain/langgraph";
 import { Static, Type } from "@sinclair/typebox";
-import { WorkflowSchema, AgentIntermediateSchema } from "@ewestern/events"
+import { WorkflowSchema, AgentPrototypeSchema } from "@ewestern/events"
 
 const WORKFLOW_BREAKDOWN_PROMPT = `
 You are an expert in breaking down job descriptions into a set of workflows capable of being performed by an AI agent.
@@ -41,6 +41,7 @@ In addition to the core capabilities of frontier LLMs, this agent will be able t
 identified by the get_capabilities tool.
 You must also identify a trigger that will be used to activate the agent. If the trigger tool specifies parameters,
 make a best effort to identify the parameters, soliciting the user for clarification if needed.
+Remember that all user-specific information required for interacting with capabilities is handled by Connect Hub, so you do not need to ask the user for this information.
 You MUST call get_capabilities and get_triggers before you produce your final answer.  
 Do not respond with a final answer until both calls have been made.
 You MUST only return capability ids and trigger ids that you obtained by calling the provided tools.
@@ -89,7 +90,7 @@ export const AgentSchema = Type.Recursive(This => Type.Object(
 
 const UnsatisfiedWorkflowSchema = Type.Object(
   {
-    workflowDescription: Type.String({
+    description: Type.String({
       description: "A description of the workflow.",
     }),
     explanation: Type.String({
@@ -173,6 +174,7 @@ export class GraphCreator {
   async getLLm() {
     const llm = new ChatAnthropic({
       model: this.model,
+      temperature: 0.0,
     });
     return llm;
   }
@@ -205,6 +207,7 @@ export class GraphCreator {
     });
   }
   joiner(state: typeof GraphState.State) {
+    console.log("joiner", state);
     return state;
   }
 
@@ -265,12 +268,15 @@ export class GraphCreator {
     const result = await agent.invoke({
       workflow: state.workflow,
     });
+
     if (result.agent) {
       return {
         agents: [result.agent],
+        unsatisfiedWorkflows: [],
       }
     } else {
       return {
+        agents: [],
         unsatisfiedWorkflows: [result.unsatisfiedWorkflow],
       }
     }
@@ -359,7 +365,7 @@ export class GraphCreator {
       },
       {
         name: "human_input",
-        description: "Get the human input for the agent",
+        description: "Used to ask the user for questions related to Agent design.",
         schema: Type.Object({
           question: Type.String({
             description: "A question that the user should answer.",
@@ -375,11 +381,8 @@ export class GraphCreator {
         const connectHubConfig = new Configuration({
           basePath: config.configurable?.connectHubApiUrl,
         });
-        const orgId = config.configurable?.orgId;
         const capabilitiesApi = new CapabilitiesApi(connectHubConfig);
-        const capabilities = await capabilitiesApi.capabilitiesGet({
-          orgId: orgId,
-        });
+        const capabilities = await capabilitiesApi.capabilitiesGet();
         return {
           capabilities: capabilities.flatMap((provider) => {
             return provider.capabilities.map((capability) => {
@@ -410,11 +413,8 @@ export class GraphCreator {
         const connectHubConfig = new Configuration({
           basePath: config.configurable?.connectHubApiUrl,
         });
-        const orgId = config.configurable?.orgId;
         const triggersApi = new TriggersApi(connectHubConfig);
-        const triggers = await triggersApi.triggersGet({
-          orgId: orgId,
-        });
+        const triggers = await triggersApi.triggersGet();
         return {
           triggers: triggers.map((trigger) => ({
             id: trigger.id,

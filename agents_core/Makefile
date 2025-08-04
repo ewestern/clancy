@@ -69,5 +69,5 @@ push-image: login
 reset-dev-database:
 	dropdb $(DB_NAME) || true
 	createdb $(DB_NAME) || true
-	#npx drizzle-kit migrate
+	npx drizzle-kit migrate
 	npx tsx node_modules/.bin/drizzle-kit push 
