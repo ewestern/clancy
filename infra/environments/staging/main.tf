@@ -7,6 +7,12 @@ terraform {
       source = "hashicorp/google"
     }
   }
+  backend "s3" {
+    profile = "clancy"
+    bucket = "clancy-terraform-state"
+    key    = "staging/main.tfstate"
+    region = "us-east-1"
+  }
 }
 
 provider "aws" {
@@ -36,47 +42,6 @@ resource "google_pubsub_subscription" "clancy_connect_hub_staging" {
 }
 
 
-
-resource "aws_schemas_registry" "clancy_schema_registry" {
-  name        = "clancy-schema-registry-staging"
-  description = "Clancy schema registry"
-}
-
-#resource "aws_cognito_user_pool" "clancy_user_pool" {
-#  name = "clancy-user-pool-staging"
-#}
-#
-#resource "aws_cognito_user_pool_client" "clancy_user_pool_client" {
-#  name = "clancy-user-pool-client-staging"
-#  generate_secret     = true
-#  user_pool_id = aws_cognito_user_pool.clancy_user_pool.id
-#  allowed_oauth_flows = ["client_credentials"]
-#  allowed_oauth_scopes = ["https://clancyai.com/all"]
-#  depends_on = [aws_cognito_resource_server.clancy_resource_server]
-#}
-#
-#
-#resource "aws_cognito_resource_server" "clancy_resource_server" {
-#  identifier = "https://clancyai.com"
-#  name       = "clancy-resource-server-staging"
-#
-#  scope {
-#    scope_name        = "all"
-#    scope_description = "All permissions"
-#  }
-#
-#  user_pool_id = aws_cognito_user_pool.clancy_user_pool.id
-#}
-#
-#
-#resource "aws_kinesis_stream" "clancy_stream" {
-#  name             = "clancy-main-staging"
-#
-#  stream_mode_details {
-#    stream_mode = "ON_DEMAND"
-#  }
-#}
-
 resource "aws_ecr_repository" "connect_hub" {
   name                 = "clancy/connect-hub"
   image_tag_mutability = "MUTABLE"
@@ -85,6 +50,10 @@ resource "aws_ecr_repository" "connect_hub" {
     scan_on_push = true
   }
 }
+import {
+  to = aws_ecr_repository.connect_hub
+  id = "clancy/connect-hub"
+}
 resource "aws_ecr_repository" "agents_core" {
   name                 = "clancy/agents-core"
   image_tag_mutability = "MUTABLE"
@@ -92,6 +61,10 @@ resource "aws_ecr_repository" "agents_core" {
   image_scanning_configuration {
     scan_on_push = true
   }
+}
+import {
+  to = aws_ecr_repository.agents_core
+  id = "clancy/agents-core"
 }
 
 data "aws_route53_zone" "clancy_domain" {
@@ -116,10 +89,8 @@ module "lambdas" {
   project_name = "clancy"
   vpc_subnet_ids = values(module.shared.private_subnet_ids)
   vpc_security_group_ids = [module.shared.lb_security_group_id]
-  agents_core_api_url = "https://283eed2afd74.ngrok-free.app"
-  connect_hub_api_url = "https://f84eda44776c.ngrok-free.app"
-  #agents_core_api_url = module.agents_core.lb_endpoint
-  #connect_hub_api_url = module.connect_hub.lb_endpoint
+  agents_core_api_url = module.agents_core.lb_endpoint
+  connect_hub_api_url = module.connect_hub.lb_endpoint
 
   kinesis_stream_name = "clancy-main-staging"
   kinesis_stream_arn = module.events.kinesis_stream_arn
@@ -177,9 +148,10 @@ module "events" {
   environment = "staging"
   graph_creator_executor_function_arn = module.lambdas.graph_creator_executor_function_arn
   main_agent_executor_function_arn = module.lambdas.main_agent_executor_function_arn
-  agents_core_lb_endpoint = "https://283eed2afd74.ngrok-free.app"
-  connect_hub_lb_endpoint = "https://f84eda44776c.ngrok-free.app"
-  //connect_hub_lb_endpoint = module.connect_hub.lb_endpoint
+  #agents_core_lb_endpoint = "https://283eed2afd74.ngrok-free.app"
+  #connect_hub_lb_endpoint = "https://f84eda44776c.ngrok-free.app"
+  connect_hub_lb_endpoint = module.connect_hub.lb_endpoint
+  agents_core_lb_endpoint = module.agents_core.lb_endpoint
 }
 
 output "shared_subnet_ids" {

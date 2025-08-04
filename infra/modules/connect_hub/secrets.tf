@@ -6,14 +6,11 @@ resource "aws_secretsmanager_secret" "connect_hub_db_password" {
 
 resource "aws_secretsmanager_secret_version" "connect_hub_db_password" {
   secret_id     = aws_secretsmanager_secret.connect_hub_db_password.id
-  secret_string = jsonencode({
-    password = random_password.connect_hub_db_password.result
-  })
-}
-
-resource "random_password" "connect_hub_db_password" {
-  length  = 16
-  special = false
+  lifecycle {
+    ignore_changes = [
+      secret_string
+    ]
+  }
 }
 
 resource "aws_secretsmanager_secret" "oauth_microsoft_provider" {
@@ -21,9 +18,6 @@ resource "aws_secretsmanager_secret" "oauth_microsoft_provider" {
   description = "Microsoft OAuth provider secrets"
 }
 
-#resource "aws_secretsmanager_secret_version" "agents_core_service_clerk_secrets" {
-#  secret_id     = aws_secretsmanager_secret.agents_core_service_clerk_secrets.id
-#}
 
 locals {
 

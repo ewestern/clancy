@@ -23,7 +23,7 @@ resource "aws_security_group" "checkpointer_sg" {
   vpc_id      = var.vpc_id
 }
 locals {
-  db_password = jsondecode(aws_secretsmanager_secret_version.checkpointer_db_password.secret_string)["password"]
+  db_password = jsondecode(data.aws_secretsmanager_secret_version.checkpointer_db_password.secret_string)["password"]
   url_encoded_db_password = urlencode(local.db_password)
 }
 
@@ -62,6 +62,11 @@ resource "aws_db_instance" "checkpointer_db" {
   username                              = "postgres"
   vpc_security_group_ids                = [aws_security_group.checkpointer_sg.id]
   parameter_group_name                  = aws_db_parameter_group.checkpointer_db_parameter_group.name
+  lifecycle {
+    ignore_changes = [
+      password
+    ]
+  }
 }
 
 resource "aws_secretsmanager_secret" "checkpointer_db_password" {
@@ -70,14 +75,6 @@ resource "aws_secretsmanager_secret" "checkpointer_db_password" {
   description = "Password for checkpointer database"
 }
 
-resource "aws_secretsmanager_secret_version" "checkpointer_db_password" {
-  secret_id     = aws_secretsmanager_secret.checkpointer_db_password.id
-  secret_string = jsonencode({
-    password = random_password.checkpointer_db_password.result
-  })
-}
-
-resource "random_password" "checkpointer_db_password" {
-  length  = 16
-  special = false
+data "aws_secretsmanager_secret_version" "checkpointer_db_password" {
+  secret_id = aws_secretsmanager_secret.checkpointer_db_password.id
 }
