@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  X,
-  Sparkles,
-  CheckCircle,
-} from "lucide-react";
+import { X, Sparkles, CheckCircle } from "lucide-react";
 import { clsx } from "clsx";
 import { ChatInterface } from "./wizard/ChatInterface";
 import { ProviderCards } from "./wizard/ProviderCards";
-import { SimpleWorkflowDisplay, type SimpleWorkflow } from "./wizard/SimpleWorkflowDisplay";
-import { AgentConnectDisplay, type UnsatisfiedWorkflow } from "./wizard/AgentConnectDisplay";
+import {
+  SimpleWorkflowDisplay,
+  type SimpleWorkflow,
+} from "./wizard/SimpleWorkflowDisplay";
+import {
+  AgentConnectDisplay,
+  type UnsatisfiedWorkflow,
+} from "./wizard/AgentConnectDisplay";
 import { PhaseProgressIndicator } from "./wizard/PhaseProgressIndicator";
 import type {
   CollaborativeWizardData,
@@ -28,10 +30,15 @@ import type {
 } from "@ewestern/events";
 import { EventType, AgentSchema } from "@ewestern/events";
 import { Static } from "@sinclair/typebox";
-import { OAuthApi, Configuration, CapabilitiesApi, TriggersApi, type Trigger, type ProviderCapabilities } from "@ewestern/connect_hub_sdk";
-import type { 
-  OauthAuditPostRequest 
+import {
+  OAuthApi,
+  Configuration,
+  CapabilitiesApi,
+  TriggersApi,
+  type Trigger,
+  type ProviderCapabilities,
 } from "@ewestern/connect_hub_sdk";
+import type { OauthAuditPostRequest } from "@ewestern/connect_hub_sdk";
 import { useWebSocketCtx } from "../context/WebSocketContext";
 import { useUser, useOrganization, useAuth } from "@clerk/react-router";
 import { WebsocketMessage } from "../types";
@@ -39,22 +46,17 @@ import { WebsocketMessage } from "../types";
 // Agent type from events
 type Agent = Static<typeof AgentSchema>;
 
-
-
 interface HiringWizardProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: (data: CollaborativeWizardData) => void;
 }
 
-
-
 export function HiringWizard({
   isOpen,
   onClose,
   onComplete,
 }: HiringWizardProps) {
-
   const mockAgents: Agent[] = [
     {
       id: "agent-1",
@@ -63,29 +65,31 @@ export function HiringWizard({
       trigger: {
         id: "cron",
         providerId: "internal",
-        triggerParams: {}
+        triggerParams: {},
       },
       capabilities: [
         { id: "drive.drives.list", providerId: "google" },
-        { id: "gmail.messages.list", providerId: "google" }
+        { id: "gmail.messages.list", providerId: "google" },
       ],
-      prompt: "You are an invoice processing assistant that handles monthly billing tasks."
+      prompt:
+        "You are an invoice processing assistant that handles monthly billing tasks.",
     },
     {
-      id: "agent-2", 
+      id: "agent-2",
       name: "Meeting Coordination Agent",
       description: "Meeting Coordination Assistant",
       trigger: {
         id: "message.created",
         providerId: "slack",
-        triggerParams: {}
+        triggerParams: {},
       },
       capabilities: [
         { id: "chat.post", providerId: "slack" },
-        { id: "gmail.messages.list", providerId: "google" }
+        { id: "gmail.messages.list", providerId: "google" },
       ],
-      prompt: "You are a meeting coordination assistant that helps manage calendars and meetings."
-    }
+      prompt:
+        "You are a meeting coordination assistant that helps manage calendars and meetings.",
+    },
   ];
 
   const [wizardData, setWizardData] = useState<CollaborativeWizardData>({
@@ -116,7 +120,9 @@ export function HiringWizard({
   >([]);
 
   // Add state for capability and trigger metadata
-  const [providerCapabilities, setProviderCapabilities] = useState<Record<string, ProviderCapabilities>>({});
+  const [providerCapabilities, setProviderCapabilities] = useState<
+    Record<string, ProviderCapabilities>
+  >({});
   const [triggers, setTriggers] = useState<Record<string, Trigger>>({});
 
   const { send, subscribe } = useWebSocketCtx();
@@ -130,24 +136,30 @@ export function HiringWizard({
   const { getToken } = useAuth();
 
   const getAuditApi = useCallback(() => {
-    return new OAuthApi(new Configuration({
-      basePath: import.meta.env.VITE_CONNECT_HUB_URL!,
-      accessToken: getToken() as Promise<string>,
-    }));
+    return new OAuthApi(
+      new Configuration({
+        basePath: import.meta.env.VITE_CONNECT_HUB_URL!,
+        accessToken: getToken() as Promise<string>,
+      }),
+    );
   }, [getToken]);
 
   const getCapabilityApi = useCallback(() => {
-    return new CapabilitiesApi(new Configuration({
-      basePath: import.meta.env.VITE_CONNECT_HUB_URL!,
-      accessToken: getToken() as Promise<string>,
-    }));
+    return new CapabilitiesApi(
+      new Configuration({
+        basePath: import.meta.env.VITE_CONNECT_HUB_URL!,
+        accessToken: getToken() as Promise<string>,
+      }),
+    );
   }, [getToken]);
 
   const getTriggerApi = useCallback(() => {
-    return new TriggersApi(new Configuration({
-      basePath: import.meta.env.VITE_CONNECT_HUB_URL!,
-      accessToken: getToken() as Promise<string>,
-    }));
+    return new TriggersApi(
+      new Configuration({
+        basePath: import.meta.env.VITE_CONNECT_HUB_URL!,
+        accessToken: getToken() as Promise<string>,
+      }),
+    );
   }, [getToken]);
 
   // Fetch capability and trigger metadata when component mounts
@@ -161,16 +173,22 @@ export function HiringWizard({
           getTriggerApi().triggersGet(),
         ]);
 
-        const providerCapabilityMap = capabilities.reduce((acc, providerCapability) => {
-          acc[providerCapability.id] = providerCapability;
-          return acc;
-        }, {} as Record<string, ProviderCapabilities>);
+        const providerCapabilityMap = capabilities.reduce(
+          (acc, providerCapability) => {
+            acc[providerCapability.id] = providerCapability;
+            return acc;
+          },
+          {} as Record<string, ProviderCapabilities>,
+        );
         setProviderCapabilities(providerCapabilityMap);
 
-        const triggerMap = triggersList.reduce((acc, trigger) => {
-          acc[trigger.id] = trigger;
-          return acc;
-        }, {} as Record<string, Trigger>);
+        const triggerMap = triggersList.reduce(
+          (acc, trigger) => {
+            acc[trigger.id] = trigger;
+            return acc;
+          },
+          {} as Record<string, Trigger>,
+        );
         setTriggers(triggerMap);
       } catch (error) {
         console.error("Failed to fetch metadata:", error);
@@ -212,51 +230,65 @@ export function HiringWizard({
     }
   }, [isOpen]);
 
-  const performOAuthAudit = useCallback(async (agents: Agent[]) => {
-    if (!organization?.id) {
-      console.error("No organization ID available for OAuth audit");
-      return;
-    }
-    if ( Object.keys(providerCapabilities).length === 0) {
-      return;
-    }
+  const performOAuthAudit = useCallback(
+    async (agents: Agent[]) => {
+      if (!organization?.id) {
+        console.error("No organization ID available for OAuth audit");
+        return;
+      }
+      if (Object.keys(providerCapabilities).length === 0) {
+        return;
+      }
 
-    try {
-      // Prepare the audit request
-      const capabilities = agents.flatMap(agent => 
-        agent.capabilities.map((cap: { id: string; providerId: string }) => ({
-          providerId: cap.providerId,
-          capabilityId: cap.id,
-        }))
-      );
+      try {
+        // Prepare the audit request
+        const capabilities = agents.flatMap((agent) =>
+          agent.capabilities.map((cap: { id: string; providerId: string }) => ({
+            providerId: cap.providerId,
+            capabilityId: cap.id,
+          })),
+        );
 
-      const triggers = agents.map(agent => ({
-        providerId: agent.trigger.providerId,
-        triggerId: agent.trigger.id,
-      }));
+        const triggers = agents.map((agent) => ({
+          providerId: agent.trigger.providerId,
+          triggerId: agent.trigger.id,
+        }));
 
-      const auditRequest: OauthAuditPostRequest = {
-        capabilities,
-        triggers,
-      };
+        const auditRequest: OauthAuditPostRequest = {
+          capabilities,
+          triggers,
+        };
 
-      console.log("Performing OAuth audit with request:", auditRequest);
-      const oauthApi = getAuditApi();
+        console.log("Performing OAuth audit with request:", auditRequest);
+        const oauthApi = getAuditApi();
 
-      const auditResults = await oauthApi.oauthAuditPost({
-        orgId: organization.id,
-        oauthAuditPostRequest: auditRequest,
-      });
+        const auditResults = await oauthApi.oauthAuditPost({
+          orgId: organization.id,
+          oauthAuditPostRequest: auditRequest,
+        });
 
-      console.log("OAuth audit results:", auditResults);
+        console.log("OAuth audit results:", auditResults);
 
-      const groupedCapabilities = Object.groupBy(capabilities, (cap) => cap.providerId);
+        const groupedCapabilities = Object.groupBy(
+          capabilities,
+          (cap) => cap.providerId,
+        );
 
-      // Convert audit results to provider cards
-      const providers: ProviderCard[] = auditResults
-        .map(result => {
-          const capabilityIds = groupedCapabilities[result.providerId]?.map(cap => cap.capabilityId) || [];
-          const requiredScopes = capabilityIds?.map(cap => providerCapabilities[result.providerId].capabilities.find(c => c.id === cap)?.displayName).filter((cap): cap is string => cap !== undefined) || [];
+        // Convert audit results to provider cards
+        const providers: ProviderCard[] = auditResults.map((result) => {
+          const capabilityIds =
+            groupedCapabilities[result.providerId]?.map(
+              (cap) => cap.capabilityId,
+            ) || [];
+          const requiredScopes =
+            capabilityIds
+              ?.map(
+                (cap) =>
+                  providerCapabilities[result.providerId].capabilities.find(
+                    (c) => c.id === cap,
+                  )?.displayName,
+              )
+              .filter((cap): cap is string => cap !== undefined) || [];
           return {
             id: result.providerId,
             name: result.providerDisplayName, // You might want to create a mapping to friendly names
@@ -268,21 +300,22 @@ export function HiringWizard({
           };
         });
 
-      setWizardData(prev => ({
-        ...prev,
-        availableProviders: providers,
-      }));
-
-    } catch (error) {
-      console.error("OAuth audit failed:", error);
-      // On audit failure, proceed anyway assuming no additional connections needed
-      setWizardData(prev => ({
-        ...prev,
-        phase: "ready",
-        canComplete: true, // Default to allowing completion if audit fails
-      }));
-    }
-  }, [getAuditApi, organization?.id, providerCapabilities]);
+        setWizardData((prev) => ({
+          ...prev,
+          availableProviders: providers,
+        }));
+      } catch (error) {
+        console.error("OAuth audit failed:", error);
+        // On audit failure, proceed anyway assuming no additional connections needed
+        setWizardData((prev) => ({
+          ...prev,
+          phase: "ready",
+          canComplete: true, // Default to allowing completion if audit fails
+        }));
+      }
+    },
+    [getAuditApi, organization?.id, providerCapabilities],
+  );
 
   // Handle OAuth audit when agents are set
   useEffect(() => {
@@ -338,8 +371,8 @@ export function HiringWizard({
         ...prev,
         phase: "ready", // Always set to ready for this final case
         enhancedWorkflows,
-        canComplete: prev.availableProviders.every(p => 
-          prev.connectedProviders.some(cp => cp.id === p.id)
+        canComplete: prev.availableProviders.every((p) =>
+          prev.connectedProviders.some((cp) => cp.id === p.id),
         ), // All required providers must be connected (true if no providers needed)
       }));
     }
@@ -365,23 +398,21 @@ export function HiringWizard({
         const updatedProvider: ProviderCard = {
           ...provider,
           connectionStatus: "connected",
-          accountInfo: {
-            email: (event.externalAccountMetadata.email as string) || undefined,
-            accountName:
-              (event.externalAccountMetadata.name as string) || provider.name,
-          },
         };
 
-        const newConnectedProviders = [...prev.connectedProviders, updatedProvider];
-        
+        const newConnectedProviders = [
+          ...prev.connectedProviders,
+          updatedProvider,
+        ];
+
         return {
           ...prev,
           availableProviders: prev.availableProviders.map((p) =>
             p.id === event.providerId ? updatedProvider : p,
           ),
           connectedProviders: newConnectedProviders,
-          canComplete: prev.availableProviders.every(p => 
-            newConnectedProviders.some(cp => cp.id === p.id)
+          canComplete: prev.availableProviders.every((p) =>
+            newConnectedProviders.some((cp) => cp.id === p.id),
           ), // All required providers must be connected (true if no providers needed)
         };
       });
@@ -526,7 +557,9 @@ export function HiringWizard({
 
   const handleConnectProvider = async (providerId: string) => {
     // Update provider status to connecting (optimistic update)
-    const baseOauthUrl = wizardData.availableProviders.find(p => p.id === providerId)?.oauthUrl;
+    const baseOauthUrl = wizardData.availableProviders.find(
+      (p) => p.id === providerId,
+    )?.oauthUrl;
     if (!baseOauthUrl) {
       console.error("No OAuth URL found for provider:", providerId);
       return;
@@ -570,7 +603,7 @@ export function HiringWizard({
       const newConnectedProviders = prev.connectedProviders.filter(
         (p) => p.id !== providerId,
       );
-      
+
       return {
         ...prev,
         connectedProviders: newConnectedProviders,
@@ -583,8 +616,8 @@ export function HiringWizard({
               }
             : p,
         ),
-        canComplete: prev.availableProviders.every(p => 
-          newConnectedProviders.some(cp => cp.id === p.id)
+        canComplete: prev.availableProviders.every((p) =>
+          newConnectedProviders.some((cp) => cp.id === p.id),
         ), // All required providers must be connected (true if no providers needed)
       };
     });
@@ -785,7 +818,6 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
                   <>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
                       Workflows
-                      
                     </h3>
                     <p className="text-sm text-gray-600 mb-6">
                       Your AI Employees will perform the following workflows.
@@ -813,12 +845,16 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
                 <div className="flex items-center space-x-2 text-green-600">
                   <CheckCircle size={16} />
                   <span>
-                    All required integrations connected ({wizardData.connectedProviders.length}/{wizardData.availableProviders.length})
+                    All required integrations connected (
+                    {wizardData.connectedProviders.length}/
+                    {wizardData.availableProviders.length})
                   </span>
                 </div>
               ) : (
                 <span>
-                  Connect all required integrations to continue ({wizardData.connectedProviders.length}/{wizardData.availableProviders.length})
+                  Connect all required integrations to continue (
+                  {wizardData.connectedProviders.length}/
+                  {wizardData.availableProviders.length})
                 </span>
               )
             ) : wizardData.phase === "connect" && wizardData.canComplete ? (

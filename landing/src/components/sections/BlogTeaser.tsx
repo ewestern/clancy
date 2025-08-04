@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { ArrowRight, Calendar, User } from 'lucide-react';
-import { BlogPost } from '@/types';
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { ArrowRight, Calendar, User } from "lucide-react";
+import { BlogPost } from "@/types";
 
 interface BlogTeaserProps {
   posts: BlogPost[];
@@ -16,21 +16,23 @@ export function BlogTeaser({ posts }: BlogTeaserProps) {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   const getCategoryColor = (category: string) => {
     const colors = {
-      'Announcement': 'bg-blue-100 text-blue-700',
-      'Technology': 'bg-purple-100 text-purple-700',
-      'Security': 'bg-green-100 text-green-700',
-      'Product': 'bg-orange-100 text-orange-700',
+      Announcement: "bg-blue-100 text-blue-700",
+      Technology: "bg-purple-100 text-purple-700",
+      Security: "bg-green-100 text-green-700",
+      Product: "bg-orange-100 text-orange-700",
     };
-    return colors[category as keyof typeof colors] || 'bg-slate-100 text-slate-700';
+    return (
+      colors[category as keyof typeof colors] || "bg-slate-100 text-slate-700"
+    );
   };
 
   return (
@@ -53,7 +55,8 @@ export function BlogTeaser({ posts }: BlogTeaserProps) {
             viewport={{ once: true }}
             className="text-xl text-slate-600 max-w-2xl mx-auto"
           >
-            Stay updated with the latest insights on digital employees, automation, and the future of work.
+            Stay updated with the latest insights on digital employees,
+            automation, and the future of work.
           </motion.p>
         </div>
 
@@ -73,7 +76,9 @@ export function BlogTeaser({ posts }: BlogTeaserProps) {
                   <div className="h-48 bg-gradient-to-br from-primary-400 to-primary-600 relative overflow-hidden">
                     <div className="absolute inset-0 bg-black bg-opacity-20"></div>
                     <div className="absolute bottom-4 left-4">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(post.category)}`}>
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(post.category)}`}
+                      >
                         {post.category}
                       </span>
                     </div>
@@ -83,7 +88,7 @@ export function BlogTeaser({ posts }: BlogTeaserProps) {
                     <h3 className="text-xl font-display font-semibold text-slate-900 mb-3 group-hover:text-primary-600 transition-colors duration-200 line-clamp-2">
                       {post.title}
                     </h3>
-                    
+
                     <p className="text-slate-600 mb-4 line-clamp-3">
                       {post.excerpt}
                     </p>
@@ -122,7 +127,7 @@ export function BlogTeaser({ posts }: BlogTeaserProps) {
           viewport={{ once: true }}
           className="text-center"
         >
-          <Link 
+          <Link
             href="/blog"
             className="inline-flex items-center px-6 py-3 bg-white border border-slate-300 hover:border-primary-300 text-slate-700 hover:text-primary-600 font-medium rounded-lg transition-all duration-200 hover:shadow-md"
           >
@@ -133,4 +138,4 @@ export function BlogTeaser({ posts }: BlogTeaserProps) {
       </div>
     </section>
   );
-} 
+}

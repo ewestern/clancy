@@ -35,7 +35,12 @@ export function AgentConnectDisplay({
         <div>
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {agents.map((agent) => (
-              <AgentCard key={agent.id} agent={agent} providers={providerCapabilities} triggers={triggers} />
+              <AgentCard
+                key={agent.id}
+                agent={agent}
+                providers={providerCapabilities}
+                triggers={triggers}
+              />
             ))}
           </div>
         </div>
@@ -73,4 +78,4 @@ export function AgentConnectDisplay({
   );
 }
 
-export type { UnsatisfiedWorkflow }; 
+export type { UnsatisfiedWorkflow };

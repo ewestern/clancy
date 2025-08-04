@@ -13,12 +13,16 @@ interface AgentCardProps {
   triggers?: Record<string, Trigger>;
 }
 
-export function AgentCard({ agent, providers = {}, triggers = {} }: AgentCardProps) {
+export function AgentCard({
+  agent,
+  providers = {},
+  triggers = {},
+}: AgentCardProps) {
   // Sequential color cycling based on agent name
   const getSequentialColor = (name: string) => {
     const colors = [
       "bg-emerald-500",
-      "bg-indigo-500", 
+      "bg-indigo-500",
       "bg-blue-500",
       "bg-purple-500",
       "bg-orange-500",
@@ -26,9 +30,9 @@ export function AgentCard({ agent, providers = {}, triggers = {} }: AgentCardPro
       "bg-rose-500",
       "bg-teal-500",
       "bg-amber-500",
-      "bg-cyan-500"
+      "bg-cyan-500",
     ];
-    
+
     // Simple hash of the name to pick a color
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
@@ -40,8 +44,12 @@ export function AgentCard({ agent, providers = {}, triggers = {} }: AgentCardPro
 
   // Get unique providers for this agent
   const getUniqueProviders = (agent: Agent) => {
-    const uniqueProviderIds = Array.from(new Set(agent.capabilities.map(cap => cap.providerId)));
-    return uniqueProviderIds.map(providerId => providers[providerId]).filter(Boolean);
+    const uniqueProviderIds = Array.from(
+      new Set(agent.capabilities.map((cap) => cap.providerId)),
+    );
+    return uniqueProviderIds
+      .map((providerId) => providers[providerId])
+      .filter(Boolean);
   };
 
   // Get trigger description
@@ -52,22 +60,23 @@ export function AgentCard({ agent, providers = {}, triggers = {} }: AgentCardPro
   return (
     <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
       {/* Header strip */}
-      <div 
+      <div
         className={clsx(
           "h-4 rounded-t-lg bg-gradient-to-r to-slate-100",
-          getSequentialColor(agent.name)
+          getSequentialColor(agent.name),
         )}
-      >
-      </div>
+      ></div>
 
       <div className="p-4">
         <div className="flex items-start gap-4">
           {/* Left column - Avatar */}
           <div className="flex-shrink-0 relative">
-            <div className={clsx(
-              "w-14 h-14 rounded-full flex items-center justify-center",
-              getSequentialColor(agent.name)
-            )}>
+            <div
+              className={clsx(
+                "w-14 h-14 rounded-full flex items-center justify-center",
+                getSequentialColor(agent.name),
+              )}
+            >
               <Bot className="text-white" size={24} />
             </div>
             <div className="absolute -bottom-1 -right-1 bg-white border border-gray-200 rounded-full px-1 py-0.5 text-xs text-gray-600">
@@ -81,9 +90,7 @@ export function AgentCard({ agent, providers = {}, triggers = {} }: AgentCardPro
             <h3 className="text-lg font-semibold text-gray-900 mb-1">
               {agent.name}
             </h3>
-            <p className="text-sm text-gray-600 mb-3">
-              {agent.description}
-            </p>
+            <p className="text-sm text-gray-600 mb-3">{agent.description}</p>
 
             {/* Provider icons */}
             {getUniqueProviders(agent).length > 0 && (
@@ -92,9 +99,9 @@ export function AgentCard({ agent, providers = {}, triggers = {} }: AgentCardPro
                 <div className="flex items-center gap-2">
                   {getUniqueProviders(agent).map((provider) => (
                     <div key={provider.id} className="flex items-center gap-1">
-                      <img 
-                        src={provider.icon} 
-                        alt={provider.displayName} 
+                      <img
+                        src={provider.icon}
+                        alt={provider.displayName}
                         className="w-6 h-6"
                         title={provider.displayName}
                       />
@@ -116,4 +123,4 @@ export function AgentCard({ agent, providers = {}, triggers = {} }: AgentCardPro
       </div>
     </div>
   );
-} 
+}

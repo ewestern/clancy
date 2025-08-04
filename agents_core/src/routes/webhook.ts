@@ -89,7 +89,7 @@ function handleProviderConnectionCompleted(
   event: ProviderConnectionCompletedEvent,
   request: FastifyRequestTypeBox<typeof WebhookEndpoint>,
 ) {
-  const sentCount = request.server.wsService.sendEventToOrg(event.orgId, event);
+  const sentCount = request.server.wsService.sendEvent(event.userId, event);
   request.log.info(
     `Sent ProviderConnectionCompleted to ${sentCount} connections in org ${event.orgId}`,
   );

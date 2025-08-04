@@ -10,7 +10,9 @@ interface SimpleWorkflowDisplayProps {
   workflows: SimpleWorkflow[];
 }
 
-export function SimpleWorkflowDisplay({ workflows }: SimpleWorkflowDisplayProps) {
+export function SimpleWorkflowDisplay({
+  workflows,
+}: SimpleWorkflowDisplayProps) {
   return (
     <div className="space-y-4">
       {workflows.map((workflow) => (
@@ -48,4 +50,4 @@ export function SimpleWorkflowDisplay({ workflows }: SimpleWorkflowDisplayProps)
   );
 }
 
-export type { SimpleWorkflow }; 
+export type { SimpleWorkflow };

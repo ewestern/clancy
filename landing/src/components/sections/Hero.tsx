@@ -1,10 +1,77 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Play, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import Image from "next/image";
+import slack from "../../assets/logos/slack.svg";
+import quickbooks from "../../assets/logos/quickbooks.svg";
+import googleCalendar from "../../assets/logos/google-calendar.svg";
+import microsoftTeams from "../../assets/logos/microsoft-teams.svg";
+import gmailLogo from "../../assets/logos/gmail.svg";
+// Additional logos for diverse toolsets
+import shopify from "../../assets/logos/shopify.svg";
+import zoom from "../../assets/logos/zoom.svg";
+import salesforce from "../../assets/logos/salesforce.svg";
+import { useState, useEffect } from "react";
+
+interface Tool {
+  name: string;
+  logo: string;
+}
+
+interface AIEmployee {
+  jobDescription: string;
+  trigger: string;
+  tools: Tool[];
+}
 
 export function Hero() {
+  const aiEmployees: AIEmployee[] = [
+    {
+      jobDescription:
+        "Monitor inventory levels and adjust pricing across all sales channels",
+      trigger: "When stock levels change or competitor pricing updates",
+      tools: [
+        { name: "Shopify", logo: shopify },
+        { name: "QuickBooks", logo: quickbooks },
+        { name: "Slack", logo: slack },
+      ],
+    },
+    {
+      jobDescription: "Schedule meetings and keep team calendars conflict-free",
+      trigger: "When new meeting requests arrive or conflicts are detected",
+      tools: [
+        { name: "Google Calendar", logo: googleCalendar },
+        { name: "Microsoft Teams", logo: microsoftTeams },
+        { name: "Zoom", logo: zoom },
+        { name: "Slack", logo: slack },
+      ],
+    },
+    {
+      jobDescription:
+        "Follow up on overdue invoices and send payment reminders",
+      trigger: "Daily at 8 AM and whenever an invoice becomes overdue",
+      tools: [
+        { name: "QuickBooks", logo: quickbooks },
+        { name: "Salesforce", logo: salesforce },
+        { name: "Gmail", logo: gmailLogo },
+        { name: "Slack", logo: slack },
+      ],
+    },
+  ];
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % aiEmployees.length);
+    }, 10000); // Change every 10 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  const aiEmployee = aiEmployees[currentIndex];
+
   return (
     <section className="relative bg-gradient-to-br from-slate-50 to-white section-padding">
       <div className="section-container">
@@ -18,47 +85,27 @@ export function Hero() {
           >
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-slate-900 leading-tight mb-6">
               <span className="text-balance">
-                Autonomous employees for{' '}
+                Autonomous employees for{" "}
                 <span className="text-primary-500">every workflow</span>
               </span>
             </h1>
-            
+
             <p className="text-xl text-slate-600 mb-8 max-w-2xl text-balance">
-              Create digital employees with custom job descriptions who autonomously fulfill their roles. 
-              You define what they do, they handle the execution across all your tools.
+              Create AI employees with custom job descriptions who autonomously
+              fulfill their roles. You define what they do, they handle the
+              execution across all your tools.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button 
-                variant="primary" 
-                size="lg" 
-                href="/signup"
+              <Button
+                variant="primary"
+                size="lg"
+                href="http://localhost:5173/signup"
                 className="group"
               >
                 Get Early Access
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
               </Button>
-              
-              <Button 
-                variant="secondary" 
-                size="lg" 
-                href="#demo"
-                className="group"
-              >
-                <Play className="mr-2 w-5 h-5" />
-                Watch Demo
-              </Button>
-            </div>
-
-            {/* Trust indicators */}
-            <div className="mt-8 pt-8 border-t border-slate-200">
-              <p className="text-sm text-slate-500 mb-4">Trusted by innovative teams at</p>
-              <div className="flex items-center justify-center lg:justify-start space-x-6 opacity-60">
-                <span className="text-slate-400 font-medium">TechFlow</span>
-                <span className="text-slate-400 font-medium">EduTech</span>
-                <span className="text-slate-400 font-medium">RetailPro</span>
-                <span className="text-slate-400 font-medium">FinanceFlow</span>
-              </div>
             </div>
           </motion.div>
 
@@ -69,122 +116,163 @@ export function Hero() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="relative"
           >
-            <div className="relative">
-              {/* Main graph container */}
-              <div className="bg-white rounded-2xl shadow-2xl p-8 border border-slate-100">
-                <div className="text-center mb-6">
-                  <h3 className="text-lg font-semibold text-slate-800">Digital Employee Network</h3>
-                  <p className="text-sm text-slate-500">Orchestrating your workflow ecosystem</p>
-                </div>
-                
-                {/* Simplified agent graph visualization */}
-                <div className="relative h-64">
-                  {/* Central hub */}
-                  <motion.div
-                    animate={{ y: [-5, 5, -5] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-primary-500 rounded-full flex items-center justify-center shadow-lg"
-                  >
-                    <span className="text-white font-bold text-lg">DE</span>
-                  </motion.div>
-                  
-                  {/* Surrounding tools */}
-                  {[
-                    { name: 'Slack', pos: 'top-4 left-8', color: 'bg-purple-500', delay: 0 },
-                    { name: 'Gmail', pos: 'top-4 right-8', color: 'bg-red-500', delay: 0.5 },
-                    { name: 'QB', pos: 'bottom-4 left-8', color: 'bg-green-500', delay: 1 },
-                    { name: 'Cal', pos: 'bottom-4 right-8', color: 'bg-blue-500', delay: 1.5 },
-                    { name: 'CRM', pos: 'top-1/2 left-0 transform -translate-y-1/2', color: 'bg-orange-500', delay: 2 },
-                    { name: 'Doc', pos: 'top-1/2 right-0 transform -translate-y-1/2', color: 'bg-indigo-500', delay: 2.5 },
-                  ].map((tool) => (
-                    <motion.div
-                      key={tool.name}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: tool.delay, duration: 0.5 }}
-                      className={`absolute ${tool.pos} w-12 h-12 ${tool.color} rounded-lg flex items-center justify-center shadow-md`}
-                    >
-                      <span className="text-white font-medium text-xs">{tool.name}</span>
-                    </motion.div>
-                  ))}
-                  
-                  {/* Connection lines */}
-                  <svg className="absolute inset-0 w-full h-full" style={{ zIndex: -1 }}>
-                    <defs>
-                      <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.6" />
-                        <stop offset="100%" stopColor="#4F46E5" stopOpacity="0.2" />
-                      </linearGradient>
-                    </defs>
-                    {/* Lines connecting center to each tool */}
-                    <motion.line 
-                      x1="50%" y1="50%" x2="15%" y2="20%" 
-                      stroke="url(#lineGradient)" strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ delay: 0.5, duration: 1 }}
-                    />
-                    <motion.line 
-                      x1="50%" y1="50%" x2="85%" y2="20%" 
-                      stroke="url(#lineGradient)" strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ delay: 1, duration: 1 }}
-                    />
-                    <motion.line 
-                      x1="50%" y1="50%" x2="15%" y2="80%" 
-                      stroke="url(#lineGradient)" strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ delay: 1.5, duration: 1 }}
-                    />
-                    <motion.line 
-                      x1="50%" y1="50%" x2="85%" y2="80%" 
-                      stroke="url(#lineGradient)" strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ delay: 2, duration: 1 }}
-                    />
-                    <motion.line 
-                      x1="50%" y1="50%" x2="5%" y2="50%" 
-                      stroke="url(#lineGradient)" strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ delay: 2.5, duration: 1 }}
-                    />
-                    <motion.line 
-                      x1="50%" y1="50%" x2="95%" y2="50%" 
-                      stroke="url(#lineGradient)" strokeWidth="2"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ delay: 3, duration: 1 }}
-                    />
-                  </svg>
-                </div>
+            <div className="bg-white rounded-2xl shadow-2xl p-8 border border-slate-100">
+              <div className="text-center mb-6">
+                <h3 className="text-lg font-semibold text-slate-800">
+                  AI Employee in Action
+                </h3>
+                <p className="text-sm text-slate-500">
+                  See how they work autonomously
+                </p>
               </div>
-              
-              {/* Floating cards */}
-              {/*
+
+              {/* Job Description */}
               <motion.div
-                animate={{ y: [-10, 10, -10] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                className="absolute -top-4 -right-4 bg-white rounded-lg shadow-lg p-3 border border-green-200"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="text-center mb-6"
               >
-                <div className="text-green-600 text-sm font-medium">✓ Process Complete</div>
+                <div className="inline-flex items-center bg-slate-100 rounded-full px-6 py-3 mb-4">
+                  <span className="text-slate-700 font-medium">
+                    &quot;{aiEmployee.jobDescription}&quot;
+                  </span>
+                </div>
+                <motion.div
+                  animate={{ y: [0, 10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <ArrowRight className="w-6 h-6 text-slate-400 mx-auto rotate-90" />
+                </motion.div>
               </motion.div>
-              
+
+              {/* Trigger */}
               <motion.div
-                animate={{ y: [10, -10, 10] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-                className="absolute -bottom-4 -left-4 bg-white rounded-lg shadow-lg p-3 border border-blue-200"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+                className="text-center mb-6"
               >
-                <div className="text-blue-600 text-sm font-medium">🚀 Scaling Up</div>
+                <div className="inline-flex items-center bg-amber-50 border border-amber-200 rounded-full px-4 py-2 mb-4">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full mr-3 animate-pulse"></div>
+                  <span className="text-amber-700 text-sm font-medium">
+                    {aiEmployee.trigger}
+                  </span>
+                </div>
+                <motion.div
+                  animate={{ y: [0, 10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                >
+                  <ArrowRight className="w-6 h-6 text-slate-400 mx-auto rotate-90" />
+                </motion.div>
               </motion.div>
-              */}
+
+              {/* AI Employee Avatar */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+                className="text-center mb-8"
+              >
+                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg border-2 border-primary-500">
+                  <Image
+                    src={"/favicon.svg"}
+                    alt="Clancy Logo"
+                    width={40}
+                    height={40}
+                    className="w-10 h-10"
+                  />
+                </div>
+
+                <motion.div
+                  animate={{ y: [0, 10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+                >
+                  <ArrowRight className="w-6 h-6 text-slate-400 mx-auto rotate-90 mt-4" />
+                </motion.div>
+              </motion.div>
+
+              {/* Tools Grid */}
+              <div
+                className="grid gap-3 mb-8"
+                style={{
+                  gridTemplateColumns: `repeat(${aiEmployee.tools.length}, minmax(0, 1fr))`,
+                }}
+              >
+                {aiEmployee.tools.map((tool, index) => (
+                  <motion.div
+                    key={tool.name}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.7 + index * 0.1, duration: 0.4 }}
+                    className="text-center group"
+                  >
+                    <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-200 border border-slate-200">
+                      <Image
+                        src={tool.logo}
+                        alt={`${tool.name} logo`}
+                        width={20}
+                        height={20}
+                        className="w-5 h-5"
+                        onError={(e) => {
+                          // Fallback to a placeholder if logo fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                          target.parentElement!.innerHTML += `<div class="w-5 h-5 bg-slate-400 rounded opacity-50"></div>`;
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs text-slate-600 font-medium">
+                      {tool.name}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Success Indicator */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 1.5, duration: 0.5 }}
+                className="text-center pt-6 border-t border-slate-200"
+              >
+                <div className="inline-flex items-center bg-green-50 text-green-700 rounded-full px-4 py-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-3 animate-pulse"></div>
+                  <span className="text-sm font-medium">
+                    All systems updated successfully
+                  </span>
+                </div>
+              </motion.div>
             </div>
+
+            {/* Floating benefits */}
+            <motion.div
+              animate={{ x: [-5, 5, -5] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute -top-4 -left-4 bg-white rounded-lg shadow-lg p-3 border border-accent-200"
+            >
+              <div className="text-accent-600 text-sm font-medium">
+                ⚡ Always On
+              </div>
+            </motion.div>
+
+            <motion.div
+              animate={{ x: [5, -5, 5] }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 2,
+              }}
+              className="absolute -bottom-4 -right-4 bg-white rounded-lg shadow-lg p-3 border border-primary-200"
+            >
+              <div className="text-primary-600 text-sm font-medium">
+                🎯 Full Control
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </div>
     </section>
   );
-} 
+}

@@ -1,23 +1,31 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { Menu, X } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { navItems } from '@/lib/data';
+import { useState } from "react";
+import Link from "next/link";
+import { Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { navItems } from "@/lib/data";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  const NavLink = ({ href, children, onClick }: { href: string; children: React.ReactNode; onClick?: () => void }) => {
-    const isInternalLink = href.startsWith('/') || href.startsWith('#');
-    
+  const NavLink = ({
+    href,
+    children,
+    onClick,
+  }: {
+    href: string;
+    children: React.ReactNode;
+    onClick?: () => void;
+  }) => {
+    const isInternalLink = href.startsWith("/") || href.startsWith("#");
+
     if (isInternalLink) {
       return (
-        <Link 
-          href={href} 
+        <Link
+          href={href}
           className="text-slate-600 hover:text-slate-900 font-medium transition-colors duration-200"
           onClick={onClick}
         >
@@ -25,10 +33,10 @@ export function Header() {
         </Link>
       );
     }
-    
+
     return (
-      <a 
-        href={href} 
+      <a
+        href={href}
         className="text-slate-600 hover:text-slate-900 font-medium transition-colors duration-200"
         onClick={onClick}
       >
@@ -64,10 +72,10 @@ export function Header() {
 
           {/* Desktop CTA */}
           <div className="hidden lg:flex items-center space-x-4">
-            <Button variant="secondary" href="/login">
+            <Button variant="secondary" href="http://localhost:5173/signin">
               Login
             </Button>
-            <Button variant="primary" href="/signup">
+            <Button variant="primary" href="http://localhost:5173/signup">
               Get Early Access
             </Button>
           </div>
@@ -91,8 +99,8 @@ export function Header() {
           <div className="lg:hidden border-t border-slate-100 py-4">
             <nav className="flex flex-col space-y-4">
               {navItems.map((item) => (
-                <NavLink 
-                  key={item.label} 
+                <NavLink
+                  key={item.label}
                   href={item.href}
                   onClick={() => setIsMenuOpen(false)}
                 >
@@ -100,10 +108,18 @@ export function Header() {
                 </NavLink>
               ))}
               <div className="flex flex-col space-y-2 pt-4 border-t border-slate-100">
-                <Button variant="secondary" href="/login" size="sm">
+                <Button
+                  variant="secondary"
+                  href="http://localhost:5173/signin"
+                  size="sm"
+                >
                   Login
                 </Button>
-                <Button variant="primary" href="/signup" size="sm">
+                <Button
+                  variant="primary"
+                  href="http://localhost:5173/signup"
+                  size="sm"
+                >
                   Get Early Access
                 </Button>
               </div>
@@ -113,4 +129,4 @@ export function Header() {
       </div>
     </header>
   );
-} 
+}

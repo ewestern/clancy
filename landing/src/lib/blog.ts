@@ -1,26 +1,26 @@
-import fs from 'fs';
-import path from 'path';
-import matter from 'gray-matter';
-import { remark } from 'remark';
-import html from 'remark-html';
-import { BlogPost } from '@/types';
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
+import { remark } from "remark";
+import html from "remark-html";
+import { BlogPost } from "@/types";
 
-const postsDirectory = path.join(process.cwd(), 'src/content/blog');
+const postsDirectory = path.join(process.cwd(), "src/content/blog");
 
 export async function getAllPosts(): Promise<BlogPost[]> {
   // Get file names under /posts
   const fileNames = fs.readdirSync(postsDirectory);
-  
+
   const allPostsData = await Promise.all(
     fileNames
-      .filter((fileName) => fileName.endsWith('.md'))
+      .filter((fileName) => fileName.endsWith(".md"))
       .map(async (fileName) => {
         // Remove ".md" from file name to get id
-        const slug = fileName.replace(/\.md$/, '');
+        const slug = fileName.replace(/\.md$/, "");
 
         // Read markdown file as string
         const fullPath = path.join(postsDirectory, fileName);
-        const fileContents = fs.readFileSync(fullPath, 'utf8');
+        const fileContents = fs.readFileSync(fullPath, "utf8");
 
         // Use gray-matter to parse the post metadata section
         const matterResult = matter(fileContents);
@@ -41,7 +41,7 @@ export async function getAllPosts(): Promise<BlogPost[]> {
           publishedAt: matterResult.data.publishedAt,
           author: matterResult.data.author,
         } as BlogPost;
-      })
+      }),
   );
 
   // Sort posts by date
@@ -55,7 +55,7 @@ export async function getAllPosts(): Promise<BlogPost[]> {
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
   try {
     const fullPath = path.join(postsDirectory, `${slug}.md`);
-    const fileContents = fs.readFileSync(fullPath, 'utf8');
+    const fileContents = fs.readFileSync(fullPath, "utf8");
 
     // Use gray-matter to parse the post metadata section
     const matterResult = matter(fileContents);
@@ -88,6 +88,6 @@ export async function getRecentPosts(limit: number = 3): Promise<BlogPost[]> {
 export function getAllPostSlugs(): string[] {
   const fileNames = fs.readdirSync(postsDirectory);
   return fileNames
-    .filter((fileName) => fileName.endsWith('.md'))
-    .map((fileName) => fileName.replace(/\.md$/, ''));
-} 
+    .filter((fileName) => fileName.endsWith(".md"))
+    .map((fileName) => fileName.replace(/\.md$/, ""));
+}

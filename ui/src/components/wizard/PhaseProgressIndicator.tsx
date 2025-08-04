@@ -72,4 +72,4 @@ export function PhaseProgressIndicator({ phase }: PhaseProgressIndicatorProps) {
       )}
     </div>
   );
-} 
+}

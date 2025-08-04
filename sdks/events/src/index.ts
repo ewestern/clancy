@@ -107,6 +107,7 @@ export const RequestHumanFeedbackEventSchema = Type.Object({
 export const ProviderConnectionCompletedEventSchema = Type.Object({
     type: Type.Literal(EventType.ProviderConnectionCompleted),
     orgId: Type.String(),
+    userId: Type.String(),
     timestamp: Type.String(),
     providerId: Type.String(),
     connectionStatus: Type.Union([Type.Literal("connected"), Type.Literal("failed")]),

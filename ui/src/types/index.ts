@@ -76,12 +76,7 @@ export interface ProviderCard {
   name: string;
   logo: string;
   oauthUrl: string;
-  category: string; // 'email', 'calendar', 'accounting', etc.
   connectionStatus: "disconnected" | "connecting" | "connected";
-  accountInfo?: {
-    email?: string;
-    accountName?: string;
-  };
   requiredScopes: string[];
 }
 

@@ -484,6 +484,7 @@ export async function oauthRoutes(app: FastifyTypeBox) {
               connectionStatus: "connected",
               connectionId: oauthTransaction.id,
               externalAccountMetadata: externalAccountMetadata,
+              userId: oauthTransaction.userId,
             },
             partitionKey: oauthTransaction.id,
           },
