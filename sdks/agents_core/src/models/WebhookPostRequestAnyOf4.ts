@@ -44,6 +44,12 @@ export interface WebhookPostRequestAnyOf4 {
      * @type {string}
      * @memberof WebhookPostRequestAnyOf4
      */
+    userId: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof WebhookPostRequestAnyOf4
+     */
     timestamp: string;
     /**
      * 
@@ -87,6 +93,7 @@ export type WebhookPostRequestAnyOf4TypeEnum = typeof WebhookPostRequestAnyOf4Ty
 export function instanceOfWebhookPostRequestAnyOf4(value: object): value is WebhookPostRequestAnyOf4 {
     if (!('type' in value) || value['type'] === undefined) return false;
     if (!('orgId' in value) || value['orgId'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
     if (!('providerId' in value) || value['providerId'] === undefined) return false;
     if (!('connectionStatus' in value) || value['connectionStatus'] === undefined) return false;
@@ -107,6 +114,7 @@ export function WebhookPostRequestAnyOf4FromJSONTyped(json: any, ignoreDiscrimin
         
         'type': json['type'],
         'orgId': json['orgId'],
+        'userId': json['userId'],
         'timestamp': json['timestamp'],
         'providerId': json['providerId'],
         'connectionStatus': WebhookPostRequestAnyOf4ConnectionStatusFromJSON(json['connectionStatus']),
@@ -128,6 +136,7 @@ export function WebhookPostRequestAnyOf4ToJSONTyped(value?: WebhookPostRequestAn
         
         'type': value['type'],
         'orgId': value['orgId'],
+        'userId': value['userId'],
         'timestamp': value['timestamp'],
         'providerId': value['providerId'],
         'connectionStatus': WebhookPostRequestAnyOf4ConnectionStatusToJSON(value['connectionStatus']),

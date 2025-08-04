@@ -2,7 +2,8 @@
 NVM_INSTALLED := $(shell command -v nvm >/dev/null 2>&1 || [ -d "$$HOME/.nvm" ] && echo "yes" || echo "no")
 DB_NAME := agents_core
 IMAGE_NAME := clancy/agents-core
-IMAGE_REPO := 702853186114.dkr.ecr.us-east-1.amazonaws.com/$(IMAGE_NAME)
+REPO := 702853186114.dkr.ecr.us-east-1.amazonaws.com
+IMAGE_REPO := $(REPO)/$(IMAGE_NAME)
 PROFILE := clancy
 
 .PHONY: setup-nvm
@@ -54,9 +55,9 @@ PROFILE ?= default
 
 login:
 	@if [ "$(PROFILE)" = "default" ]; then \
-		aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 702853186114.dkr.ecr.us-east-1.amazonaws.com; \
+		aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(REPO); \
 	else \
-		aws ecr get-login-password --region us-east-1 --profile $(PROFILE) | docker login --username AWS --password-stdin 702853186114.dkr.ecr.us-east-1.amazonaws.com; \
+		aws ecr get-login-password --region us-east-1 --profile $(PROFILE) | docker login --username AWS --password-stdin $(REPO); \
 	fi
 
 push-image: login
@@ -68,5 +69,5 @@ push-image: login
 reset-dev-database:
 	dropdb $(DB_NAME) || true
 	createdb $(DB_NAME) || true
-	#npx drizzle-kit migrate
+	npx drizzle-kit migrate
 	npx tsx node_modules/.bin/drizzle-kit push 

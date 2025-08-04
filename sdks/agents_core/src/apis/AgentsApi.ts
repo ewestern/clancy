@@ -15,13 +15,13 @@
 
 import * as runtime from '../runtime';
 import type {
-  T0,
+  Agent,
   V1AgentsIdPutRequest,
   V1AgentsPost400Response,
 } from '../models/index';
 import {
-    T0FromJSON,
-    T0ToJSON,
+    AgentFromJSON,
+    AgentToJSON,
     V1AgentsIdPutRequestFromJSON,
     V1AgentsIdPutRequestToJSON,
     V1AgentsPost400ResponseFromJSON,
@@ -46,7 +46,7 @@ export interface V1AgentsIdPutOperationRequest {
 }
 
 export interface V1AgentsPostRequest {
-    t0?: T0;
+    agent?: Agent;
 }
 
 /**
@@ -58,7 +58,7 @@ export class AgentsApi extends runtime.BaseAPI {
      * List agents
      * List agents
      */
-    async v1AgentsGetRaw(requestParameters: V1AgentsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<T0>>> {
+    async v1AgentsGetRaw(requestParameters: V1AgentsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Agent>>> {
         if (requestParameters['orgId'] == null) {
             throw new runtime.RequiredError(
                 'orgId',
@@ -81,14 +81,14 @@ export class AgentsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(T0FromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(AgentFromJSON));
     }
 
     /**
      * List agents
      * List agents
      */
-    async v1AgentsGet(requestParameters: V1AgentsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<T0>> {
+    async v1AgentsGet(requestParameters: V1AgentsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Agent>> {
         const response = await this.v1AgentsGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -131,7 +131,7 @@ export class AgentsApi extends runtime.BaseAPI {
      * Get an agent
      * Get an agent
      */
-    async v1AgentsIdGetRaw(requestParameters: V1AgentsIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<T0>> {
+    async v1AgentsIdGetRaw(requestParameters: V1AgentsIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Agent>> {
         if (requestParameters['id'] == null) {
             throw new runtime.RequiredError(
                 'id',
@@ -150,14 +150,14 @@ export class AgentsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => T0FromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => AgentFromJSON(jsonValue));
     }
 
     /**
      * Get an agent
      * Get an agent
      */
-    async v1AgentsIdGet(requestParameters: V1AgentsIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<T0> {
+    async v1AgentsIdGet(requestParameters: V1AgentsIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Agent> {
         const response = await this.v1AgentsIdGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -166,7 +166,7 @@ export class AgentsApi extends runtime.BaseAPI {
      * Update an agent
      * Update an agent
      */
-    async v1AgentsIdPutRaw(requestParameters: V1AgentsIdPutOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<T0>> {
+    async v1AgentsIdPutRaw(requestParameters: V1AgentsIdPutOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Agent>> {
         if (requestParameters['id'] == null) {
             throw new runtime.RequiredError(
                 'id',
@@ -188,14 +188,14 @@ export class AgentsApi extends runtime.BaseAPI {
             body: V1AgentsIdPutRequestToJSON(requestParameters['v1AgentsIdPutRequest']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => T0FromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => AgentFromJSON(jsonValue));
     }
 
     /**
      * Update an agent
      * Update an agent
      */
-    async v1AgentsIdPut(requestParameters: V1AgentsIdPutOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<T0> {
+    async v1AgentsIdPut(requestParameters: V1AgentsIdPutOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Agent> {
         const response = await this.v1AgentsIdPutRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -204,7 +204,7 @@ export class AgentsApi extends runtime.BaseAPI {
      * Create an agent
      * Create an agent
      */
-    async v1AgentsPostRaw(requestParameters: V1AgentsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<T0>> {
+    async v1AgentsPostRaw(requestParameters: V1AgentsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Agent>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -216,17 +216,17 @@ export class AgentsApi extends runtime.BaseAPI {
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: T0ToJSON(requestParameters['t0']),
+            body: AgentToJSON(requestParameters['agent']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => T0FromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => AgentFromJSON(jsonValue));
     }
 
     /**
      * Create an agent
      * Create an agent
      */
-    async v1AgentsPost(requestParameters: V1AgentsPostRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<T0> {
+    async v1AgentsPost(requestParameters: V1AgentsPostRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Agent> {
         const response = await this.v1AgentsPostRaw(requestParameters, initOverrides);
         return await response.value();
     }

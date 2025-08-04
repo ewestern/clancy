@@ -1,43 +1,47 @@
-import Link from 'next/link';
-import { Github, Twitter, Linkedin, Mail } from 'lucide-react';
+import Link from "next/link";
+import { Github, Twitter, Linkedin, Mail } from "lucide-react";
 
 export function Footer() {
   const footerLinks = {
     product: [
-      { label: 'Features', href: '#features' },
-      { label: 'Integrations', href: '#integrations' },
-      { label: 'Pricing', href: '#pricing' },
-      { label: 'Documentation', href: '/docs' },
-      { label: 'API Reference', href: '/docs/api' },
+      { label: "Features", href: "#features" },
+      { label: "Integrations", href: "#integrations" },
+      { label: "Pricing", href: "#pricing" },
+      { label: "Documentation", href: "/docs" },
+      { label: "API Reference", href: "/docs/api" },
     ],
     company: [
-      { label: 'About', href: '/about' },
-      { label: 'Blog', href: '/blog' },
-      { label: 'Careers', href: '/careers' },
-      { label: 'Contact', href: '/contact' },
-      { label: 'Press', href: '/press' },
+      { label: "About", href: "/about" },
+      { label: "Blog", href: "/blog" },
+      { label: "Careers", href: "/careers" },
+      { label: "Contact", href: "/contact" },
+      { label: "Press", href: "/press" },
     ],
     resources: [
-      { label: 'Help Center', href: '/help' },
-      { label: 'Community', href: '/community' },
-      { label: 'Templates', href: '/templates' },
-      { label: 'Status', href: '/status' },
-      { label: 'Roadmap', href: '/roadmap' },
+      { label: "Help Center", href: "/help" },
+      { label: "Community", href: "/community" },
+      { label: "Templates", href: "/templates" },
+      { label: "Status", href: "/status" },
+      { label: "Roadmap", href: "/roadmap" },
     ],
     legal: [
-      { label: 'Privacy Policy', href: '/privacy' },
-      { label: 'Terms of Service', href: '/terms' },
-      { label: 'Cookie Policy', href: '/cookies' },
-      { label: 'Security', href: '/security' },
-      { label: 'Compliance', href: '/compliance' },
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms of Service", href: "/terms" },
+      { label: "Cookie Policy", href: "/cookies" },
+      { label: "Security", href: "/security" },
+      { label: "Compliance", href: "/compliance" },
     ],
   };
 
   const socialLinks = [
-    { label: 'Twitter', href: 'https://twitter.com/clancyai', icon: Twitter },
-    { label: 'GitHub', href: 'https://github.com/clancyai', icon: Github },
-    { label: 'LinkedIn', href: 'https://linkedin.com/company/clancyai', icon: Linkedin },
-    { label: 'Email', href: 'mailto:hello@clancy.ai', icon: Mail },
+    { label: "Twitter", href: "https://twitter.com/clancyai", icon: Twitter },
+    { label: "GitHub", href: "https://github.com/clancyai", icon: Github },
+    {
+      label: "LinkedIn",
+      href: "https://linkedin.com/company/clancyai",
+      icon: Linkedin,
+    },
+    { label: "Email", href: "mailto:hello@clancy.ai", icon: Mail },
   ];
 
   return (
@@ -54,10 +58,11 @@ export function Footer() {
                 Clancy AI
               </span>
             </div>
-            
+
             <p className="text-slate-300 mb-6 max-w-md">
-              Autonomous digital employees that own complete business processes. 
-              Transform how your team works with AI that actually gets things done.
+              Autonomous AI employees that own complete business processes.
+              Transform how your team works with AI that actually gets things
+              done.
             </p>
 
             {/* Social links */}
@@ -86,7 +91,7 @@ export function Footer() {
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
                 <li key={link.label}>
-                  <Link 
+                  <Link
                     href={link.href}
                     className="text-slate-300 hover:text-white transition-colors duration-200"
                   >
@@ -102,7 +107,7 @@ export function Footer() {
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.label}>
-                  <Link 
+                  <Link
                     href={link.href}
                     className="text-slate-300 hover:text-white transition-colors duration-200"
                   >
@@ -118,7 +123,7 @@ export function Footer() {
             <ul className="space-y-3">
               {footerLinks.resources.map((link) => (
                 <li key={link.label}>
-                  <Link 
+                  <Link
                     href={link.href}
                     className="text-slate-300 hover:text-white transition-colors duration-200"
                   >
@@ -136,11 +141,11 @@ export function Footer() {
             <div className="text-slate-400 text-sm mb-4 md:mb-0">
               © {new Date().getFullYear()} Clancy AI. All rights reserved.
             </div>
-            
+
             <div className="flex flex-wrap items-center space-x-6 text-sm">
               {footerLinks.legal.map((link, index) => (
                 <span key={link.label} className="flex items-center">
-                  <Link 
+                  <Link
                     href={link.href}
                     className="text-slate-400 hover:text-white transition-colors duration-200"
                   >
@@ -157,4 +162,4 @@ export function Footer() {
       </div>
     </footer>
   );
-} 
+}

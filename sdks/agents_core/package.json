@@ -1,6 +1,6 @@
 {
   "name": "@ewestern/agents_core_sdk",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "Agents Core SDK - TypeScript client library",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

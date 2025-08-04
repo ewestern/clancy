@@ -1,11 +1,10 @@
 import { AlertCircle } from "lucide-react";
 import { Static } from "@sinclair/typebox";
-import { AgentSchema } from "@ewestern/events";
+import { AgentPrototypeSchema } from "@ewestern/events";
 import { Trigger, ProviderCapabilities } from "@ewestern/connect_hub_sdk";
 import { AgentCard } from "./AgentCard";
 
-// Agent type from events
-type Agent = Static<typeof AgentSchema>;
+type AgentPrototype = Static<typeof AgentPrototypeSchema>;
 
 // Unsatisfied workflow display for connect phase
 interface UnsatisfiedWorkflow {
@@ -14,7 +13,7 @@ interface UnsatisfiedWorkflow {
 }
 
 interface AgentConnectDisplayProps {
-  agents: Agent[];
+  agents: AgentPrototype[];
   unsatisfiedWorkflows: UnsatisfiedWorkflow[];
   providerCapabilities: Record<string, ProviderCapabilities>;
   triggers: Record<string, Trigger>;
@@ -35,7 +34,12 @@ export function AgentConnectDisplay({
         <div>
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {agents.map((agent) => (
-              <AgentCard key={agent.id} agent={agent} providers={providerCapabilities} triggers={triggers} />
+              <AgentCard
+                key={agent.id}
+                agent={agent}
+                providers={providerCapabilities}
+                triggers={triggers}
+              />
             ))}
           </div>
         </div>
@@ -73,4 +77,4 @@ export function AgentConnectDisplay({
   );
 }
 
-export type { UnsatisfiedWorkflow }; 
+export type { UnsatisfiedWorkflow };

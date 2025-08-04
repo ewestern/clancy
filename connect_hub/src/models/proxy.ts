@@ -9,12 +9,9 @@ export const ProxyEndpointSchema = {
     providerId: Type.String(),
     capabilityId: Type.String(),
   }),
-  querystring: Type.Object({
-    orgId: Type.String(),
-  }),
   body: Type.Object({
-    ownershipScope: Ref(OwnershipScopeSchema),
-    ownerId: Type.String(),
+    userId: Type.String(),
+    orgId: Type.String(),
     params: Type.Any(),
   }),
   response: {

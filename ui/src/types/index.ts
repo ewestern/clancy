@@ -76,12 +76,7 @@ export interface ProviderCard {
   name: string;
   logo: string;
   oauthUrl: string;
-  category: string; // 'email', 'calendar', 'accounting', etc.
   connectionStatus: "disconnected" | "connecting" | "connected";
-  accountInfo?: {
-    email?: string;
-    accountName?: string;
-  };
   requiredScopes: string[];
 }
 
@@ -135,7 +130,7 @@ export interface CollaborativeWizardData {
   chatHistory: ChatMessage[];
   enhancedWorkflows: EnhancedWorkflow[];
   availableProviders: ProviderCard[];
-  connectedProviders: ProviderCard[];
+  connectedProviders: (ProviderCard & { connectionId: string })[];
   phase: "job_description" | "workflows" | "connect" | "ready" | "completed"; // Updated: changed "mapping" to "connect"
   canComplete: boolean;
   notifications: NotificationSettings;

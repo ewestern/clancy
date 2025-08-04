@@ -8,7 +8,7 @@ import {
 } from "@ewestern/agents_core_sdk";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-//import updateLocale from 'dayjs/plugin/updateLocale';
+import { useAuth } from "@clerk/react-router";
 
 dayjs.extend(relativeTime);
 //dayjs.extend(updateLocale);
@@ -18,15 +18,14 @@ const ApprovalsQueue: React.FC = () => {
   const [requests, setRequests] = useState<ApprovalRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
-  //const { getToken } = useAuth();
+  const { getToken } = useAuth();
   const getClient = useCallback(() => {
-    //const token = getToken();
     const configuration = new Configuration({
       basePath: agentsCoreUrl,
-      //headers: { Authorization: `Bearer ${token}` },
+      accessToken: getToken() as Promise<string>,
     });
     return new ApprovalsApi(configuration);
-  }, []);
+  }, [getToken]);
 
   useEffect(() => {
     const client = getClient();

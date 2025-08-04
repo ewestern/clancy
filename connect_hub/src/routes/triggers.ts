@@ -8,10 +8,15 @@ import {
   GetTriggersEndpoint,
   TriggerRegistrationSchema,
 } from "../models/triggers.js";
-import { triggerRegistrations } from "../database/schema.js";
+import { connections, triggerRegistrations } from "../database/schema.js";
 import { registry } from "../integrations.js";
 import { FastifyReply } from "fastify";
-import { Value } from "@sinclair/typebox/value";
+import { validateInput } from "../providers/utils.js";
+import { eq } from "drizzle-orm";
+import { and } from "drizzle-orm";
+import { ConnectionStatus } from "../models/connection.js";
+import { getAuth } from "@clerk/fastify";
+
 
 export async function triggerRoutes(app: FastifyTypeBox) {
   app.addSchema(TriggerRegistrationSchema);
@@ -43,7 +48,13 @@ export async function triggerRoutes(app: FastifyTypeBox) {
     schema: CreateTriggerRegistrationEndpoint,
     handler: async (request, reply) => {
       const body = request.body;
-
+      const auth = getAuth(request);
+      if (!auth) {
+        reply.status(401).send({
+          error: "Unauthorized",
+          message: "Unauthorized",
+        } as any);
+      }
       // Find the trigger to validate against its schema
       const provider = registry.getProvider(body.providerId);
 
@@ -57,9 +68,10 @@ export async function triggerRoutes(app: FastifyTypeBox) {
       }
       // Validate metadata against trigger's paramsSchema
       if (trigger.paramsSchema && body.params) {
-        const isValid = Value.Check(trigger.paramsSchema, body.params);
-        if (!isValid) {
-          const errors = [...Value.Errors(trigger.paramsSchema, body.params)];
+        try {
+          validateInput(trigger.paramsSchema, body.params);
+        } catch (error: any) {
+          const errors = [error];
           reply.status(400).send({
             error: "Invalid trigger parameters",
             message:
@@ -73,26 +85,41 @@ export async function triggerRoutes(app: FastifyTypeBox) {
           return;
         }
       }
+      const triggerRegistration = await request.server.db.transaction(async (tx) => {
+        const connection = await tx.query.connections.findFirst({
+          where: and(
+            eq(connections.orgId, auth.orgId!),
+            eq(connections.userId, auth.userId!),
+            eq(connections.providerId, body.providerId),
+            eq(connections.status, ConnectionStatus.Active),
+          ),
+        });
+        if (!connection) {
+          throw new Error("Connection not found");
+        }
+        const toInsert = {
+          ...body,
+          connectionId: connection.id,
+          expiresAt: new Date(body.expiresAt),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        const [triggerRegistration] = await app.db
+          .insert(triggerRegistrations)
+          .values(toInsert)
+          .returning();
+        if (!triggerRegistration) {
+          throw new Error("Failed to create trigger registration");
+        }
+        return triggerRegistration;
+      });
 
-      const toInsert = {
-        ...body,
-        expiresAt: new Date(body.expiresAt),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      const [triggerRegistration] = await app.db
-        .insert(triggerRegistrations)
-        .values(toInsert)
-        .returning();
-      if (!triggerRegistration) {
-        throw new Error("Failed to create trigger registration");
-      }
+
       reply.status(201).send({
         id: triggerRegistration.id,
         agentId: triggerRegistration.agentId,
         providerId: triggerRegistration.providerId,
         triggerId: triggerRegistration.triggerId,
-        connectionId: triggerRegistration.connectionId!, // TODO: fix this
         params: triggerRegistration.params,
         expiresAt: triggerRegistration.expiresAt.toISOString(),
         createdAt: triggerRegistration.createdAt.toISOString(),

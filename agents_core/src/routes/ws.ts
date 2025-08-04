@@ -189,11 +189,11 @@ async function handleIncomingEvent(
 ) {
   switch (event.type) {
     case EventType.RunIntent:
-      await publishToKinesis(event, event.executionId);
+      await publishToKinesis([event], (e) => event.executionId);
       break;
 
     case EventType.ResumeIntent:
-      await publishToKinesis(event, event.executionId || userId);
+      await publishToKinesis([event], (e) => event.executionId);
       break;
 
     default:

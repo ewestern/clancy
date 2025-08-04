@@ -20,13 +20,20 @@ import {
     WebhookPostRequestAnyOf3AgentsInnerToJSON,
     WebhookPostRequestAnyOf3AgentsInnerToJSONTyped,
 } from './WebhookPostRequestAnyOf3AgentsInner';
-import type { WebhookPostRequestAnyOf5Request } from './WebhookPostRequestAnyOf5Request';
+import type { WebhookPostRequestAnyOf10 } from './WebhookPostRequestAnyOf10';
 import {
-    WebhookPostRequestAnyOf5RequestFromJSON,
-    WebhookPostRequestAnyOf5RequestFromJSONTyped,
-    WebhookPostRequestAnyOf5RequestToJSON,
-    WebhookPostRequestAnyOf5RequestToJSONTyped,
-} from './WebhookPostRequestAnyOf5Request';
+    WebhookPostRequestAnyOf10FromJSON,
+    WebhookPostRequestAnyOf10FromJSONTyped,
+    WebhookPostRequestAnyOf10ToJSON,
+    WebhookPostRequestAnyOf10ToJSONTyped,
+} from './WebhookPostRequestAnyOf10';
+import type { WebhookPostRequestAnyOf7Request } from './WebhookPostRequestAnyOf7Request';
+import {
+    WebhookPostRequestAnyOf7RequestFromJSON,
+    WebhookPostRequestAnyOf7RequestFromJSONTyped,
+    WebhookPostRequestAnyOf7RequestToJSON,
+    WebhookPostRequestAnyOf7RequestToJSONTyped,
+} from './WebhookPostRequestAnyOf7Request';
 import type { WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInner } from './WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInner';
 import {
     WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInnerFromJSON,
@@ -69,6 +76,27 @@ import {
     WebhookPostRequestAnyOf4ConnectionStatusToJSON,
     WebhookPostRequestAnyOf4ConnectionStatusToJSONTyped,
 } from './WebhookPostRequestAnyOf4ConnectionStatus';
+import type { WebhookPostRequestAnyOf8 } from './WebhookPostRequestAnyOf8';
+import {
+    WebhookPostRequestAnyOf8FromJSON,
+    WebhookPostRequestAnyOf8FromJSONTyped,
+    WebhookPostRequestAnyOf8ToJSON,
+    WebhookPostRequestAnyOf8ToJSONTyped,
+} from './WebhookPostRequestAnyOf8';
+import type { WebhookPostRequestAnyOf7 } from './WebhookPostRequestAnyOf7';
+import {
+    WebhookPostRequestAnyOf7FromJSON,
+    WebhookPostRequestAnyOf7FromJSONTyped,
+    WebhookPostRequestAnyOf7ToJSON,
+    WebhookPostRequestAnyOf7ToJSONTyped,
+} from './WebhookPostRequestAnyOf7';
+import type { WebhookPostRequestAnyOf9 } from './WebhookPostRequestAnyOf9';
+import {
+    WebhookPostRequestAnyOf9FromJSON,
+    WebhookPostRequestAnyOf9FromJSONTyped,
+    WebhookPostRequestAnyOf9ToJSON,
+    WebhookPostRequestAnyOf9ToJSONTyped,
+} from './WebhookPostRequestAnyOf9';
 import type { WebhookPostRequestAnyOf4 } from './WebhookPostRequestAnyOf4';
 import {
     WebhookPostRequestAnyOf4FromJSON,
@@ -209,10 +237,22 @@ export interface WebhookPostRequest {
     externalAccountMetadata: { [key: string]: object; };
     /**
      * 
-     * @type {WebhookPostRequestAnyOf5Request}
+     * @type {WebhookPostRequestAnyOf3AgentsInner}
      * @memberof WebhookPostRequest
      */
-    request: WebhookPostRequestAnyOf5Request;
+    agent: WebhookPostRequestAnyOf3AgentsInner;
+    /**
+     * 
+     * @type {string}
+     * @memberof WebhookPostRequest
+     */
+    employeeId: string;
+    /**
+     * 
+     * @type {WebhookPostRequestAnyOf7Request}
+     * @memberof WebhookPostRequest
+     */
+    request: WebhookPostRequestAnyOf7Request;
     /**
      * 
      * @type {string}
@@ -253,8 +293,10 @@ export const WebhookPostRequestTypeEnum = {
     Cron: 'cron',
     Runintent: 'runintent',
     Resumeintent: 'resumeintent',
-    Aieemployeestateupdate: 'aieemployeestateupdate',
+    Eemployeestateupdate: 'eemployeestateupdate',
     Providerconnectioncompleted: 'providerconnectioncompleted',
+    Agentcreated: 'agentcreated',
+    Employeecreated: 'employeecreated',
     Requesthumanfeedback: 'requesthumanfeedback',
     Llmusage: 'llmusage'
 } as const;
@@ -280,6 +322,8 @@ export function instanceOfWebhookPostRequest(value: object): value is WebhookPos
     if (!('connectionStatus' in value) || value['connectionStatus'] === undefined) return false;
     if (!('connectionId' in value) || value['connectionId'] === undefined) return false;
     if (!('externalAccountMetadata' in value) || value['externalAccountMetadata'] === undefined) return false;
+    if (!('agent' in value) || value['agent'] === undefined) return false;
+    if (!('employeeId' in value) || value['employeeId'] === undefined) return false;
     if (!('request' in value) || value['request'] === undefined) return false;
     if (!('model' in value) || value['model'] === undefined) return false;
     if (!('promptTokens' in value) || value['promptTokens'] === undefined) return false;
@@ -315,7 +359,9 @@ export function WebhookPostRequestFromJSONTyped(json: any, ignoreDiscriminator: 
         'connectionStatus': WebhookPostRequestAnyOf4ConnectionStatusFromJSON(json['connectionStatus']),
         'connectionId': json['connectionId'],
         'externalAccountMetadata': json['externalAccountMetadata'],
-        'request': WebhookPostRequestAnyOf5RequestFromJSON(json['request']),
+        'agent': WebhookPostRequestAnyOf3AgentsInnerFromJSON(json['agent']),
+        'employeeId': json['employeeId'],
+        'request': WebhookPostRequestAnyOf7RequestFromJSON(json['request']),
         'model': json['model'],
         'promptTokens': json['promptTokens'],
         'completionTokens': json['completionTokens'],
@@ -351,7 +397,9 @@ export function WebhookPostRequestToJSONTyped(value?: WebhookPostRequest | null,
         'connectionStatus': WebhookPostRequestAnyOf4ConnectionStatusToJSON(value['connectionStatus']),
         'connectionId': value['connectionId'],
         'externalAccountMetadata': value['externalAccountMetadata'],
-        'request': WebhookPostRequestAnyOf5RequestToJSON(value['request']),
+        'agent': WebhookPostRequestAnyOf3AgentsInnerToJSON(value['agent']),
+        'employeeId': value['employeeId'],
+        'request': WebhookPostRequestAnyOf7RequestToJSON(value['request']),
         'model': value['model'],
         'promptTokens': value['promptTokens'],
         'completionTokens': value['completionTokens'],

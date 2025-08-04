@@ -1,2 +1,3 @@
 -- Custom SQL migration file, put your code below! --
-create extension vector;
+create extension if not exists vector;
+--> statement-breakpoint

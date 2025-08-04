@@ -6,7 +6,6 @@ import type {
   KnowledgeItem,
   WorkflowTask,
   Integration,
-  CollaborativeWizardData,
 } from "../types";
 
 // Mock data
@@ -358,24 +357,6 @@ export const connectIntegration = async (
 ): Promise<void> => {
   await new Promise((resolve) => setTimeout(resolve, 800));
   console.log(`Connected integration ${integrationId}`);
-};
-
-export const createAIEmployee = async (
-  wizardData: CollaborativeWizardData,
-): Promise<AIEmployee> => {
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  // Simulate AI employee creation
-  const newEmployee: AIEmployee = {
-    id: String(Date.now()),
-    name: "New AI Assistant",
-    role: "Assistant",
-    lastRun: "Never",
-    status: "idle",
-  };
-
-  console.log("Created AI Employee:", newEmployee, "with data:", wizardData);
-  return newEmployee;
 };
 
 // Employee Profile API functions

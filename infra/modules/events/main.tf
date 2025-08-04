@@ -9,7 +9,6 @@ You can pass client metadata in M2M requests. Client metadata is additional info
 
 resource "aws_cognito_user_pool_client" "clancy_user_pool_client" {
   name = "clancy-user-pool-client-${var.environment}"
-  generate_secret     = true
   user_pool_id = aws_cognito_user_pool.clancy_user_pool.id
   allowed_oauth_flows = ["client_credentials"]
   allowed_oauth_flows_user_pool_client = true

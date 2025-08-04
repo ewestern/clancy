@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Check, Star } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { pricingTiers } from '@/lib/data';
+import { motion } from "framer-motion";
+import { Check, Star } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { pricingTiers } from "@/lib/data";
 
 export function Pricing() {
   return (
@@ -26,8 +26,8 @@ export function Pricing() {
             viewport={{ once: true }}
             className="text-xl text-slate-600 max-w-2xl mx-auto"
           >
-            Start free and scale as you grow. All plans include our core automation features 
-            and 24/7 support to help you succeed.
+            Start free and scale as you grow. All plans include our core
+            automation features and 24/7 support to help you succeed.
           </motion.p>
         </div>
 
@@ -41,12 +41,13 @@ export function Pricing() {
               viewport={{ once: true }}
               className="relative"
             >
-              <div 
+              <div
                 className={`
                   rounded-2xl p-8 h-full border-2 transition-all duration-300
-                  ${tier.isPopular 
-                    ? 'border-primary-500 bg-primary-50 shadow-xl scale-105' 
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-lg'
+                  ${
+                    tier.isPopular
+                      ? "border-primary-500 bg-primary-50 shadow-xl scale-105"
+                      : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-lg"
                   }
                 `}
               >
@@ -69,13 +70,11 @@ export function Pricing() {
                     <span className="text-4xl font-bold text-slate-900">
                       {tier.price}
                     </span>
-                    {tier.price !== 'Custom' && (
+                    {tier.price !== "Custom" && (
                       <span className="text-slate-600 text-lg">/month</span>
                     )}
                   </div>
-                  <p className="text-slate-600">
-                    {tier.description}
-                  </p>
+                  <p className="text-slate-600">{tier.description}</p>
                 </div>
 
                 {/* Features */}
@@ -93,7 +92,7 @@ export function Pricing() {
                 {/* CTA Button */}
                 <div className="mt-auto">
                   <Button
-                    variant={tier.isPopular ? 'primary' : 'secondary'}
+                    variant={tier.isPopular ? "primary" : "secondary"}
                     href={tier.ctaLink}
                     className="w-full justify-center"
                   >
@@ -106,6 +105,7 @@ export function Pricing() {
         </div>
 
         {/* FAQ Section */}
+        {/*
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -171,7 +171,9 @@ export function Pricing() {
             </Button>
           </div>
         </motion.div>
+
+          */}
       </div>
     </section>
   );
-} 
+}

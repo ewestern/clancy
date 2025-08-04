@@ -105,6 +105,16 @@ resource "aws_iam_policy" "connect_hub_service_policy" {
         Resource = [
           "arn:aws:firehose:*:*:deliverystream/*"
         ]
+      },
+      {
+        Action = [
+          "kinesis:PutRecord",
+          "kinesis:PutRecords"
+        ]
+        Effect = "Allow"
+        Resource = [
+          "arn:aws:kinesis:*:*:stream/clancy-main-${var.environment}"
+        ]
       }
     ]
   })
@@ -150,6 +160,26 @@ resource "aws_iam_role_policy" "connect_hub_service_xray_policy" {
           "xray:PutTelemetryRecords"
         ],
         Resource = "*" // Allows sending traces for all services/resources
+      }
+    ]
+  })
+}
+
+// Adding policy to allow Secrets Manager GetSecretValue for OAuth provider secrets
+resource "aws_iam_role_policy" "connect_hub_service_secrets_policy" {
+  name = "connect-hub-service-secrets-permissions-${var.environment}"
+  role = aws_iam_role.task_role.name
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ],
+        Resource = "arn:aws:secretsmanager:*:*:secret:clancy/oauth/${var.environment}/*"
       }
     ]
   })

@@ -5,6 +5,7 @@ A comprehensive landing page implementation for Clancy AI, built with Next.js 14
 ## 🚀 Features Implemented
 
 ### Core Landing Page Sections
+
 - **Header (H1)**: Logo, navigation, and CTAs with mobile-responsive design
 - **Hero**: Compelling headline, animated digital employee network visualization
 - **Feature Trio (F2)**: Top 3 differentiators with icons and descriptions
@@ -17,12 +18,14 @@ A comprehensive landing page implementation for Clancy AI, built with Next.js 14
 - **Footer (FT)**: Secondary navigation and compliance links
 
 ### Blog Infrastructure
+
 - **Blog Index**: All posts with filtering and search
 - **Individual Posts**: Full blog post pages with typography
 - **MDX Support**: Markdown with frontmatter for easy content management
 - **Static Generation**: Pre-rendered for optimal performance
 
 ### Design System
+
 - **Custom Tailwind Theme**: Indigo primary, slate neutrals, mint accents
 - **Typography**: Inter and Satoshi fonts with proper hierarchy
 - **Components**: Reusable UI components with variants
@@ -62,12 +65,14 @@ landing/
 ## 🚦 Getting Started
 
 1. **Install Dependencies**
+
    ```bash
    cd landing
    npm install
    ```
 
 2. **Start Development Server**
+
    ```bash
    npm run dev
    ```
@@ -78,6 +83,7 @@ landing/
 ## 📝 Content Management
 
 ### Adding Blog Posts
+
 Create new `.md` files in `src/content/blog/` with frontmatter:
 
 ```markdown
@@ -97,6 +103,7 @@ Write your post content here using markdown...
 ```
 
 ### Updating Data
+
 - **Features**: Edit `src/lib/data.ts`
 - **Integrations**: Update the integrations array
 - **Testimonials**: Add new customer quotes
@@ -105,17 +112,20 @@ Write your post content here using markdown...
 ## 🎨 Design Guidelines
 
 ### Colors
+
 - **Primary**: Indigo (#4F46E5)
 - **Accent**: Mint (#14b8a6)
 - **Neutrals**: Slate scale for text and backgrounds
 
 ### Typography
+
 - **Headings**: Satoshi font family
 - **Body**: Inter font family
 - **Hero**: 56px bold headings
 - **Sub-hero**: 20px regular text
 
 ### Components
+
 - **Buttons**: Primary, secondary, and accent variants
 - **Cards**: Consistent shadows and borders
 - **Animations**: Subtle motion with Framer Motion
@@ -123,6 +133,7 @@ Write your post content here using markdown...
 ## 🚢 Deployment
 
 ### Vercel (Recommended)
+
 ```bash
 # Connect to Vercel
 npx vercel
@@ -132,6 +143,7 @@ npm run build
 ```
 
 ### Other Platforms
+
 ```bash
 # Build for production
 npm run build
@@ -150,11 +162,13 @@ npm start
 ## 🔧 Customization
 
 ### Styling
+
 - Modify `tailwind.config.ts` for theme changes
 - Update `globals.css` for global styles
 - Edit component classes for specific styling
 
 ### Content
+
 - Update `src/lib/data.ts` for static content
 - Modify markdown files for blog content
 - Customize sections in `src/components/sections/`
@@ -170,6 +184,7 @@ npm start
 ## 🤝 Contributing
 
 When adding new features:
+
 1. Follow the existing component structure
 2. Use TypeScript for all new code
 3. Maintain responsive design patterns
@@ -181,6 +196,7 @@ When adding new features:
 ## Next Steps
 
 To complete the implementation:
+
 1. Add actual integration logos to `public/logos/`
 2. Implement contact forms and signup flows
 3. Add analytics (PostHog integration)

@@ -17,6 +17,7 @@ export const TriggerRegistrationSchema = Type.Object(
         {
           id: Type.String(),
           orgId: Type.String(),
+          userId: Type.String(),
           providerId: Type.String(),
           externalAccountMetadata: Type.Any(),
           status: Type.String(),
@@ -26,7 +27,6 @@ export const TriggerRegistrationSchema = Type.Object(
         },
       ),
     ),
-    connectionId: Nullable(Type.String()),
     params: Type.Record(Type.String(), Type.Any()),
     expiresAt: Type.String(),
     createdAt: Type.ReadonlyOptional(Type.String({ readOnly: true })),

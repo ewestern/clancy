@@ -19,6 +19,7 @@ export async function healthRoutes(app: FastifyTypeBox) {
           503: HealthResponseSchema,
         },
       },
+      logLevel: 'silent',
     },
     async (
       request: FastifyRequestTypeBox<{
@@ -72,6 +73,7 @@ export async function healthRoutes(app: FastifyTypeBox) {
           503: HealthResponseSchema,
         },
       },
+      logLevel: 'silent',
     },
     async (
       request: FastifyRequestTypeBox<{
@@ -120,6 +122,7 @@ export async function healthRoutes(app: FastifyTypeBox) {
           200: HealthResponseSchema,
         },
       },
+      logLevel: 'silent',
     },
     async (
       request: FastifyRequestTypeBox<{
@@ -154,6 +157,7 @@ export async function healthRoutes(app: FastifyTypeBox) {
           200: HealthResponseSchema,
         },
       },
+      logLevel: 'silent',
     },
     async (
       request: FastifyRequestTypeBox<{

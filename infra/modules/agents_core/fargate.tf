@@ -202,6 +202,26 @@ resource "aws_iam_role_policy" "agents_core_service_xray_policy" {
   })
 }
 
+// Adding policy to allow publishing to Kinesis stream
+resource "aws_iam_role_policy" "agents_core_service_kinesis_policy" {
+  name = "agents-core-service-kinesis-permissions-${var.environment}"
+  role = aws_iam_role.task_role.name
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "kinesis:PutRecord",
+          "kinesis:PutRecords"
+        ],
+        Resource = "arn:aws:kinesis:*:*:stream/clancy-main-${var.environment}"
+      }
+    ]
+  })
+}
+
 
 resource "aws_ecs_task_definition" "agents_core_service_definition" {
   container_definitions = local.container_definitions

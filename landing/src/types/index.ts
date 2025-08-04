@@ -16,7 +16,14 @@ export interface BlogPost {
 export interface Integration {
   name: string;
   logo: string;
-  category: 'productivity' | 'communication' | 'finance' | 'education' | 'ecommerce' | 'crm' | 'other';
+  category:
+    | "productivity"
+    | "communication"
+    | "finance"
+    | "education"
+    | "ecommerce"
+    | "crm"
+    | "other";
   description?: string;
 }
 
@@ -54,5 +61,5 @@ export interface NavItem {
 export interface CTAButton {
   text: string;
   href: string;
-  variant: 'primary' | 'secondary' | 'accent';
-} 
+  variant: "primary" | "secondary" | "accent";
+}

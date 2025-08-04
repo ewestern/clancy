@@ -3,8 +3,7 @@ import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { HiringWizard } from "./HiringWizard";
-import { createAIEmployee } from "../api/stubs";
-import type { CollaborativeWizardData } from "../types";
+import type { Employee } from "@ewestern/agents_core_sdk";
 
 export function Layout() {
   const [isHiringWizardOpen, setIsHiringWizardOpen] = useState(false);
@@ -13,9 +12,9 @@ export function Layout() {
     setIsHiringWizardOpen(true);
   };
 
-  const handleWizardComplete = async (wizardData: CollaborativeWizardData) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleWizardComplete = async (employee: Employee) => {
     try {
-      await createAIEmployee(wizardData);
       // Optionally show success notification
       console.log("AI Employee created successfully!");
     } catch (error) {

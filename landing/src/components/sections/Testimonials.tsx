@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Star, Quote } from 'lucide-react';
-import { testimonials } from '@/lib/data';
+import { motion } from "framer-motion";
+import { Star, Quote } from "lucide-react";
+import { testimonials } from "@/lib/data";
 
 export function Testimonials() {
   return (
@@ -25,7 +25,8 @@ export function Testimonials() {
             viewport={{ once: true }}
             className="text-xl text-slate-600 max-w-2xl mx-auto"
           >
-            See how organizations are transforming their workflows with Clancy&apos;s digital employees.
+            See how organizations are transforming their workflows with
+            Clancy&apos;s digital employees.
           </motion.p>
         </div>
 
@@ -47,7 +48,10 @@ export function Testimonials() {
                   </div>
                   <div className="flex space-x-1">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-current text-yellow-400" />
+                      <Star
+                        key={i}
+                        className="w-4 h-4 fill-current text-yellow-400"
+                      />
                     ))}
                   </div>
                 </div>
@@ -61,7 +65,10 @@ export function Testimonials() {
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mr-4">
                     <span className="text-slate-600 font-semibold text-sm">
-                      {testimonial.author.name.split(' ').map(n => n[0]).join('')}
+                      {testimonial.author.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
                     </span>
                   </div>
                   <div>
@@ -88,7 +95,9 @@ export function Testimonials() {
         >
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             <div>
-              <div className="text-3xl font-bold text-slate-900 mb-2">4.9/5</div>
+              <div className="text-3xl font-bold text-slate-900 mb-2">
+                4.9/5
+              </div>
               <div className="text-slate-600 text-sm">Customer Rating</div>
             </div>
             <div>
@@ -117,8 +126,9 @@ export function Testimonials() {
           <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-8 text-center text-white">
             <Quote className="w-8 h-8 mx-auto mb-4 opacity-80" />
             <blockquote className="text-xl md:text-2xl font-medium mb-6 leading-relaxed">
-              &quot;Clancy didn&apos;t just automate our workflows—it gave us our time back. 
-              Our team can now focus on strategy instead of manual tasks.&quot;
+              &quot;Clancy didn&apos;t just automate our workflows—it gave us
+              our time back. Our team can now focus on strategy instead of
+              manual tasks.&quot;
             </blockquote>
             <div className="font-semibold">
               Alex Thompson, CEO at InnovateNow
@@ -128,4 +138,4 @@ export function Testimonials() {
       </div>
     </section>
   );
-} 
+}

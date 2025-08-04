@@ -59,12 +59,6 @@ export interface TriggerRegistration {
     connection?: TriggerRegistrationConnection;
     /**
      * 
-     * @type {string}
-     * @memberof TriggerRegistration
-     */
-    connectionId: string | null;
-    /**
-     * 
      * @type {{ [key: string]: any; }}
      * @memberof TriggerRegistration
      */
@@ -96,7 +90,6 @@ export function instanceOfTriggerRegistration(value: object): value is TriggerRe
     if (!('agentId' in value) || value['agentId'] === undefined) return false;
     if (!('providerId' in value) || value['providerId'] === undefined) return false;
     if (!('triggerId' in value) || value['triggerId'] === undefined) return false;
-    if (!('connectionId' in value) || value['connectionId'] === undefined) return false;
     if (!('params' in value) || value['params'] === undefined) return false;
     if (!('expiresAt' in value) || value['expiresAt'] === undefined) return false;
     return true;
@@ -117,7 +110,6 @@ export function TriggerRegistrationFromJSONTyped(json: any, ignoreDiscriminator:
         'providerId': json['providerId'],
         'triggerId': json['triggerId'],
         'connection': json['connection'] == null ? undefined : TriggerRegistrationConnectionFromJSON(json['connection']),
-        'connectionId': json['connectionId'],
         'params': json['params'],
         'expiresAt': json['expiresAt'],
         'createdAt': json['createdAt'] == null ? undefined : json['createdAt'],
@@ -140,7 +132,6 @@ export function TriggerRegistrationToJSONTyped(value?: Omit<TriggerRegistration,
         'providerId': value['providerId'],
         'triggerId': value['triggerId'],
         'connection': TriggerRegistrationConnectionToJSON(value['connection']),
-        'connectionId': value['connectionId'],
         'params': value['params'],
         'expiresAt': value['expiresAt'],
     };

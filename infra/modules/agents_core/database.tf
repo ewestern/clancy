@@ -23,6 +23,11 @@ resource "aws_db_parameter_group" "agents_core_service_db_parameter_group" {
   }
 }
 resource "aws_db_instance" "agents_core_service_db" {
+  lifecycle {
+    ignore_changes = [
+      password
+    ]
+  }
   publicly_accessible                   = true
   allocated_storage                     = var.db_allocated_storage
   auto_minor_version_upgrade            = "true"

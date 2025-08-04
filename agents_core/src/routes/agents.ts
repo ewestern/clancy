@@ -7,7 +7,6 @@ import {
   UpdateAgentEndpoint,
   DeleteAgentEndpoint,
   AgentStatusSchema,
-  AgentScopeSchema,
 } from "../models/agents.js";
 import {
   FastifyRequestTypeBox,
@@ -29,7 +28,6 @@ async function createAgentHandler(
 export const agentRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addSchema(AgentSchema);
   fastify.addSchema(AgentStatusSchema);
-  fastify.addSchema(AgentScopeSchema);
 
   fastify.get(
     "/agents",

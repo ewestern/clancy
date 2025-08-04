@@ -36,6 +36,12 @@ export interface TriggerRegistrationConnection {
      * @type {string}
      * @memberof TriggerRegistrationConnection
      */
+    userId: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof TriggerRegistrationConnection
+     */
     providerId: string;
     /**
      * 
@@ -57,6 +63,7 @@ export interface TriggerRegistrationConnection {
 export function instanceOfTriggerRegistrationConnection(value: object): value is TriggerRegistrationConnection {
     if (!('id' in value) || value['id'] === undefined) return false;
     if (!('orgId' in value) || value['orgId'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('providerId' in value) || value['providerId'] === undefined) return false;
     if (!('externalAccountMetadata' in value) || value['externalAccountMetadata'] === undefined) return false;
     if (!('status' in value) || value['status'] === undefined) return false;
@@ -75,6 +82,7 @@ export function TriggerRegistrationConnectionFromJSONTyped(json: any, ignoreDisc
         
         'id': json['id'],
         'orgId': json['orgId'],
+        'userId': json['userId'],
         'providerId': json['providerId'],
         'externalAccountMetadata': json['externalAccountMetadata'],
         'status': json['status'],
@@ -94,6 +102,7 @@ export function TriggerRegistrationConnectionToJSONTyped(value?: TriggerRegistra
         
         'id': value['id'],
         'orgId': value['orgId'],
+        'userId': value['userId'],
         'providerId': value['providerId'],
         'externalAccountMetadata': value['externalAccountMetadata'],
         'status': value['status'],

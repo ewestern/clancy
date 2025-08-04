@@ -4,12 +4,27 @@ import { Dashboard } from "./pages/Dashboard";
 import AIEmployeeProfile from "./pages/AIEmployeeProfile";
 import ApprovalsQueue from "./pages/ApprovalsQueue";
 import KnowledgeExplorer from "./pages/KnowledgeExplorer";
+import { SignIn } from "./pages/SignIn";
+import { SignUp } from "./pages/SignUp";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Layout />}>
+        {/* Auth routes */}
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+
+        {/* Protected app routes */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="employee/:id" element={<AIEmployeeProfile />} />
           <Route

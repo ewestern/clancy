@@ -36,7 +36,7 @@ export function ChatInterface({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (inputMessage.trim()) {
         onSendMessage(inputMessage.trim());
@@ -163,17 +163,21 @@ export function ChatInterface({
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={inputEnabled ? "Ask questions or provide feedback about the workflow..." : "Wait for the AI Employee Designer to request feedback..."}
+            placeholder={
+              inputEnabled
+                ? "Ask questions or provide feedback about the workflow..."
+                : "Wait for the AI Employee Designer to request feedback..."
+            }
             className="flex-1 border border-gray-300 rounded-button px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:border-transparent text-sm resize-none min-h-[64px] max-h-[112px] overflow-y-auto"
             disabled={isProcessing || !inputEnabled}
             rows={2}
             style={{
-              height: 'auto',
-              minHeight: '64px',
+              height: "auto",
+              minHeight: "64px",
             }}
             onInput={(e) => {
               const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
+              target.style.height = "auto";
               target.style.height = `${Math.min(target.scrollHeight, 112)}px`;
             }}
           />

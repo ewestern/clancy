@@ -6,7 +6,7 @@ import {
   Event,
   RequestHumanFeedbackEvent,
   ProviderConnectionCompletedEvent,
-  AiEmployeeUpdateEvent,
+  EmployeeStateUpdateEvent,
 } from "@ewestern/events";
 
 export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
@@ -22,8 +22,8 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
       request.log.info(`Received webhook event: ${payload.type}`);
 
       switch (payload.type) {
-        case EventType.AiEmployeeStateUpdate:
-          handleAiEmployeeUpdate(payload as AiEmployeeUpdateEvent, request);
+        case EventType.EmployeeStateUpdate:
+          handleEmployeeStateUpdate(payload as EmployeeStateUpdateEvent, request);
           break;
 
         case EventType.RequestHumanFeedback:
@@ -55,8 +55,8 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
 /**
  * Handle AiEmployeeUpdateEvent - send to all users in the organization
  */
-function handleAiEmployeeUpdate(
-  event: AiEmployeeUpdateEvent,
+function handleEmployeeStateUpdate(
+  event: EmployeeStateUpdateEvent,
   request: FastifyRequestTypeBox<typeof WebhookEndpoint>,
 ) {
   const sentCount = request.server.wsService.sendEventToOrg(event.orgId, event);
@@ -89,7 +89,7 @@ function handleProviderConnectionCompleted(
   event: ProviderConnectionCompletedEvent,
   request: FastifyRequestTypeBox<typeof WebhookEndpoint>,
 ) {
-  const sentCount = request.server.wsService.sendEventToOrg(event.orgId, event);
+  const sentCount = request.server.wsService.sendEvent(event.userId, event);
   request.log.info(
     `Sent ProviderConnectionCompleted to ${sentCount} connections in org ${event.orgId}`,
   );

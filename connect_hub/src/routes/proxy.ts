@@ -6,6 +6,7 @@ import { OwnershipScopeSchema } from "../models/capabilities.js";
 import { ProviderKind } from "../models/providers.js";
 import { connections, tokens } from "../database/schema.js";
 import { eq, and, isNotNull } from "drizzle-orm";
+import { OwnershipScope } from "../models/shared.js";
 
 export async function proxyRoutes(app: FastifyTypeBox) {
   app.addSchema(OwnershipScopeSchema);
@@ -17,7 +18,7 @@ export async function proxyRoutes(app: FastifyTypeBox) {
     async (request, reply) => {
       console.log("Proxy request", JSON.stringify(request.body));
       const { providerId, capabilityId } = request.params;
-      const { ownershipScope, ownerId, params } = request.body;
+      const { userId, orgId, params } = request.body;
 
       const provider = registry.getProvider(providerId);
       if (!provider) {
@@ -32,15 +33,16 @@ export async function proxyRoutes(app: FastifyTypeBox) {
           error: "Capability not found",
         });
       }
-
-      // Check if capability's ownership scope matches request
-      if (
-        capability.meta.ownershipScope &&
-        capability.meta.ownershipScope !== ownershipScope
-      ) {
+      const ownershipScope = capability.meta.ownershipScope;
+      let ownerId;
+      if (ownershipScope === OwnershipScope.User) {
+        ownerId = userId;
+      } else if (ownershipScope === OwnershipScope.Organization) {
+        ownerId = orgId;
+      } else {
         return reply.status(400).send({
-          error: "Ownership scope mismatch",
-          message: `Capability ${capabilityId} requires ${capability.meta.ownershipScope} scope, but ${ownershipScope} was provided`,
+          error: "Invalid ownership scope",
+          message: `Capability ${capabilityId} requires ${ownershipScope} scope, but ${ownershipScope} was provided`,
         });
       }
 
@@ -57,7 +59,7 @@ export async function proxyRoutes(app: FastifyTypeBox) {
           .where(
             and(
               eq(connections.providerId, providerId),
-              eq(connections.orgId, request.query.orgId),
+              eq(connections.orgId, orgId),
               eq(tokens.ownershipScope, ownershipScope),
               eq(tokens.ownerId, ownerId),
               isNotNull(tokens.tokenPayload),
@@ -92,7 +94,7 @@ export async function proxyRoutes(app: FastifyTypeBox) {
 
       const context: ExecutionContext = {
         db: request.server.db,
-        orgId: request.query.orgId,
+        orgId: orgId,
         tokenPayload: token,
         retryCount: 0,
       };

@@ -62,7 +62,7 @@ export interface OauthAuditPost200ResponseInner {
      * @type {string}
      * @memberof OauthAuditPost200ResponseInner
      */
-    oauthUrl?: string;
+    oauthUrl: string;
     /**
      * 
      * @type {string}
@@ -80,6 +80,7 @@ export function instanceOfOauthAuditPost200ResponseInner(value: object): value i
     if (!('providerIcon' in value) || value['providerIcon'] === undefined) return false;
     if (!('status' in value) || value['status'] === undefined) return false;
     if (!('missingScopes' in value) || value['missingScopes'] === undefined) return false;
+    if (!('oauthUrl' in value) || value['oauthUrl'] === undefined) return false;
     return true;
 }
 
@@ -98,7 +99,7 @@ export function OauthAuditPost200ResponseInnerFromJSONTyped(json: any, ignoreDis
         'providerIcon': json['providerIcon'],
         'status': OauthAuditPost200ResponseInnerStatusFromJSON(json['status']),
         'missingScopes': json['missingScopes'],
-        'oauthUrl': json['oauthUrl'] == null ? undefined : json['oauthUrl'],
+        'oauthUrl': json['oauthUrl'],
         'message': json['message'] == null ? undefined : json['message'],
     };
 }

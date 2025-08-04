@@ -10,6 +10,7 @@ import {
   pgEnum,
   vector,
   index,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 import { eq } from "drizzle-orm";
 import { ConnectionStatus } from "../models/connection.js";
@@ -38,6 +39,8 @@ export const connections = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     orgId: varchar("org_id", { length: 255 }).notNull(),
+    // we need user_id to make sense of external account metadata
+    userId: varchar("user_id", { length: 255 }).notNull(),
     providerId: varchar("provider_id", { length: 255 }).notNull(),
     externalAccountMetadata: jsonb("external_account_metadata")
       .$type<Record<string, unknown>>()
@@ -50,7 +53,7 @@ export const connections = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => [
-    //uniqueIndex("idx_connections_org_id_provider_id_active").on(table.orgId, table.providerId).where(eq(table.status, ConnectionStatus.Active)),
+    uniqueIndex("idx_connections_org_id_provider_id_active").on(table.orgId, table.providerId).where(eq(table.status, ConnectionStatus.Active)),
   ],
 );
 
@@ -144,7 +147,7 @@ export const triggerRegistrations = pgTable("trigger_registrations", {
   id: uuid("id").primaryKey().defaultRandom(),
   agentId: text("agent_id").notNull(),
   providerId: text("provider_id").notNull(),
-  connectionId: uuid("connection_id").references(() => connections.id),
+  connectionId: uuid("connection_id").references(() => connections.id, { onDelete: "cascade" }),
   triggerId: text("trigger_id").notNull(),
   params: jsonb("params").$type<Record<string, any>>().notNull().default({}),
   expiresAt: timestamp("expires_at").notNull(),

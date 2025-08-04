@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@aws-sdk/client-kinesis": "^3.845.0",
-    "@clancy/agents_core_sdk": "file:../sdks/agents_core",
-    "@clancy/connect_hub_sdk": "file:../sdks/connect_hub",
-    "@ewestern/events": "^1.0.17",
+    "@clancy/agents_core_sdk": "^0.0.4",
+    "@clancy/connect_hub_sdk": "^0.0.7",
+    "@ewestern/events": "^1.0.23",
     "@langchain/anthropic": "^0.3.25",
     "@langchain/core": "^0.3.66",
     "@langchain/langgraph": "^0.3.11",
