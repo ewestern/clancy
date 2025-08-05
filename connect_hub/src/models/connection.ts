@@ -14,22 +14,28 @@ export const ConnectionStatusSchema = StringEnum(
   },
 );
 
-export const ConnectionSchema = Type.Object({
-  id: Type.String({ format: "uuid" }),
-  orgId: Type.String(),
-  providerId: Type.String({ format: "uuid" }),
-  displayName: Type.String(),
-  status: ConnectionStatusSchema,
-  metadata: Type.Record(Type.String(), Type.Any()),
-  isActive: Type.Boolean(),
-});
+export const ConnectionSchema = Type.Object(
+  {
+    id: Type.String({ format: "uuid" }),
+    orgId: Type.String(),
+    providerId: Type.String(),
+    displayName: Type.String(),
+    status: ConnectionStatusSchema,
+    metadata: Type.Record(Type.String(), Type.Any()),
+  },
+  { $id: "Connection" },
+);
 
 export type Connection = Static<typeof ConnectionSchema>;
 
 export const ConnectionListEndpoint = {
   tags: ["Connection"],
   description: "Get all connections",
+  security: [{ bearerAuth: [] }],
   response: {
     200: Type.Array(ConnectionSchema),
+    500: Type.Object({
+      error: Type.String(),
+    }),
   },
 };

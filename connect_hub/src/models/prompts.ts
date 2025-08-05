@@ -27,6 +27,7 @@ export const PromptParamsSchema = Type.Object({
 export const PromptEndpointSchema = {
   tags: ["Prompt"],
   description: "Retrieve a specific prompt version for a capability.",
+  security: [{ bearerAuth: [] }],
   params: PromptParamsSchema,
   response: {
     200: Ref(PromptSpecSchema),

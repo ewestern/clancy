@@ -293,7 +293,7 @@ export const WebhookPostRequestTypeEnum = {
     Cron: 'cron',
     Runintent: 'runintent',
     Resumeintent: 'resumeintent',
-    Eemployeestateupdate: 'eemployeestateupdate',
+    Employeestateupdate: 'employeestateupdate',
     Providerconnectioncompleted: 'providerconnectioncompleted',
     Agentcreated: 'agentcreated',
     Employeecreated: 'employeecreated',

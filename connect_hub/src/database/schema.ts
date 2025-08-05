@@ -53,7 +53,9 @@ export const connections = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => [
-    uniqueIndex("idx_connections_org_id_provider_id_active").on(table.orgId, table.providerId).where(eq(table.status, ConnectionStatus.Active)),
+    uniqueIndex("idx_connections_org_id_provider_id_active")
+      .on(table.orgId, table.providerId)
+      .where(eq(table.status, ConnectionStatus.Active)),
   ],
 );
 
@@ -147,7 +149,9 @@ export const triggerRegistrations = pgTable("trigger_registrations", {
   id: uuid("id").primaryKey().defaultRandom(),
   agentId: text("agent_id").notNull(),
   providerId: text("provider_id").notNull(),
-  connectionId: uuid("connection_id").references(() => connections.id, { onDelete: "cascade" }),
+  connectionId: uuid("connection_id").references(() => connections.id, {
+    onDelete: "cascade",
+  }),
   triggerId: text("trigger_id").notNull(),
   params: jsonb("params").$type<Record<string, any>>().notNull().default({}),
   expiresAt: timestamp("expires_at").notNull(),

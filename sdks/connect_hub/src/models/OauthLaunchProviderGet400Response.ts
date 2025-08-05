@@ -24,21 +24,50 @@ export interface OauthLaunchProviderGet400Response {
      * @type {string}
      * @memberof OauthLaunchProviderGet400Response
      */
+    status: OauthLaunchProviderGet400ResponseStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof OauthLaunchProviderGet400Response
+     */
     error: string;
     /**
      * 
      * @type {string}
      * @memberof OauthLaunchProviderGet400Response
      */
-    message: string;
+    errorDescription?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof OauthLaunchProviderGet400Response
+     */
+    provider: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof OauthLaunchProviderGet400Response
+     */
+    redirectUrl?: string;
 }
+
+
+/**
+ * @export
+ */
+export const OauthLaunchProviderGet400ResponseStatusEnum = {
+    Failed: 'failed'
+} as const;
+export type OauthLaunchProviderGet400ResponseStatusEnum = typeof OauthLaunchProviderGet400ResponseStatusEnum[keyof typeof OauthLaunchProviderGet400ResponseStatusEnum];
+
 
 /**
  * Check if a given object implements the OauthLaunchProviderGet400Response interface.
  */
 export function instanceOfOauthLaunchProviderGet400Response(value: object): value is OauthLaunchProviderGet400Response {
+    if (!('status' in value) || value['status'] === undefined) return false;
     if (!('error' in value) || value['error'] === undefined) return false;
-    if (!('message' in value) || value['message'] === undefined) return false;
+    if (!('provider' in value) || value['provider'] === undefined) return false;
     return true;
 }
 
@@ -52,8 +81,11 @@ export function OauthLaunchProviderGet400ResponseFromJSONTyped(json: any, ignore
     }
     return {
         
+        'status': json['status'],
         'error': json['error'],
-        'message': json['message'],
+        'errorDescription': json['errorDescription'] == null ? undefined : json['errorDescription'],
+        'provider': json['provider'],
+        'redirectUrl': json['redirectUrl'] == null ? undefined : json['redirectUrl'],
     };
 }
 
@@ -68,8 +100,11 @@ export function OauthLaunchProviderGet400ResponseToJSONTyped(value?: OauthLaunch
 
     return {
         
+        'status': value['status'],
         'error': value['error'],
-        'message': value['message'],
+        'errorDescription': value['errorDescription'],
+        'provider': value['provider'],
+        'redirectUrl': value['redirectUrl'],
     };
 }
 

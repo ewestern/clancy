@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { X, Sparkles, CheckCircle } from "lucide-react";
+import { X, Sparkles } from "lucide-react";
 import { clsx } from "clsx";
 import { ChatInterface } from "./wizard/ChatInterface";
 import { ProviderCards } from "./wizard/ProviderCards";
@@ -26,7 +26,7 @@ import type {
   RequestHumanFeedbackEvent,
   ProviderConnectionCompletedEvent,
   GraphCreatorResumeIntentEvent,
-  AgentPrototypeSchema
+  AgentPrototypeSchema,
 } from "@ewestern/events";
 import { EventType } from "@ewestern/events";
 import {
@@ -34,6 +34,7 @@ import {
   Configuration,
   CapabilitiesApi,
   TriggersApi,
+  ConnectionApi,
 } from "@ewestern/connect_hub_sdk";
 import type {
   OauthAuditPostRequest,
@@ -43,7 +44,13 @@ import type {
 import { useWebSocketCtx } from "../context/WebSocketContext";
 import { useUser, useOrganization, useAuth } from "@clerk/react-router";
 import { WebsocketMessage } from "../types";
-import { EmployeesApi, Configuration as AgentsCoreConfiguration, EmployeeStatus, AgentStatus, Employee } from "@ewestern/agents_core_sdk";
+import {
+  EmployeesApi,
+  Configuration as AgentsCoreConfiguration,
+  EmployeeStatus,
+  AgentStatus,
+  Employee,
+} from "@ewestern/agents_core_sdk";
 import { Static } from "@sinclair/typebox";
 type AgentPrototype = Static<typeof AgentPrototypeSchema>;
 
@@ -95,17 +102,13 @@ export function HiringWizard({
 
   const [wizardData, setWizardData] = useState<CollaborativeWizardData>({
     jobDescription: "",
+    employeeName: "",
     chatHistory: [],
     enhancedWorkflows: [],
     availableProviders: [],
     connectedProviders: [],
     phase: "job_description",
     canComplete: false,
-    notifications: {
-      slack: { taskComplete: true, needsReview: true, error: true },
-      email: { taskComplete: false, needsReview: true, error: true },
-      sms: { taskComplete: false, needsReview: false, error: true },
-    },
     requireApproval: true,
     slaHours: 24,
     pinToDashboard: true,
@@ -163,7 +166,18 @@ export function HiringWizard({
     );
   }, [getToken]);
 
+  const getConnectionApi = useCallback(() => {
+    return new ConnectionApi(
+      new Configuration({
+        basePath: import.meta.env.VITE_CONNECT_HUB_URL!,
+        accessToken: getToken() as Promise<string>,
+      }),
+    );
+  }, [getToken]);
+
   const getEmployeeApi = useCallback(() => {
+    console.log("getEmployeeApi", import.meta.env.VITE_AGENTS_CORE_URL!);
+    console.log("getToken", getToken());
     return new EmployeesApi(
       new AgentsCoreConfiguration({
         basePath: import.meta.env.VITE_AGENTS_CORE_URL!,
@@ -209,11 +223,17 @@ export function HiringWizard({
   }, [isOpen, getCapabilityApi, getTriggerApi]);
 
   useEffect(() => {
+    getConnectionApi()
+      .connectionsGet()
+      .then((connections) => {
+        console.log("connections", JSON.stringify(connections, null, 2));
+      });
     // Reset wizard when modal opens
     if (isOpen) {
       setWizardData((prev) => ({
         ...prev,
         jobDescription: "",
+        employeeName: "",
         chatHistory: [],
         enhancedWorkflows: [],
         availableProviders: [],
@@ -311,14 +331,16 @@ export function HiringWizard({
         setWizardData((prev) => ({
           ...prev,
           availableProviders: providers,
+          // If no providers are required, transition to naming phase
+          phase: providers.length === 0 ? "naming" : prev.phase,
         }));
       } catch (error) {
         console.error("OAuth audit failed:", error);
-        // On audit failure, proceed anyway assuming no additional connections needed
+        // On audit failure, proceed to naming phase anyway
         setWizardData((prev) => ({
           ...prev,
-          phase: "ready",
-          canComplete: true, // Default to allowing completion if audit fails
+          phase: "naming",
+          availableProviders: [], // No providers available due to audit failure
         }));
       }
     },
@@ -392,15 +414,18 @@ export function HiringWizard({
           updatedProvider,
         ];
 
+        const allProvidersConnected = prev.availableProviders.every((p) =>
+          newConnectedProviders.some((cp) => cp.id === p.id),
+        );
+
         return {
           ...prev,
           availableProviders: prev.availableProviders.map((p) =>
             p.id === event.providerId ? updatedProvider : p,
           ),
           connectedProviders: newConnectedProviders,
-          canComplete: prev.availableProviders.every((p) =>
-            newConnectedProviders.some((cp) => cp.id === p.id),
-          ), // All required providers must be connected (true if no providers needed)
+          phase: allProvidersConnected ? "naming" : prev.phase,
+          canComplete: false, // Don't allow completion until naming is done
         };
       });
     } else {
@@ -603,18 +628,17 @@ export function HiringWizard({
               }
             : p,
         ),
-        canComplete: prev.availableProviders.every((p) =>
-          newConnectedProviders.some((cp) => cp.id === p.id),
-        ), // All required providers must be connected (true if no providers needed)
+        canComplete: false, // Don't allow completion until naming is done
       };
     });
   };
 
   const createEmployee = async (): Promise<Employee> => {
     const employeeApi = getEmployeeApi();
+    console.log("agents", JSON.stringify(agents, null, 2));
     return employeeApi.v1EmployeesPost({
       employee: {
-        name: wizardData.jobDescription,
+        name: wizardData.employeeName || "",
         orgId: organization?.id as string,
         userId: user?.id as string,
         status: EmployeeStatus.Active,
@@ -628,7 +652,7 @@ export function HiringWizard({
           trigger: {
             providerId: agent.trigger.providerId,
             id: agent.trigger.id,
-            triggerParams: agent.trigger.triggerParams,
+            triggerParams: agent.trigger.triggerParams || {},
           },
           prompt: agent.prompt,
           orgId: organization?.id as string,
@@ -636,7 +660,7 @@ export function HiringWizard({
           status: AgentStatus.Active,
         })),
       },
-    })
+    });
   };
 
   const handleComplete = () => {
@@ -789,7 +813,7 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
                       requirements.
                     </p>
                     <SimpleWorkflowDisplay workflows={simpleWorkflows} />
-                    
+
                     {/* Loading indicator for next phase */}
                     <div className="mt-8 border-t border-gray-200 pt-6">
                       <div className="flex items-center justify-center">
@@ -848,14 +872,106 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
                 ) : null}
               </>
             )}
+
+            {wizardData.phase === "naming" && (
+              <>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Name Your AI Employee
+                </h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  Give your AI employee a name to identify it.
+                </p>
+                <div className="space-y-4">
+                  <input
+                    type="text"
+                    value={wizardData.employeeName}
+                    onChange={(e) =>
+                      setWizardData((prev) => ({
+                        ...prev,
+                        employeeName: e.target.value,
+                      }))
+                    }
+                    placeholder="e.g., Invoice Assistant, Meeting Planner"
+                    className="w-full h-12 p-3 border border-gray-300 rounded-button focus:outline-none focus:ring-2 focus:ring-primary-600 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Minimum 3 characters required. Current:{" "}
+                    {wizardData.employeeName.length}
+                  </p>
+                </div>
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={() =>
+                      setWizardData((prev) => ({
+                        ...prev,
+                        phase: "ready",
+                        canComplete: true,
+                      }))
+                    }
+                    disabled={wizardData.employeeName.length < 3}
+                    className={clsx(
+                      "inline-flex items-center px-6 py-2 text-sm font-medium rounded-button transition-colors",
+                      wizardData.employeeName.length >= 3
+                        ? "bg-primary-600 text-white hover:bg-primary-700"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed",
+                    )}
+                  >
+                    Next
+                  </button>
+                </div>
+              </>
+            )}
+
+            {wizardData.phase === "ready" && (
+              <>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Ready to Hire: {wizardData.employeeName}
+                </h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  Your AI employee is configured and ready to start working.
+                  Click "Hire AI Employee" to complete the setup.
+                </p>
+
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg
+                        className="h-5 w-5 text-green-400"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-green-800">
+                        All Set!
+                      </h3>
+                      <div className="mt-2 text-sm text-green-700">
+                        <ul className="list-disc pl-5 space-y-1">
+                          <li>Employee name: {wizardData.employeeName}</li>
+                          <li>AI agents configured: {agents.length}</li>
+                          <li>
+                            Integrations connected:{" "}
+                            {wizardData.connectedProviders.length}
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
         {/* Footer */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between flex-shrink-0">
-          <div className="text-sm text-gray-600">
-
-          </div>
+          <div className="text-sm text-gray-600"></div>
 
           <button
             onClick={handleComplete}

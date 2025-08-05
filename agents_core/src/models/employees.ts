@@ -31,6 +31,7 @@ export const CreateEmployeeEndpoint = {
   tags: ["Employees"],
   summary: "Create an employee",
   description: "Create an employee",
+  security: [{ bearerAuth: [] }],
   body: Ref(EmployeeSchema),
   response: {
     200: Ref(EmployeeSchema),
@@ -43,6 +44,7 @@ export const GetEmployeesEndpoint = {
   tags: ["Employees"],
   summary: "Get an employee",
   description: "Get an employee",
+  security: [{ bearerAuth: [] }],
   response: {
     200: Type.Array(Ref(EmployeeSchema)),
   },
@@ -52,6 +54,7 @@ export const GetEmployeeEndpoint = {
   tags: ["Employees"],
   summary: "Get an employee",
   description: "Get an employee",
+  security: [{ bearerAuth: [] }],
   params: Type.Object({
     id: Type.String(),
   }),

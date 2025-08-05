@@ -94,29 +94,10 @@ export interface Integration {
   connected: boolean;
 }
 
-export interface NotificationSettings {
-  slack: {
-    taskComplete: boolean;
-    needsReview: boolean;
-    error: boolean;
-  };
-  email: {
-    taskComplete: boolean;
-    needsReview: boolean;
-    error: boolean;
-  };
-  sms: {
-    taskComplete: boolean;
-    needsReview: boolean;
-    error: boolean;
-  };
-}
-
 export interface HiringWizardData {
   jobDescription: string;
   proposedWorkflow: WorkflowTask[];
   integrations: Integration[];
-  notifications: NotificationSettings;
   requireApproval: boolean;
   slaHours: number;
   scheduleCron?: string;
@@ -127,13 +108,19 @@ export interface HiringWizardData {
 export interface CollaborativeWizardData {
   executionId?: string; // Added to track graph creator execution
   jobDescription: string;
+  employeeName: string;
   chatHistory: ChatMessage[];
   enhancedWorkflows: EnhancedWorkflow[];
   availableProviders: ProviderCard[];
   connectedProviders: (ProviderCard & { connectionId: string })[];
-  phase: "job_description" | "workflows" | "connect" | "ready" | "completed"; // Updated: changed "mapping" to "connect"
+  phase:
+    | "job_description"
+    | "workflows"
+    | "connect"
+    | "naming"
+    | "ready"
+    | "completed"; // Updated: changed "mapping" to "connect", added "naming"
   canComplete: boolean;
-  notifications: NotificationSettings;
   requireApproval: boolean;
   slaHours: number;
   pinToDashboard: boolean;

@@ -1,4 +1,5 @@
 apis/CapabilitiesApi.ts
+apis/ConnectionApi.ts
 apis/HealthApi.ts
 apis/OAuthApi.ts
 apis/ProvidersApi.ts
@@ -11,6 +12,10 @@ models/CapabilitiesProviderIdCapabilityIdGet404Response.ts
 models/Capability.ts
 models/CapabilityRisk.ts
 models/CapabilitySummary.ts
+models/Connection.ts
+models/ConnectionStatus.ts
+models/ConnectionsGet200ResponseInner.ts
+models/ConnectionsIdPatchRequest.ts
 models/HealthGet200Response.ts
 models/HealthGet200ResponseDependencies.ts
 models/HealthGet200ResponseDependenciesDatabase.ts
@@ -19,11 +24,11 @@ models/OAuthErrorResponse.ts
 models/OAuthSuccessResponse.ts
 models/OauthAuditPost200ResponseInner.ts
 models/OauthAuditPost200ResponseInnerStatus.ts
+models/OauthAuditPost400Response.ts
 models/OauthAuditPostRequest.ts
 models/OauthAuditPostRequestCapabilitiesInner.ts
 models/OauthAuditPostRequestTriggersInner.ts
 models/OauthCallbackProviderGet200Response.ts
-models/OauthCallbackProviderGet400Response.ts
 models/OauthLaunchProviderGet302Response.ts
 models/OauthLaunchProviderGet400Response.ts
 models/OwnershipScope.ts

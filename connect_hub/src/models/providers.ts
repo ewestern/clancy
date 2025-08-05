@@ -47,6 +47,7 @@ export const ProviderMetadataSchema = Type.Object(
 export const ProviderListEndpoint = {
   tags: ["Providers"],
   description: "Get all providers",
+  security: [{ bearerAuth: [] }],
   response: {
     200: Type.Array(Ref(ProviderMetadataSchema)),
   },

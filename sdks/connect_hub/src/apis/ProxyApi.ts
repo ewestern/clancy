@@ -15,12 +15,12 @@
 
 import * as runtime from '../runtime';
 import type {
-  OauthLaunchProviderGet400Response,
+  OauthAuditPost400Response,
   ProxyProviderIdCapabilityIdPostRequest,
 } from '../models/index';
 import {
-    OauthLaunchProviderGet400ResponseFromJSON,
-    OauthLaunchProviderGet400ResponseToJSON,
+    OauthAuditPost400ResponseFromJSON,
+    OauthAuditPost400ResponseToJSON,
     ProxyProviderIdCapabilityIdPostRequestFromJSON,
     ProxyProviderIdCapabilityIdPostRequestToJSON,
 } from '../models/index';
@@ -67,6 +67,14 @@ export class ProxyApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/proxy/{providerId}/{capabilityId}`.replace(`{${"providerId"}}`, encodeURIComponent(String(requestParameters['providerId']))).replace(`{${"capabilityId"}}`, encodeURIComponent(String(requestParameters['capabilityId']))),
             method: 'POST',

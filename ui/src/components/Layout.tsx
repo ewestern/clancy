@@ -3,20 +3,27 @@ import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { HiringWizard } from "./HiringWizard";
+import { useDashboard } from "../context/DashboardContext";
 import type { Employee } from "@ewestern/agents_core_sdk";
 
 export function Layout() {
   const [isHiringWizardOpen, setIsHiringWizardOpen] = useState(false);
+  const { addEmployee } = useDashboard();
 
   const handleHireClick = () => {
     setIsHiringWizardOpen(true);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleWizardComplete = async (employee: Employee) => {
     try {
-      // Optionally show success notification
-      console.log("AI Employee created successfully!");
+      // Add the employee to the dashboard
+      addEmployee(employee);
+
+      // Close the wizard
+      setIsHiringWizardOpen(false);
+
+      // Show success notification
+      console.log("AI Employee created successfully and added to dashboard!");
     } catch (error) {
       console.error("Error creating AI employee:", error);
     }

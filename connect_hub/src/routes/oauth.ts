@@ -86,8 +86,6 @@ async function updateOrCreateConnection(
       .limit(1);
     const existingConnection = existingConnectionResponse[0] || null;
 
-
-
     if (existingConnection) {
       // Update existing token for this ownership scope/owner combination
       await tx
@@ -301,8 +299,10 @@ export async function oauthRoutes(app: FastifyTypeBox) {
       const { userId } = getAuth(request);
       if (!userId) {
         return reply.status(401).send({
-          error: "Unauthorized",
-          message: "User not authenticated",
+          error: "unauthorized",
+          errorDescription: "User not authenticated",
+          provider: providerId,
+          status: OauthStatus.Failed,
         });
       }
 
@@ -311,14 +311,18 @@ export async function oauthRoutes(app: FastifyTypeBox) {
         const provider = registry.getProvider(providerId);
         if (!provider) {
           return reply.status(400).send({
-            error: "Provider not found",
-            message: `Provider ${providerId} not found`,
+            error: "provider_not_found",
+            errorDescription: `Provider ${providerId} not found`,
+            provider: providerId,
+            status: OauthStatus.Failed,
           });
         }
         if (!provider.generateAuthUrl) {
           return reply.status(400).send({
-            error: "Provider does not support OAuth",
-            message: `Provider ${providerId} does not implement OAuth flow`,
+            error: "provider_does_not_support_oauth",
+            errorDescription: `Provider ${providerId} does not implement OAuth flow`,
+            provider: providerId,
+            status: OauthStatus.Failed,
           });
         }
 
@@ -347,8 +351,10 @@ export async function oauthRoutes(app: FastifyTypeBox) {
           await request.server.getProviderSecrets(providerId);
         if (!providerSecrets) {
           return reply.status(400).send({
-            error: "Provider not found",
-            message: `Provider ${providerId} not found`,
+            error: "provider_not_found",
+            errorDescription: `Provider ${providerId} not found`,
+            provider: providerId,
+            status: OauthStatus.Failed,
           });
         }
 
@@ -368,8 +374,11 @@ export async function oauthRoutes(app: FastifyTypeBox) {
       } catch (error) {
         app.log.error("OAuth launch failed:", error);
         return reply.status(400).send({
-          error: "OAuth launch failed",
-          message: error instanceof Error ? error.message : "Unknown error",
+          error: "oauth_launch_failed",
+          errorDescription:
+            error instanceof Error ? error.message : "Unknown error",
+          provider: providerId,
+          status: OauthStatus.Failed,
         });
       }
     },
@@ -464,9 +473,14 @@ export async function oauthRoutes(app: FastifyTypeBox) {
       request: FastifyRequestTypeBox<typeof OAuthAuditEndpointSchema>,
       reply: FastifyReplyTypeBox<typeof OAuthAuditEndpointSchema>,
     ) => {
-      const { orgId } = request.query;
       const { capabilities, triggers } = request.body;
-      const { userId } = getAuth(request);
+      const { orgId, userId } = getAuth(request);
+      if (!orgId || !userId) {
+        return reply.status(401).send({
+          error: "unauthorized",
+          message: "User not authenticated",
+        });
+      }
 
       try {
         // Get current active scopes for the user/org
