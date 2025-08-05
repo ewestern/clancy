@@ -16,6 +16,7 @@ import { eq } from "drizzle-orm";
 import { and } from "drizzle-orm";
 import { ConnectionStatus } from "../models/connection.js";
 import { getAuth } from "@clerk/fastify";
+import { ProviderKind } from "../models/providers.js";
 
 export async function triggerRoutes(app: FastifyTypeBox) {
   app.addSchema(TriggerRegistrationSchema);
@@ -106,12 +107,12 @@ export async function triggerRoutes(app: FastifyTypeBox) {
               eq(connections.status, ConnectionStatus.Active),
             ),
           });
-          if (!connection) {
+          if (!connection && provider?.metadata.kind === ProviderKind.External) {
             throw new Error("Connection not found");
           }
           const toInsert = {
             ...body,
-            connectionId: connection.id,
+            connectionId: connection?.id,
             expiresAt: new Date(body.expiresAt),
             createdAt: new Date(),
             updatedAt: new Date(),
