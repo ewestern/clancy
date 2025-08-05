@@ -35,7 +35,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   // Comprehensive health check
   fastify.get("/health", {
     schema: healthSchema,
-    logLevel: 'silent',
+    logLevel: "silent",
     handler: async (request, reply) => {
       const timestamp = new Date().toISOString();
 
@@ -89,7 +89,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   // Kubernetes readiness probe
   fastify.get("/ready", {
     schema: simpleHealthSchema,
-    logLevel: 'silent',
+    logLevel: "silent",
     handler: async (request, reply) => {
       try {
         await fastify.db.execute(sql`SELECT 1`);
@@ -109,7 +109,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   // Kubernetes liveness probe
   fastify.get("/live", {
     schema: simpleHealthSchema,
-    logLevel: 'silent',
+    logLevel: "silent",
     handler: async (request, reply) => {
       return reply.send({
         status: "alive",
@@ -121,7 +121,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   // Service information
   fastify.get("/info", {
     schema: infoSchema,
-    logLevel: 'silent',
+    logLevel: "silent",
     handler: async (request, reply) => {
       return reply.send({
         name: packageJson.name,
@@ -134,7 +134,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Metrics endpoint (placeholder)
   fastify.get("/metrics", {
-    logLevel: 'silent',
+    logLevel: "silent",
     handler: async (request, reply) => {
       // TODO: Implement Prometheus metrics
       return reply.type("text/plain").send("# Metrics not implemented yet\n");

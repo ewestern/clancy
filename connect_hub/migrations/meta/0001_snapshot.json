@@ -504,12 +504,8 @@
           "name": "tokens_connection_id_connections_id_fk",
           "tableFrom": "tokens",
           "tableTo": "connections",
-          "columnsFrom": [
-            "connection_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["connection_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -519,11 +515,7 @@
         "unique_token_per_scope": {
           "name": "unique_token_per_scope",
           "nullsNotDistinct": false,
-          "columns": [
-            "connection_id",
-            "ownership_scope",
-            "owner_id"
-          ]
+          "columns": ["connection_id", "ownership_scope", "owner_id"]
         }
       },
       "policies": {},
@@ -599,12 +591,8 @@
           "name": "trigger_registrations_connection_id_connections_id_fk",
           "tableFrom": "trigger_registrations",
           "tableTo": "connections",
-          "columnsFrom": [
-            "connection_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["connection_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -620,36 +608,22 @@
     "public.connection_status": {
       "name": "connection_status",
       "schema": "public",
-      "values": [
-        "active",
-        "inactive",
-        "error"
-      ]
+      "values": ["active", "inactive", "error"]
     },
     "public.knowledge_snippet_origin": {
       "name": "knowledge_snippet_origin",
       "schema": "public",
-      "values": [
-        "agent"
-      ]
+      "values": ["agent"]
     },
     "public.oauth_transaction_status": {
       "name": "oauth_transaction_status",
       "schema": "public",
-      "values": [
-        "pending",
-        "completed",
-        "failed",
-        "expired"
-      ]
+      "values": ["pending", "completed", "failed", "expired"]
     },
     "public.ownership_scope": {
       "name": "ownership_scope",
       "schema": "public",
-      "values": [
-        "user",
-        "organization"
-      ]
+      "values": ["user", "organization"]
     }
   },
   "schemas": {},

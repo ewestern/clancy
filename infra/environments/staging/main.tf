@@ -128,6 +128,7 @@ module "agents_core" {
   clerk_publishable_key = module.shared.clerk_publishable_key
   clerk_secret_key = module.shared.clerk_secret_key
   hosted_zone_id = data.aws_route53_zone.clancy_domain.id
+  connect_hub_api_url = module.connect_hub.lb_endpoint
 }
 
 module "checkpointer" {

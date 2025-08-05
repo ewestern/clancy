@@ -1,6 +1,6 @@
 {
   "name": "@ewestern/connect_hub_sdk",
-  "version": "0.0.7",
+  "version": "0.0.9",
   "description": "Clancy SDK - TypeScript client library",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -5,6 +5,7 @@ import { OwnershipScopeSchema } from "./capabilities.js";
 export const ProxyEndpointSchema = {
   tags: ["Proxy"],
   description: "Proxies action requests",
+  security: [{ bearerAuth: [] }],
   params: Type.Object({
     providerId: Type.String(),
     capabilityId: Type.String(),

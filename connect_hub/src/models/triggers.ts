@@ -51,6 +51,7 @@ export const TriggerSchema = Type.Object(
 
 export const GetTriggersEndpoint = {
   tags: ["Triggers"],
+  security: [{ bearerAuth: [] }],
   response: {
     200: Type.Array(TriggerSchema),
   },
@@ -58,6 +59,7 @@ export const GetTriggersEndpoint = {
 
 export const CreateTriggerRegistrationEndpoint = {
   tags: ["Triggers"],
+  security: [{ bearerAuth: [] }],
   body: Ref(TriggerRegistrationSchema),
   response: {
     200: Ref(TriggerRegistrationSchema),

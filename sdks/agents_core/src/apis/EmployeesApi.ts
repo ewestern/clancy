@@ -25,6 +25,10 @@ import {
     V1AgentsPost400ResponseToJSON,
 } from '../models/index';
 
+export interface V1EmployeesIdGetRequest {
+    id: string;
+}
+
 export interface V1EmployeesPostRequest {
     employee?: Employee;
 }
@@ -43,6 +47,14 @@ export class EmployeesApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/v1/employees`,
             method: 'GET',
@@ -63,6 +75,49 @@ export class EmployeesApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get an employee
+     * Get an employee
+     */
+    async v1EmployeesIdGetRaw(requestParameters: V1EmployeesIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Employee>> {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling v1EmployeesIdGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v1/employees/{id}`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => EmployeeFromJSON(jsonValue));
+    }
+
+    /**
+     * Get an employee
+     * Get an employee
+     */
+    async v1EmployeesIdGet(requestParameters: V1EmployeesIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Employee> {
+        const response = await this.v1EmployeesIdGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Create an employee
      * Create an employee
      */
@@ -73,6 +128,14 @@ export class EmployeesApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/v1/employees`,
             method: 'POST',

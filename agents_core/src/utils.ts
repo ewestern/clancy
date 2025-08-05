@@ -6,7 +6,11 @@ import * as yaml from "yaml";
 import { PromptTemplate } from "@langchain/core/prompts";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { KinesisClient, PutRecordCommand, PutRecordsCommand } from "@aws-sdk/client-kinesis";
+import {
+  KinesisClient,
+  PutRecordCommand,
+  PutRecordsCommand,
+} from "@aws-sdk/client-kinesis";
 import { Event } from "@ewestern/events";
 
 dayjs.extend(utc);

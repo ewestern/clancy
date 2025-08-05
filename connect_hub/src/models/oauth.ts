@@ -123,30 +123,29 @@ export const OAuthTransactionSchema = Type.Object({
 // Route Schema Definitions
 export const OAuthNeedsEndpointSchema = {
   tags: ["OAuth"],
-  description: "Check OAuth status and missing scopes for an organization",
+  description: "Check OAuth connection status",
+  security: [{ bearerAuth: [] }],
   querystring: OAuthNeedsQuerySchema,
   response: {
     200: OAuthNeedsResponseSchema,
   },
-};
+} as const;
 
 export const OAuthLaunchEndpointSchema = {
   tags: ["OAuth"],
   description: "Launch OAuth authorization flow",
+  security: [{ bearerAuth: [] }],
+  querystring: OAuthLaunchQuerySchema,
   params: Type.Object({
     provider: Type.String(),
   }),
-  querystring: OAuthLaunchQuerySchema,
   response: {
     302: Type.Object({
       location: Type.String({ format: "uri" }),
     }),
-    400: Type.Object({
-      error: Type.String(),
-      message: Type.String(),
-    }),
+    400: OAuthErrorResponseSchema,
   },
-};
+} as const;
 
 export const OAuthCallbackEndpointSchema = {
   tags: ["OAuth"],
@@ -211,10 +210,8 @@ export const OAuthAuditResponseSchema = Type.Array(
 
 export const OAuthAuditEndpointSchema = {
   tags: ["OAuth"],
+  security: [{ bearerAuth: [] }],
   body: OAuthAuditRequestSchema,
-  querystring: Type.Object({
-    orgId: Type.String(),
-  }),
   response: {
     200: OAuthAuditResponseSchema,
     400: Type.Object({

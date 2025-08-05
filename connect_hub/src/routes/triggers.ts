@@ -17,7 +17,6 @@ import { and } from "drizzle-orm";
 import { ConnectionStatus } from "../models/connection.js";
 import { getAuth } from "@clerk/fastify";
 
-
 export async function triggerRoutes(app: FastifyTypeBox) {
   app.addSchema(TriggerRegistrationSchema);
 
@@ -46,10 +45,13 @@ export async function triggerRoutes(app: FastifyTypeBox) {
 
   app.post("/trigger-registrations", {
     schema: CreateTriggerRegistrationEndpoint,
-    handler: async (request, reply) => {
+    handler: async (
+      request: FastifyRequestTypeBox<typeof CreateTriggerRegistrationEndpoint>,
+      reply: FastifyReplyTypeBox<typeof CreateTriggerRegistrationEndpoint>,
+    ) => {
       const body = request.body;
       const auth = getAuth(request);
-      if (!auth) {
+      if (!auth.orgId || !auth.userId) {
         reply.status(401).send({
           error: "Unauthorized",
           message: "Unauthorized",
@@ -85,35 +87,45 @@ export async function triggerRoutes(app: FastifyTypeBox) {
           return;
         }
       }
-      const triggerRegistration = await request.server.db.transaction(async (tx) => {
-        const connection = await tx.query.connections.findFirst({
-          where: and(
-            eq(connections.orgId, auth.orgId!),
-            eq(connections.userId, auth.userId!),
-            eq(connections.providerId, body.providerId),
-            eq(connections.status, ConnectionStatus.Active),
-          ),
-        });
-        if (!connection) {
-          throw new Error("Connection not found");
-        }
-        const toInsert = {
-          ...body,
-          connectionId: connection.id,
-          expiresAt: new Date(body.expiresAt),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        const [triggerRegistration] = await app.db
-          .insert(triggerRegistrations)
-          .values(toInsert)
-          .returning();
-        if (!triggerRegistration) {
-          throw new Error("Failed to create trigger registration");
-        }
-        return triggerRegistration;
-      });
-
+      request.log.info(
+        `Creating trigger registration: ${JSON.stringify([
+          auth.orgId,
+          auth.userId,
+          body.providerId,
+          body.triggerId,
+          body.params,
+        ])}`,
+      );
+      const triggerRegistration = await request.server.db.transaction(
+        async (tx) => {
+          const connection = await tx.query.connections.findFirst({
+            where: and(
+              eq(connections.orgId, auth.orgId!),
+              eq(connections.userId, auth.userId!),
+              eq(connections.providerId, body.providerId),
+              eq(connections.status, ConnectionStatus.Active),
+            ),
+          });
+          if (!connection) {
+            throw new Error("Connection not found");
+          }
+          const toInsert = {
+            ...body,
+            connectionId: connection.id,
+            expiresAt: new Date(body.expiresAt),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          const [triggerRegistration] = await app.db
+            .insert(triggerRegistrations)
+            .values(toInsert)
+            .returning();
+          if (!triggerRegistration) {
+            throw new Error("Failed to create trigger registration");
+          }
+          return triggerRegistration;
+        },
+      );
 
       reply.status(201).send({
         id: triggerRegistration.id,

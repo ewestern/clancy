@@ -48,6 +48,7 @@ export const GetApprovalRequestsEndpoint = {
   tags: ["Approvals"],
   summary: "Get approval requests",
   description: "Get approval requests",
+  security: [{ bearerAuth: [] }],
   querystring: Type.Object({
     status: Type.Optional(ApprovalRequestStatusSchema),
   }),
@@ -60,6 +61,7 @@ export const GetApprovalRequestEndpoint = {
   tags: ["Approvals"],
   summary: "Get an approval request",
   description: "Get an approval request by ID",
+  security: [{ bearerAuth: [] }],
   params: Type.Object({
     id: Type.String(),
   }),
@@ -73,6 +75,7 @@ export const CreateApprovalRequestEndpoint = {
   tags: ["Approvals"],
   summary: "Create an approval request",
   description: "Create an approval request",
+  security: [{ bearerAuth: [] }],
   body: Ref(ApprovalRequestSchema),
   response: {
     200: Ref(ApprovalRequestSchema),
@@ -84,6 +87,7 @@ export const UpdateApprovalRequestEndpoint = {
   tags: ["Approvals"],
   summary: "Update an approval request",
   description: "Update an approval request",
+  security: [{ bearerAuth: [] }],
   params: Type.Object({
     id: Type.String(),
   }),

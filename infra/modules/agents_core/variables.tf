@@ -112,6 +112,12 @@ variable "hosted_zone_id" {
   type        = string
   description = "The ID of the hosted zone to create the DNS record in"
 }
+
+variable "connect_hub_api_url" {
+  type        = string
+  description = "The URL of the Connect Hub API"
+}
+
 output "lb_endpoint" {
   value = "https://${aws_route53_record.agents_core_service.fqdn}"
 }

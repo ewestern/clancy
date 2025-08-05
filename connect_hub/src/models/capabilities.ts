@@ -89,9 +89,7 @@ export const CapabilityEndpointSchema = {
     providerId: Type.String(),
     capabilityId: Type.String(),
   }),
-  //security: [{
-  //  bearerAuth: [],
-  //}],
+  security: [{ bearerAuth: [] }],
   response: {
     200: Ref(ProviderCapabilitySchema),
     404: Type.Object({
@@ -104,6 +102,7 @@ export const CapabilitiesEndpointSchema = {
   tags: ["Capabilities"],
   description:
     "Returns the catalog of provider capabilities available to the platform.",
+  security: [{ bearerAuth: [] }],
   response: {
     200: Type.Array(Ref(ProviderCapabilitiesSchema)),
   },

@@ -13,11 +13,7 @@ import {
   FastifyRequestTypeBox,
   FastifyReplyTypeBox,
 } from "../types/fastify.js";
-import {
-  Agent,
-  AgentSchema,
-  AgentStatusSchema,
-} from "../models/agents.js";
+import { Agent, AgentSchema, AgentStatusSchema } from "../models/agents.js";
 import { agents, aiEmployees } from "../database/schema.js";
 import { TriggersApi, Configuration } from "@ewestern/connect_hub_sdk";
 import { getAuth } from "@clerk/fastify";
@@ -68,7 +64,7 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
           timestamp: getCurrentTimestamp(),
         });
       }
-      
+
       const orgId = auth.orgId;
       const { agents: newAgents, ...employee } = request.body;
       return fastify.db.transaction(async (tx) => {
@@ -84,16 +80,23 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
           .values(newAgents)
           .returning();
         const triggerRegistrations = await Promise.all(
-          createdAgents.map((agent) => createTriggerRegistration(agent, auth.getToken() as Promise<string>)),
+          createdAgents.map((agent) =>
+            createTriggerRegistration(
+              agent,
+              auth.getToken() as Promise<string>,
+            ),
+          ),
         );
         await publishToKinesis(
-          [{
-            type: EventType.EmployeeCreated,
-            orgId: createdEmployee.orgId,
-            userId: createdEmployee.userId,
-            employeeId: createdEmployee.id,
-            timestamp: getCurrentTimestamp(),
-          }],
+          [
+            {
+              type: EventType.EmployeeCreated,
+              orgId: createdEmployee.orgId,
+              userId: createdEmployee.userId,
+              employeeId: createdEmployee.id,
+              timestamp: getCurrentTimestamp(),
+            },
+          ],
           (event) => event.orgId,
         );
         return {
@@ -118,9 +121,7 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
           agents: true,
         },
       });
-      return reply.status(200).send(
-        employees,
-      );
+      return reply.status(200).send(employees);
     },
   );
 

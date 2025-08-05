@@ -27,7 +27,7 @@ export async function publishEvents(
     },
   }));
   const command = new PutRecordsCommand({
-    Records: events.map((e) => ({
+    Records: eventsWithTimestamp.map((e) => ({
       Data: Buffer.from(JSON.stringify(e.event)),
       PartitionKey: e.partitionKey,
     })),

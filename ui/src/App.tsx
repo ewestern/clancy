@@ -7,6 +7,7 @@ import KnowledgeExplorer from "./pages/KnowledgeExplorer";
 import { SignIn } from "./pages/SignIn";
 import { SignUp } from "./pages/SignUp";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { DashboardProvider } from "./context/DashboardContext";
 
 function App() {
   return (
@@ -21,7 +22,9 @@ function App() {
           path="/"
           element={
             <ProtectedRoute>
-              <Layout />
+              <DashboardProvider>
+                <Layout />
+              </DashboardProvider>
             </ProtectedRoute>
           }
         >

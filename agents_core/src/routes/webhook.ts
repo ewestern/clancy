@@ -23,7 +23,10 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
 
       switch (payload.type) {
         case EventType.EmployeeStateUpdate:
-          handleEmployeeStateUpdate(payload as EmployeeStateUpdateEvent, request);
+          handleEmployeeStateUpdate(
+            payload as EmployeeStateUpdateEvent,
+            request,
+          );
           break;
 
         case EventType.RequestHumanFeedback:

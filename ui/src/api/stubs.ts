@@ -243,16 +243,31 @@ const mockIntegrations: Integration[] = [
   },
 ];
 
+// Mutable mock data store for demo purposes
+let currentMockEmployees = [...mockAIEmployees];
+let currentMockKPIData = { ...mockKPIData };
+
 // API functions
 export const fetchKPIData = async (): Promise<KPIData> => {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500));
-  return mockKPIData;
+  return currentMockKPIData;
 };
 
 export const fetchAIEmployees = async (): Promise<AIEmployee[]> => {
   await new Promise((resolve) => setTimeout(resolve, 800));
-  return mockAIEmployees;
+  return [...currentMockEmployees];
+};
+
+// Function to add a new employee to the mock store
+export const addAIEmployeeMock = (employee: AIEmployee): void => {
+  currentMockEmployees.push(employee);
+  // Update KPI data
+  currentMockKPIData = {
+    ...currentMockKPIData,
+    aiEmployees: currentMockEmployees.length,
+    aiEmployeesChange: currentMockKPIData.aiEmployeesChange + 1,
+  };
 };
 
 export const fetchApprovalRequests = async (): Promise<ApprovalRequest[]> => {
@@ -531,4 +546,30 @@ export const retryRun = async (runId: string): Promise<void> => {
   await new Promise((resolve) => setTimeout(resolve, 1000));
   console.log(`Retrying run ${runId}`);
   // In real implementation, this would enqueue a RunIntent retry
+};
+
+// Demo utility: Create a mock Employee for testing the integration
+export const createMockEmployee = (
+  name: string,
+  role: string,
+): import("@ewestern/agents_core_sdk").Employee => {
+  return {
+    id: `emp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    orgId: "demo-org",
+    userId: "demo-user",
+    name: name,
+    status: "active" as const,
+    agents: [
+      {
+        id: `agent-${Date.now()}`,
+        name: role,
+        status: "active" as const,
+        capabilities: [],
+        trigger: {
+          type: "schedule",
+          config: {},
+        },
+      },
+    ],
+  };
 };

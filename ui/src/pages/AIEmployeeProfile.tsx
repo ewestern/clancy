@@ -10,6 +10,7 @@ import {
   FileText,
   Eye,
 } from "lucide-react";
+import { AIEmployee } from "../types";
 import {
   getAIEmployee,
   getEmployeeActivity,
@@ -17,8 +18,6 @@ import {
   getEmployeeKnowledge,
   getEmployeeHealth,
 } from "../api/stubs";
-import { EmployeesApi, Configuration, Employee } from "@ewestern/agents_core_sdk";
-import { useAuth } from "@clerk/react-router";
 
 interface ActivityEvent {
   id: string;
@@ -60,7 +59,7 @@ const AIEmployeeProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [employee, setEmployee] = useState<AIEmployee | null>(null);
 
   // Check URL params for initial tab and run filter
   const initialTab =
@@ -76,24 +75,11 @@ const AIEmployeeProfile: React.FC = () => {
   const [knowledge, setKnowledge] = useState<KnowledgeItem[]>([]);
   const [health, setHealth] = useState<HealthMetrics | null>(null);
   const [loading, setLoading] = useState(true);
-  const { getToken } = useAuth();
-
-  const getEmployeesApi = useCallback(() => {
-    const configuration = new Configuration({
-      basePath: import.meta.env.VITE_AGENTS_CORE_API_URL,
-      accessToken: getToken() as Promise<string>,
-    });
-    return new EmployeesApi(configuration);
-  }, [getToken]);
 
   useEffect(() => {
     const loadEmployee = async () => {
       if (!id) return;
 
-      const employeesApi = getEmployeesApi();
-      const employee = await employeesApi.v1EmployeeGet({
-        id: id,
-      });
       try {
         const [
           employeeData,
@@ -102,7 +88,7 @@ const AIEmployeeProfile: React.FC = () => {
           knowledgeData,
           healthData,
         ] = await Promise.all([
-          getEmployeesApi().getEmployee(id),
+          getAIEmployee(id),
           getEmployeeActivity(id),
           getEmployeePermissions(id),
           getEmployeeKnowledge(id),

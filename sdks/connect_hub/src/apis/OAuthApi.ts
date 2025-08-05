@@ -16,21 +16,21 @@
 import * as runtime from '../runtime';
 import type {
   OauthAuditPost200ResponseInner,
+  OauthAuditPost400Response,
   OauthAuditPostRequest,
   OauthCallbackProviderGet200Response,
-  OauthCallbackProviderGet400Response,
   OauthLaunchProviderGet302Response,
   OauthLaunchProviderGet400Response,
 } from '../models/index';
 import {
     OauthAuditPost200ResponseInnerFromJSON,
     OauthAuditPost200ResponseInnerToJSON,
+    OauthAuditPost400ResponseFromJSON,
+    OauthAuditPost400ResponseToJSON,
     OauthAuditPostRequestFromJSON,
     OauthAuditPostRequestToJSON,
     OauthCallbackProviderGet200ResponseFromJSON,
     OauthCallbackProviderGet200ResponseToJSON,
-    OauthCallbackProviderGet400ResponseFromJSON,
-    OauthCallbackProviderGet400ResponseToJSON,
     OauthLaunchProviderGet302ResponseFromJSON,
     OauthLaunchProviderGet302ResponseToJSON,
     OauthLaunchProviderGet400ResponseFromJSON,
@@ -89,6 +89,14 @@ export class OAuthApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/oauth/audit`,
             method: 'POST',
@@ -211,6 +219,14 @@ export class OAuthApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/oauth/launch/{provider}`.replace(`{${"provider"}}`, encodeURIComponent(String(requestParameters['provider']))),
             method: 'GET',

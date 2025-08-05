@@ -97,7 +97,7 @@ export interface WebhookPostRequestAnyOf3 {
  * @export
  */
 export const WebhookPostRequestAnyOf3TypeEnum = {
-    Eemployeestateupdate: 'eemployeestateupdate'
+    Employeestateupdate: 'employeestateupdate'
 } as const;
 export type WebhookPostRequestAnyOf3TypeEnum = typeof WebhookPostRequestAnyOf3TypeEnum[keyof typeof WebhookPostRequestAnyOf3TypeEnum];
 

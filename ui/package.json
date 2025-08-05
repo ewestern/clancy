@@ -12,8 +12,8 @@
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
     "@clerk/react-router": "^1.8.9",
-    "@ewestern/agents_core_sdk": "^0.0.4",
-    "@ewestern/connect_hub_sdk": "^0.0.7",
+    "@ewestern/agents_core_sdk": "^0.0.6",
+    "@ewestern/connect_hub_sdk": "^0.0.8",
     "@ewestern/events": "^1.0.23",
     "@fastify/cors": "^11.1.0",
     "@sinclair/typebox": "^0.34.38",

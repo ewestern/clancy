@@ -56,6 +56,10 @@ locals {
       //],
       environment = [
         {
+          name = "CONNECT_HUB_API_URL"
+          value = var.connect_hub_api_url
+        },
+        {
           name  = "DATABASE_URL"
           value = local.database_url
         },
