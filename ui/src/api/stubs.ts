@@ -65,8 +65,8 @@ const mockAIEmployees: AIEmployee[] = [
 const mockKPIData: KPIData = {
   aiEmployees: 7,
   aiEmployeesChange: 1,
-  pendingApprovals: 3,
-  knowledgeItems: 128,
+  pendingApprovals: 0,
+  knowledgeItems: 1,
 };
 
 const mockApprovalRequests: ApprovalRequest[] = [
@@ -103,7 +103,7 @@ const mockKnowledgeItems: KnowledgeItem[] = [
     type: "pdf",
     lastModified: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
     scope: "finance",
-    contributingEmployee: "Sarah (Invoice Bot)",
+    contributingEmployee: "Invoice Assistant",
     visibility: "internal",
   },
   {
@@ -112,26 +112,8 @@ const mockKnowledgeItems: KnowledgeItem[] = [
     type: "doc",
     lastModified: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     scope: "sales",
-    contributingEmployee: "Maya (HR Bot)",
+    contributingEmployee: "Legal Assistant",
     visibility: "confidential",
-  },
-  {
-    id: "doc-003",
-    title: "Customer Support Guidelines v2.1",
-    type: "pdf",
-    lastModified: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    scope: "support",
-    contributingEmployee: "Alex (Support Bot)",
-    visibility: "public",
-  },
-  {
-    id: "doc-004",
-    title: "Invoice Processing Checklist",
-    type: "doc",
-    lastModified: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    scope: "finance.invoices",
-    contributingEmployee: "Sarah (Invoice Bot)",
-    visibility: "internal",
   },
   {
     id: "doc-005",
@@ -139,7 +121,7 @@ const mockKnowledgeItems: KnowledgeItem[] = [
     type: "doc",
     lastModified: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     scope: "sales.presentations",
-    contributingEmployee: "Maya (HR Bot)",
+    contributingEmployee: "User Uploaded",
     visibility: "internal",
   },
   {
@@ -148,7 +130,7 @@ const mockKnowledgeItems: KnowledgeItem[] = [
     type: "xlsx",
     lastModified: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
     scope: "finance.reports",
-    contributingEmployee: "Sarah (Invoice Bot)",
+    contributingEmployee: "User Uploaded",
     visibility: "confidential",
   },
   {
@@ -157,7 +139,7 @@ const mockKnowledgeItems: KnowledgeItem[] = [
     type: "pdf",
     lastModified: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
     scope: "sales.proposals",
-    contributingEmployee: "Maya (HR Bot)",
+    contributingEmployee: "User Uploaded",
     visibility: "confidential",
   },
   {
@@ -166,7 +148,7 @@ const mockKnowledgeItems: KnowledgeItem[] = [
     type: "txt",
     lastModified: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     scope: "support.faqs",
-    contributingEmployee: "Alex (Support Bot)",
+    contributingEmployee: "User Uploaded",
     visibility: "public",
   },
   {
@@ -175,7 +157,7 @@ const mockKnowledgeItems: KnowledgeItem[] = [
     type: "pdf",
     lastModified: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     scope: "public",
-    contributingEmployee: "Maya (HR Bot)",
+    contributingEmployee: "User Uploaded",
     visibility: "public",
   },
   {
@@ -184,7 +166,7 @@ const mockKnowledgeItems: KnowledgeItem[] = [
     type: "doc",
     lastModified: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
     scope: "finance.policies",
-    contributingEmployee: "Sarah (Invoice Bot)",
+    contributingEmployee: "User Uploaded",
     visibility: "internal",
   },
 ];
@@ -507,39 +489,39 @@ export const fetchErrors = async () => {
   await new Promise((resolve) => setTimeout(resolve, 300));
 
   return [
-    {
-      id: "error-001",
-      employeeId: "sarah-invoice-bot",
-      employeeName: "Sarah (Invoice Bot)",
-      employeeAvatar: "🤖",
-      errorSnippet:
-        "Failed to connect to QuickBooks API. Connection timeout after 30 seconds.",
-      runId: "run-20241215-001",
-      timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
-      severity: "high" as const,
-    },
-    {
-      id: "error-002",
-      employeeId: "alex-support-bot",
-      employeeName: "Alex (Support Bot)",
-      employeeAvatar: "🤖",
-      errorSnippet:
-        "Unable to parse customer email format. Invalid email structure detected.",
-      runId: "run-20241215-002",
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-      severity: "medium" as const,
-    },
-    {
-      id: "error-003",
-      employeeId: "maya-hr-bot",
-      employeeName: "Maya (HR Bot)",
-      employeeAvatar: "🤖",
-      errorSnippet:
-        "Template file not found: job_offer_template.docx. Please check file path.",
-      runId: "run-20241215-003",
-      timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
-      severity: "low" as const,
-    },
+    //{
+    //  id: "error-001",
+    //  employeeId: "sarah-invoice-bot",
+    //  employeeName: "Sarah (Invoice Bot)",
+    //  employeeAvatar: "🤖",
+    //  errorSnippet:
+    //    "Failed to connect to QuickBooks API. Connection timeout after 30 seconds.",
+    //  runId: "run-20241215-001",
+    //  timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+    //  severity: "high" as const,
+    //},
+    //{
+    //  id: "error-002",
+    //  employeeId: "alex-support-bot",
+    //  employeeName: "Alex (Support Bot)",
+    //  employeeAvatar: "🤖",
+    //  errorSnippet:
+    //    "Unable to parse customer email format. Invalid email structure detected.",
+    //  runId: "run-20241215-002",
+    //  timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+    //  severity: "medium" as const,
+    //},
+    //{
+    //  id: "error-003",
+    //  employeeId: "maya-hr-bot",
+    //  employeeName: "Maya (HR Bot)",
+    //  employeeAvatar: "🤖",
+    //  errorSnippet:
+    //    "Template file not found: job_offer_template.docx. Please check file path.",
+    //  runId: "run-20241215-003",
+    //  timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
+    //  severity: "low" as const,
+    //},
   ];
 };
 

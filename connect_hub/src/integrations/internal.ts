@@ -133,7 +133,7 @@ export class InternalProvider
     displayName: "Clancy Internal Services",
     description:
       "First-party services that do not require external OAuth credentials.",
-    icon: "https://raw.githubusercontent.com/twemoji/twitter-emojis/master/assets/svg/1f4bb.svg",
+    icon: "https://www.clancyai.com/favicon.svg"
     kind: ProviderKind.Internal,
     auth: ProviderAuth.None,
   } as const;

@@ -5,7 +5,6 @@ import { AIEmployeeCard } from "../components/AIEmployeeCard";
 import {
   fetchKPIData,
   fetchAIEmployees,
-  createMockEmployee,
 } from "../api/stubs";
 import { useDashboard } from "../context/DashboardContext";
 import type { KPIData, AIEmployee } from "../types";
@@ -16,7 +15,7 @@ export function Dashboard() {
   const [employees, setEmployees] = useState<AIEmployee[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useUser();
-  const { refreshTrigger, addEmployee } = useDashboard();
+  const { refreshTrigger } = useDashboard();
 
   useEffect(() => {
     const loadData = async () => {
@@ -55,30 +54,6 @@ export function Dashboard() {
   const handleHireEmployee = () => {
     // This will be handled by the top nav button now
     console.log("Hire button clicked - wizard should open from top nav");
-  };
-
-  // Demo function to test the integration - this simulates what happens when the wizard completes
-  const handleTestAddEmployee = () => {
-    const roles = [
-      "Marketing Specialist",
-      "Data Analyst",
-      "Customer Support",
-      "Sales Representative",
-      "Content Writer",
-    ];
-    const names = [
-      "Alex Thompson",
-      "Sarah Chen",
-      "Michael Rodriguez",
-      "Emma Wilson",
-      "David Kim",
-    ];
-
-    const randomRole = roles[Math.floor(Math.random() * roles.length)];
-    const randomName = names[Math.floor(Math.random() * names.length)];
-
-    const mockEmployee = createMockEmployee(randomName, randomRole);
-    addEmployee(mockEmployee);
   };
 
   if (loading) {
@@ -133,14 +108,6 @@ export function Dashboard() {
             AI Employee Roster
           </h2>
           <div className="flex gap-3">
-            <button
-              onClick={handleTestAddEmployee}
-              className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-button hover:bg-green-700 transition-colors"
-              title="Demo: Add random employee to test integration"
-            >
-              <Plus size={16} className="mr-2" />
-              Demo Add Employee
-            </button>
             <button
               onClick={handleHireEmployee}
               className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-button hover:bg-primary-700 transition-colors"

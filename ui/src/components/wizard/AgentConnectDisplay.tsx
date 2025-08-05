@@ -29,6 +29,13 @@ export function AgentConnectDisplay({
 
   return (
     <div className="space-y-6">
+      {/* Descriptive text based on content */}
+      <p className="text-sm text-gray-600">
+        {agents.length > 0
+          ? "Your AI Employees will perform the following workflows."
+          : "The following workflows could not be automated and require manual resolution."}
+      </p>
+
       {/* Agent Cards */}
       {agents.length > 0 && (
         <div>

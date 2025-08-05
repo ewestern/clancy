@@ -852,24 +852,15 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
                 )}
 
                 {/* AI Employees Section - Second */}
-                {agents.length > 0 ? (
-                  <>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      Workflows
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-6">
-                      Your AI Employees will perform the following workflows.
-                    </p>
-                    <AgentConnectDisplay
-                      agents={agents}
-                      unsatisfiedWorkflows={unsatisfiedWorkflows}
-                      providerCapabilities={providerCapabilities}
-                      triggers={triggers}
-                    />
-                  </>
-                ) : wizardData.availableProviders.length === 0 ? (
-                  <PhaseProgressIndicator phase="connect" />
-                ) : null}
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Workflows
+                </h3>
+                <AgentConnectDisplay
+                  agents={agents}
+                  unsatisfiedWorkflows={unsatisfiedWorkflows}
+                  providerCapabilities={providerCapabilities}
+                  triggers={triggers}
+                />
               </>
             )}
 
