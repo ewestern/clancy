@@ -7,6 +7,7 @@ import type {
   WorkflowTask,
   Integration,
 } from "../types";
+import { Employee } from "@ewestern/agents_core_sdk";
 
 // Mock data
 const mockAIEmployees: AIEmployee[] = [
@@ -244,7 +245,7 @@ const mockIntegrations: Integration[] = [
 ];
 
 // Mutable mock data store for demo purposes
-let currentMockEmployees = [...mockAIEmployees];
+const currentMockEmployees = [...mockAIEmployees];
 let currentMockKPIData = { ...mockKPIData };
 
 // API functions
@@ -552,7 +553,7 @@ export const retryRun = async (runId: string): Promise<void> => {
 export const createMockEmployee = (
   name: string,
   role: string,
-): import("@ewestern/agents_core_sdk").Employee => {
+): Employee => {
   return {
     id: `emp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     orgId: "demo-org",
@@ -565,9 +566,14 @@ export const createMockEmployee = (
         name: role,
         status: "active" as const,
         capabilities: [],
+        orgId: "demo-org",
+        userId: "demo-user",
+        description: "Demo employee",
+        prompt: "You are a demo employee",
         trigger: {
-          type: "schedule",
-          config: {},
+          providerId: "internal",
+          id: "internal",
+          triggerParams: {},
         },
       },
     ],
