@@ -1,8 +1,8 @@
 import { registry } from "../integrations.js";
-import { FastifyTypeBox } from "../types/fastify.js";
+import { FastifyInstance } from "fastify";
 import { publishEvents } from "../utils.js";
 
-export async function webhookRoutes(app: FastifyTypeBox) {
+export async function webhookRoutes(app: FastifyInstance) {
   registry.getProviders().forEach((provider) => {
     provider?.webhooks?.forEach((webhook) => {
       app.post(
@@ -14,6 +14,8 @@ export async function webhookRoutes(app: FastifyTypeBox) {
           },
         },
         async (request, reply) => {
+          const decoded = await request.jwtVerify();
+          console.log("decoded", decoded);
           if (!(await webhook.validateRequest(request))) {
             reply.status(401).send({
               status: "unauthorized",

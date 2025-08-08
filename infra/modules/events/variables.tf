@@ -24,3 +24,6 @@ variable "agents_core_lb_endpoint" {
 output "kinesis_stream_arn" {
   value = aws_kinesis_stream.clancy_stream.arn
 }
+output "authorization_endpoint" {
+  value = local.authorization_endpoint
+}

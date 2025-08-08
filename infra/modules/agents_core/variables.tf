@@ -22,15 +22,15 @@ variable "vpc_id" {
   description = "The ID of the VPC to deploy the service to"
 }
 
+variable "db_subnet_ids" {
+  type        = list(string)
+  description = "The availability zones to deploy the database to"
+}
+
 variable "subnet_ids" {
   type        = list(string)
   description = "The IDs of the subnets to deploy the service to"
 }
-
-#variable "hosted_zone_id" {
-#  type        = string
-#  description = "The ID of the hosted zone to create the DNS record in"
-#}
 
 variable "lb_listener_arn" {
   type        = string

@@ -1,19 +1,21 @@
 import { NavLink } from "react-router-dom";
 import {
   Home,
-  // Users,
+  Users,
   CheckCircle,
   BookOpen,
   Settings,
   Plus,
+  Shield,
 } from "lucide-react";
 import { clsx } from "clsx";
 
 const navItems = [
   { icon: Home, path: "/", label: "Home" },
-  // { icon: Users, path: "/employees", label: "AI Employees" },
+  { icon: Users, path: "/employees", label: "AI Employees" },
   { icon: CheckCircle, path: "/approvals", label: "Approvals" },
   { icon: BookOpen, path: "/knowledge", label: "Knowledge" },
+  { icon: Shield, path: "/connections", label: "Connections" },
   { icon: Settings, path: "/settings", label: "Settings" },
 ];
 

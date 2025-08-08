@@ -1,66 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type {
-  AIEmployee,
   KPIData,
   ApprovalRequest,
-  KnowledgeItem,
   WorkflowTask,
   Integration,
 } from "../types";
-import { Employee } from "@ewestern/agents_core_sdk";
 
-// Mock data
-const mockAIEmployees: AIEmployee[] = [
-  {
-    id: "1",
-    name: "Invoice Assistant",
-    role: "AR Clerk",
-    lastRun: "2 hours ago",
-    status: "idle",
-  },
-  {
-    id: "2",
-    name: "Social Media Manager",
-    role: "Content Creator",
-    lastRun: "15 minutes ago",
-    status: "running",
-  },
-  {
-    id: "3",
-    name: "Customer Support Bot",
-    role: "Support AI Employee",
-    lastRun: "1 day ago",
-    status: "error",
-  },
-  {
-    id: "4",
-    name: "Report Generator",
-    role: "Data Analyst",
-    lastRun: "30 minutes ago",
-    status: "idle",
-  },
-  {
-    id: "5",
-    name: "Email Responder",
-    role: "Customer Service",
-    lastRun: "5 minutes ago",
-    status: "running",
-  },
-  {
-    id: "6",
-    name: "Expense Tracker",
-    role: "Bookkeeper",
-    lastRun: "4 hours ago",
-    status: "idle",
-  },
-  {
-    id: "7",
-    name: "Meeting Scheduler",
-    role: "Executive Assistant",
-    lastRun: "1 hour ago",
-    status: "idle",
-  },
-];
+
 
 const mockKPIData: KPIData = {
   aiEmployees: 7,
@@ -96,80 +42,6 @@ const mockApprovalRequests: ApprovalRequest[] = [
   },
 ];
 
-const mockKnowledgeItems: KnowledgeItem[] = [
-  {
-    id: "doc-001",
-    title: "Q4 2024 Financial Report",
-    type: "pdf",
-    lastModified: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    scope: "finance",
-    contributingEmployee: "Invoice Assistant",
-    visibility: "internal",
-  },
-  {
-    id: "doc-002",
-    title: "Acme Corp Contract Template",
-    type: "doc",
-    lastModified: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    scope: "sales",
-    contributingEmployee: "Legal Assistant",
-    visibility: "confidential",
-  },
-  {
-    id: "doc-005",
-    title: "Sales Presentation Template",
-    type: "doc",
-    lastModified: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    scope: "sales.presentations",
-    contributingEmployee: "User Uploaded",
-    visibility: "internal",
-  },
-  {
-    id: "doc-006",
-    title: "Vendor Payment Schedule Q1 2025",
-    type: "xlsx",
-    lastModified: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-    scope: "finance.reports",
-    contributingEmployee: "User Uploaded",
-    visibility: "confidential",
-  },
-  {
-    id: "doc-007",
-    title: "Product Pricing Strategy",
-    type: "pdf",
-    lastModified: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    scope: "sales.proposals",
-    contributingEmployee: "User Uploaded",
-    visibility: "confidential",
-  },
-  {
-    id: "doc-008",
-    title: "Troubleshooting FAQ",
-    type: "txt",
-    lastModified: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    scope: "support.faqs",
-    contributingEmployee: "User Uploaded",
-    visibility: "public",
-  },
-  {
-    id: "doc-009",
-    title: "Company Privacy Policy",
-    type: "pdf",
-    lastModified: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    scope: "public",
-    contributingEmployee: "User Uploaded",
-    visibility: "public",
-  },
-  {
-    id: "doc-010",
-    title: "Internal Expense Guidelines",
-    type: "doc",
-    lastModified: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-    scope: "finance.policies",
-    contributingEmployee: "User Uploaded",
-    visibility: "internal",
-  },
-];
 
 const mockIntegrations: Integration[] = [
   {
@@ -227,8 +99,7 @@ const mockIntegrations: Integration[] = [
 ];
 
 // Mutable mock data store for demo purposes
-const currentMockEmployees = [...mockAIEmployees];
-let currentMockKPIData = { ...mockKPIData };
+const currentMockKPIData = { ...mockKPIData };
 
 // API functions
 export const fetchKPIData = async (): Promise<KPIData> => {
@@ -237,31 +108,13 @@ export const fetchKPIData = async (): Promise<KPIData> => {
   return currentMockKPIData;
 };
 
-export const fetchAIEmployees = async (): Promise<AIEmployee[]> => {
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  return [...currentMockEmployees];
-};
-
-// Function to add a new employee to the mock store
-export const addAIEmployeeMock = (employee: AIEmployee): void => {
-  currentMockEmployees.push(employee);
-  // Update KPI data
-  currentMockKPIData = {
-    ...currentMockKPIData,
-    aiEmployees: currentMockEmployees.length,
-    aiEmployeesChange: currentMockKPIData.aiEmployeesChange + 1,
-  };
-};
 
 export const fetchApprovalRequests = async (): Promise<ApprovalRequest[]> => {
   await new Promise((resolve) => setTimeout(resolve, 600));
   return mockApprovalRequests;
 };
 
-export const fetchKnowledgeItems = async (): Promise<KnowledgeItem[]> => {
-  await new Promise((resolve) => setTimeout(resolve, 700));
-  return mockKnowledgeItems;
-};
+
 
 export const approveRequest = async (requestId: string): Promise<void> => {
   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -350,26 +203,11 @@ export const fetchIntegrations = async (): Promise<Integration[]> => {
   return mockIntegrations;
 };
 
-export const connectIntegration = async (
-  integrationId: string,
-): Promise<void> => {
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  console.log(`Connected integration ${integrationId}`);
-};
 
-// Employee Profile API functions
-export const getAIEmployee = async (id: string): Promise<AIEmployee> => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  const employee = mockAIEmployees.find((emp) => emp.id === id);
-  if (!employee) {
-    throw new Error("Employee not found");
-  }
-  return employee;
-};
-
-export const getEmployeeActivity = async (_id: string) => {
+export const getEmployeeActivity = async (id: string, workflowId?: string) => {
   await new Promise((resolve) => setTimeout(resolve, 300));
-  return [
+  
+  const allActivity = [
     {
       id: "1",
       timestamp: "2 min ago",
@@ -378,6 +216,8 @@ export const getEmployeeActivity = async (_id: string) => {
       message: "Successfully created invoice #INV-2024-001 for Acme Corp",
       duration: "1.2s",
       runId: "run-20241215-004",
+      workflowId: "wf-1-invoice",
+      workflowName: "Invoice Generation",
     },
     {
       id: "2",
@@ -387,15 +227,19 @@ export const getEmployeeActivity = async (_id: string) => {
       message: "Posted summary to #finance channel",
       duration: "0.8s",
       runId: "run-20241215-003",
+      workflowId: "wf-1-invoice",
+      workflowName: "Invoice Generation",
     },
     {
       id: "3",
       timestamp: "1 hour ago",
       type: "warning" as const,
-      node: "Data Validation",
+      node: "Email Validation",
       message: "Missing customer email, using fallback notification method",
       duration: "2.1s",
       runId: "run-20241215-002",
+      workflowId: "wf-1-notifications",
+      workflowName: "Payment Notifications",
     },
     {
       id: "4",
@@ -405,39 +249,42 @@ export const getEmployeeActivity = async (_id: string) => {
       message: "Updated 12 customer records",
       duration: "3.4s",
       runId: "run-20241215-001",
+      workflowId: "wf-1-invoice",
+      workflowName: "Invoice Generation",
+    },
+    {
+      id: "5",
+      timestamp: "3 hours ago",
+      type: "success" as const,
+      node: "Payment Reminder",
+      message: "Sent payment reminder to 3 overdue customers",
+      duration: "1.8s",
+      runId: "run-20241214-015",
+      workflowId: "wf-1-notifications",
+      workflowName: "Payment Notifications",
+    },
+    {
+      id: "6",
+      timestamp: "1 day ago",
+      type: "error" as const,
+      node: "Gmail Connection",
+      message: "Failed to authenticate with Gmail API",
+      duration: "5.2s",
+      runId: "run-20241214-008",
+      workflowId: "wf-1-notifications",
+      workflowName: "Payment Notifications",
     },
   ];
+
+  // Filter by workflow if specified
+  if (workflowId) {
+    return allActivity.filter(event => event.workflowId === workflowId);
+  }
+
+  return allActivity;
 };
 
-export const getEmployeePermissions = async (_id: string) => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return [
-    {
-      id: "1",
-      provider: "QuickBooks",
-      scope: "Invoice.write",
-      level: "write" as const,
-      reason: "Create and modify invoices",
-      connected: true,
-    },
-    {
-      id: "2",
-      provider: "Slack",
-      scope: "Chat.write",
-      level: "write" as const,
-      reason: "Post notifications to channels",
-      connected: true,
-    },
-    {
-      id: "3",
-      provider: "Gmail",
-      scope: "Mail.send",
-      level: "write" as const,
-      reason: "Send invoice notifications",
-      connected: false,
-    },
-  ];
-};
+
 
 export const getEmployeeKnowledge = async (_id: string) => {
   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -489,39 +336,39 @@ export const fetchErrors = async () => {
   await new Promise((resolve) => setTimeout(resolve, 300));
 
   return [
-    //{
-    //  id: "error-001",
-    //  employeeId: "sarah-invoice-bot",
-    //  employeeName: "Sarah (Invoice Bot)",
-    //  employeeAvatar: "🤖",
-    //  errorSnippet:
-    //    "Failed to connect to QuickBooks API. Connection timeout after 30 seconds.",
-    //  runId: "run-20241215-001",
-    //  timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
-    //  severity: "high" as const,
-    //},
-    //{
-    //  id: "error-002",
-    //  employeeId: "alex-support-bot",
-    //  employeeName: "Alex (Support Bot)",
-    //  employeeAvatar: "🤖",
-    //  errorSnippet:
-    //    "Unable to parse customer email format. Invalid email structure detected.",
-    //  runId: "run-20241215-002",
-    //  timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-    //  severity: "medium" as const,
-    //},
-    //{
-    //  id: "error-003",
-    //  employeeId: "maya-hr-bot",
-    //  employeeName: "Maya (HR Bot)",
-    //  employeeAvatar: "🤖",
-    //  errorSnippet:
-    //    "Template file not found: job_offer_template.docx. Please check file path.",
-    //  runId: "run-20241215-003",
-    //  timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
-    //  severity: "low" as const,
-    //},
+    {
+      id: "error-001",
+      employeeId: "sarah-invoice-bot",
+      employeeName: "Sarah (Invoice Bot)",
+      employeeAvatar: "🤖",
+      errorSnippet:
+        "Failed to connect to QuickBooks API. Connection timeout after 30 seconds.",
+      runId: "run-20241215-001",
+      timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+      severity: "high" as const,
+    },
+    {
+      id: "error-002",
+      employeeId: "alex-support-bot",
+      employeeName: "Alex (Support Bot)",
+      employeeAvatar: "🤖",
+      errorSnippet:
+        "Unable to parse customer email format. Invalid email structure detected.",
+      runId: "run-20241215-002",
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+      severity: "medium" as const,
+    },
+    {
+      id: "error-003",
+      employeeId: "maya-hr-bot",
+      employeeName: "Maya (HR Bot)",
+      employeeAvatar: "🤖",
+      errorSnippet:
+        "Template file not found: job_offer_template.docx. Please check file path.",
+      runId: "run-20241215-003",
+      timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
+      severity: "low" as const,
+    },
   ];
 };
 
@@ -529,35 +376,4 @@ export const retryRun = async (runId: string): Promise<void> => {
   await new Promise((resolve) => setTimeout(resolve, 1000));
   console.log(`Retrying run ${runId}`);
   // In real implementation, this would enqueue a RunIntent retry
-};
-
-// Demo utility: Create a mock Employee for testing the integration
-export const createMockEmployee = (
-  name: string,
-  role: string,
-): Employee => {
-  return {
-    id: `emp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    orgId: "demo-org",
-    userId: "demo-user",
-    name: name,
-    status: "active" as const,
-    agents: [
-      {
-        id: `agent-${Date.now()}`,
-        name: role,
-        status: "active" as const,
-        capabilities: [],
-        orgId: "demo-org",
-        userId: "demo-user",
-        description: "Demo employee",
-        prompt: "You are a demo employee",
-        trigger: {
-          providerId: "internal",
-          id: "internal",
-          triggerParams: {},
-        },
-      },
-    ],
-  };
 };

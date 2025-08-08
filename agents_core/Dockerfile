@@ -1,6 +1,5 @@
 FROM node:23-bullseye-slim AS builder
 ARG NPM_TOKEN
-RUN echo "NPM_TOKEN=${NPM_TOKEN}"
 
 # Set working directory
 WORKDIR /app
@@ -9,13 +8,15 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm config set @ewestern:registry https://npm.pkg.github.com
 RUN npm config set //npm.pkg.github.com/:_authToken ${NPM_TOKEN}
+COPY package.json ./
+COPY package-lock.json ./
 
+RUN npm ci
 
-# Install dependencies
-RUN npm ci --only=production
-
-# Copy source code
-COPY . .
+COPY src ./src
+COPY tsconfig.json ./tsconfig.json
+COPY drizzle.config.ts ./drizzle.config.ts
+COPY migrations ./migrations
 
 # Build the application
 RUN npm run build

@@ -12,20 +12,20 @@
  * Do not edit the class manually.
  */
 
-import type { WebhooksSlackPostRequestOneOf } from './WebhooksSlackPostRequestOneOf';
+import type { WebhooksSlackPostRequestOneOf } from './WebhooksSlackPostRequestOneOf.js';
 import {
     instanceOfWebhooksSlackPostRequestOneOf,
     WebhooksSlackPostRequestOneOfFromJSON,
     WebhooksSlackPostRequestOneOfFromJSONTyped,
     WebhooksSlackPostRequestOneOfToJSON,
-} from './WebhooksSlackPostRequestOneOf';
-import type { WebhooksSlackPostRequestOneOf1 } from './WebhooksSlackPostRequestOneOf1';
+} from './WebhooksSlackPostRequestOneOf.js';
+import type { WebhooksSlackPostRequestOneOf1 } from './WebhooksSlackPostRequestOneOf1.js';
 import {
     instanceOfWebhooksSlackPostRequestOneOf1,
     WebhooksSlackPostRequestOneOf1FromJSON,
     WebhooksSlackPostRequestOneOf1FromJSONTyped,
     WebhooksSlackPostRequestOneOf1ToJSON,
-} from './WebhooksSlackPostRequestOneOf1';
+} from './WebhooksSlackPostRequestOneOf1.js';
 
 /**
  * @type WebhooksSlackPostRequest

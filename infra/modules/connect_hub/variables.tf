@@ -113,6 +113,11 @@ variable "hosted_zone_id" {
   description = "The ID of the hosted zone to create the DNS record in"
 }
 
+variable "db_subnet_ids" {
+  type        = list(string)
+  description = "The IDs of the subnets to deploy the database to"
+}
+
 locals {
   lb_endpoint = "https://${aws_route53_record.connect_hub_service.fqdn}"
 }

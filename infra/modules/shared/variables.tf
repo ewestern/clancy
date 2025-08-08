@@ -7,22 +7,48 @@ variable "certificate_arn" {
   type = string
 }
 
-variable "availability_zones" {
-  description = "List of availability zones to use for the VPC resources"
+variable "alb_azs" {
+  description = "List of availability zones for the Application Load Balancer (minimum 2 required)"
+  type        = list(string)
+  validation {
+    condition     = length(var.alb_azs) >= 2
+    error_message = "ALB requires at least 2 availability zones."
+  }
+}
+
+variable "ecs_azs" {
+  description = "List of availability zones for ECS tasks"
+  type        = list(string)
+}
+
+variable "db_azs" {
+  description = "List of availability zones for database resources"
   type        = list(string)
 }
 
 variable "subnet_cidrs" {
-  description = "Map of subnet names to CIDR blocks"
-  type        = map(string)
-  default = {
-    "public_2a"  = "10.0.1.0/24"
-    "private_2a" = "10.0.5.0/24"
-    "public_2b"  = "10.0.4.0/24"
-    "private_2b" = "10.0.2.0/24"
-    "public_2c"  = "10.0.6.0/24"
-    "private_2c" = "10.0.3.0/24"
+  description = "CIDR blocks for subnets organized by tier and AZ"
+  type = object({
+    public      = map(string)  # az -> cidr for ALB subnets
+    ecs_private = map(string)  # az -> cidr for ECS subnets  
+    db_private  = map(string)  # az -> cidr for DB subnets
+  })
+}
+
+variable "nat_strategy" {
+  description = "NAT Gateway strategy: 'single' for one NAT or 'per_az' for NAT per AZ"
+  type        = string
+  default     = "single"
+  validation {
+    condition     = contains(["single", "per_az"], var.nat_strategy)
+    error_message = "nat_strategy must be either 'single' or 'per_az'."
   }
+}
+
+variable "single_nat_az" {
+  description = "AZ for single NAT Gateway (required when nat_strategy = 'single')"
+  type        = string
+  default     = null
 }
 
 output "lb_security_group_id" {
@@ -53,11 +79,39 @@ output "vpc_id" {
 }
 
 output "public_subnet_ids" {
+  description = "List of public subnet IDs for ALB"
+  value = values(local.all_public_subnets)
+}
+
+output "public_subnets_by_az" {
+  description = "Map of public subnet IDs by AZ for ALB"
   value = local.all_public_subnets
 }
 
+output "ecs_private_subnet_ids" {
+  description = "List of ECS private subnet IDs"
+  value = values(local.all_ecs_private_subnets)
+}
+
+output "ecs_private_subnets_by_az" {
+  description = "Map of ECS private subnet IDs by AZ"
+  value = local.all_ecs_private_subnets
+}
+
+output "db_private_subnet_ids" {
+  description = "List of DB private subnet IDs"
+  value = values(local.all_db_private_subnets)
+}
+
+output "db_private_subnets_by_az" {
+  description = "Map of DB private subnet IDs by AZ"
+  value = local.all_db_private_subnets
+}
+
+# Legacy output for backward compatibility
 output "private_subnet_ids" {
-  value = local.all_private_subnets
+  description = "Legacy output - use ecs_private_subnet_ids instead"
+  value = local.all_ecs_private_subnets
 }
 
 output "service_discovery_namespace_arn" {

@@ -9,21 +9,20 @@ import { getEnv, publishToKinesis } from "../shared/index.js";
 import { GraphCreator } from "../shared/graphCreator.js";
 import {
   EventType,
-  GraphCreatorRunIntentEvent,
-  GraphCreatorResumeIntentEvent,
   RequestHumanFeedbackEvent,
   LLMUsageEvent,
   EmployeeStateUpdateEvent,
+  RunIntentEvent,
+  ResumeIntentEvent,
 } from "@ewestern/events";
 import { LLMResult } from "@langchain/core/outputs.js";
 
 interface LambdaEvent {
   detail: {
-    event: GraphCreatorRunIntentEvent | GraphCreatorResumeIntentEvent;
+    event: RunIntentEvent | ResumeIntentEvent;
   };
 }
-const model = "claude-sonnet-4-0"
-
+const model = "claude-sonnet-4-0";
 
 export const lambdaHandler = async (
   { detail: { event } }: LambdaEvent,
@@ -71,8 +70,7 @@ export const lambdaHandler = async (
   const graphCreator = new GraphCreator(env.checkpointerDbUrl!, model);
   let stream: AsyncGenerator<any, any, any>;
   if (event.type === EventType.RunIntent) {
-    stream = await graphCreator.start(event.jobDescription, config);
-
+    stream = await graphCreator.start(event.details, config);
   } else if (event.type === EventType.ResumeIntent) {
     stream = await graphCreator.resume(
       new Command({ resume: event.resume }),
@@ -83,7 +81,7 @@ export const lambdaHandler = async (
   }
   for await (const chunk of stream) {
     if (chunk[graphCreator.WORKFLOW_BREAKDOWN_AGENT]) {
-      const {workflows} = chunk[graphCreator.WORKFLOW_BREAKDOWN_AGENT];
+      const { workflows } = chunk[graphCreator.WORKFLOW_BREAKDOWN_AGENT];
       const updateEvent: EmployeeStateUpdateEvent = {
         type: EventType.EmployeeStateUpdate,
         orgId: event.orgId,
@@ -92,10 +90,10 @@ export const lambdaHandler = async (
         workflows: workflows,
         agents: [],
         unsatisfiedWorkflows: [],
-      }
+      };
       await publishToKinesis(updateEvent, event.executionId);
     } else if (chunk[graphCreator.JOIN]) {
-      const {agents, unsatisfiedWorkflows} = chunk[graphCreator.JOIN];
+      const { agents, unsatisfiedWorkflows } = chunk[graphCreator.JOIN];
       const updateEvent: EmployeeStateUpdateEvent = {
         type: EventType.EmployeeStateUpdate,
         orgId: event.orgId,
@@ -104,7 +102,7 @@ export const lambdaHandler = async (
         agents: agents,
         workflows: [],
         unsatisfiedWorkflows: unsatisfiedWorkflows,
-      }
+      };
       await publishToKinesis(updateEvent, event.executionId);
     }
     if (isInterrupted(chunk)) {

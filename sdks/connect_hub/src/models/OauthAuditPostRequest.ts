@@ -12,21 +12,21 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { OauthAuditPostRequestCapabilitiesInner } from './OauthAuditPostRequestCapabilitiesInner';
+import { mapValues } from '../runtime.js';
+import type { OauthAuditPostRequestCapabilitiesInner } from './OauthAuditPostRequestCapabilitiesInner.js';
 import {
     OauthAuditPostRequestCapabilitiesInnerFromJSON,
     OauthAuditPostRequestCapabilitiesInnerFromJSONTyped,
     OauthAuditPostRequestCapabilitiesInnerToJSON,
     OauthAuditPostRequestCapabilitiesInnerToJSONTyped,
-} from './OauthAuditPostRequestCapabilitiesInner';
-import type { OauthAuditPostRequestTriggersInner } from './OauthAuditPostRequestTriggersInner';
+} from './OauthAuditPostRequestCapabilitiesInner.js';
+import type { OauthAuditPostRequestTriggersInner } from './OauthAuditPostRequestTriggersInner.js';
 import {
     OauthAuditPostRequestTriggersInnerFromJSON,
     OauthAuditPostRequestTriggersInnerFromJSONTyped,
     OauthAuditPostRequestTriggersInnerToJSON,
     OauthAuditPostRequestTriggersInnerToJSONTyped,
-} from './OauthAuditPostRequestTriggersInner';
+} from './OauthAuditPostRequestTriggersInner.js';
 
 /**
  * 

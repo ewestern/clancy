@@ -2,13 +2,13 @@ import { useState } from "react";
 import { MessageCircle, Shield, Pause } from "lucide-react";
 import { clsx } from "clsx";
 import { useNavigate } from "react-router-dom";
-import type { AIEmployee } from "../types";
+import type { Employee } from "@ewestern/agents_core_sdk";
 
 interface AIEmployeeCardProps {
-  employee: AIEmployee;
-  onChat: (employee: AIEmployee) => void;
-  onPermissions: (employee: AIEmployee) => void;
-  onDeactivate: (employee: AIEmployee) => void;
+  employee: Employee;
+  onChat: (employee: Employee) => void;
+  onPermissions: (employee: Employee) => void;
+  onDeactivate: (employee: Employee) => void;
 }
 
 export function AIEmployeeCard({
@@ -20,27 +20,23 @@ export function AIEmployeeCard({
   const [showActions, setShowActions] = useState(false);
   const navigate = useNavigate();
 
-  const getStatusColor = (status: AIEmployee["status"]) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case "idle":
+      case "active":
         return "bg-success-500";
-      case "running":
-        return "bg-blue-500";
-      case "error":
-        return "bg-red-500";
+      case "inactive":
+        return "bg-gray-400";
       default:
         return "bg-gray-400";
     }
   };
 
-  const getStatusText = (status: AIEmployee["status"]) => {
+  const getStatusText = (status: string) => {
     switch (status) {
-      case "idle":
-        return "Idle";
-      case "running":
-        return "Running";
-      case "error":
-        return "Error";
+      case "active":
+        return "Active";
+      case "inactive":
+        return "Inactive";
       default:
         return "Unknown";
     }
@@ -70,12 +66,11 @@ export function AIEmployeeCard({
 
         {/* Details */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-medium text-gray-900 truncate">
+          <h3 className="text-lg font-medium text-gray-900 truncate mb-3">
             {employee.name}
           </h3>
-          <p className="text-sm text-gray-600 mb-2">{employee.role}</p>
           <p className="text-xs text-gray-500 mb-3">
-            Last run: {employee.lastRun}
+            {employee.agents?.length || 0} agent{employee.agents?.length !== 1 ? 's' : ''}
           </p>
 
           {/* Status pill */}

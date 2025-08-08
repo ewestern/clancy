@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { mapValues } from '../runtime.js';
 /**
  * 
  * @export
@@ -24,13 +24,13 @@ export interface ProxyProviderIdCapabilityIdPostRequest {
      * @type {string}
      * @memberof ProxyProviderIdCapabilityIdPostRequest
      */
-    userId: string;
+    orgId: string;
     /**
      * 
      * @type {string}
      * @memberof ProxyProviderIdCapabilityIdPostRequest
      */
-    orgId: string;
+    userId: string;
     /**
      * 
      * @type {any}
@@ -43,8 +43,8 @@ export interface ProxyProviderIdCapabilityIdPostRequest {
  * Check if a given object implements the ProxyProviderIdCapabilityIdPostRequest interface.
  */
 export function instanceOfProxyProviderIdCapabilityIdPostRequest(value: object): value is ProxyProviderIdCapabilityIdPostRequest {
-    if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('orgId' in value) || value['orgId'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('params' in value) || value['params'] === undefined) return false;
     return true;
 }
@@ -59,8 +59,8 @@ export function ProxyProviderIdCapabilityIdPostRequestFromJSONTyped(json: any, i
     }
     return {
         
-        'userId': json['userId'],
         'orgId': json['orgId'],
+        'userId': json['userId'],
         'params': json['params'],
     };
 }
@@ -76,8 +76,8 @@ export function ProxyProviderIdCapabilityIdPostRequestToJSONTyped(value?: ProxyP
 
     return {
         
-        'userId': value['userId'],
         'orgId': value['orgId'],
+        'userId': value['userId'],
         'params': value['params'],
     };
 }

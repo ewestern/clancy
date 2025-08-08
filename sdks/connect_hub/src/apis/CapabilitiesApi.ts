@@ -13,12 +13,12 @@
  */
 
 
-import * as runtime from '../runtime';
+import * as runtime from '../runtime.js';
 import type {
   CapabilitiesProviderIdCapabilityIdGet404Response,
   ProviderCapabilities,
   ProviderCapability,
-} from '../models/index';
+} from '../models/index.js';
 import {
     CapabilitiesProviderIdCapabilityIdGet404ResponseFromJSON,
     CapabilitiesProviderIdCapabilityIdGet404ResponseToJSON,
@@ -26,7 +26,7 @@ import {
     ProviderCapabilitiesToJSON,
     ProviderCapabilityFromJSON,
     ProviderCapabilityToJSON,
-} from '../models/index';
+} from '../models/index.js';
 
 export interface CapabilitiesProviderIdCapabilityIdGetRequest {
     orgId: string;

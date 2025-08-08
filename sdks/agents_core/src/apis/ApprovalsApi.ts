@@ -13,12 +13,12 @@
  */
 
 
-import * as runtime from '../runtime';
+import * as runtime from '../runtime.js';
 import type {
   ApprovalRequest,
   V1AgentsPost400Response,
   V1ApprovalsIdPutRequest,
-} from '../models/index';
+} from '../models/index.js';
 import {
     ApprovalRequestFromJSON,
     ApprovalRequestToJSON,
@@ -26,7 +26,7 @@ import {
     V1AgentsPost400ResponseToJSON,
     V1ApprovalsIdPutRequestFromJSON,
     V1ApprovalsIdPutRequestToJSON,
-} from '../models/index';
+} from '../models/index.js';
 
 export interface V1ApprovalsGetRequest {
     status?: V1ApprovalsGetStatusEnum;

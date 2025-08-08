@@ -4,6 +4,7 @@ import { Dashboard } from "./pages/Dashboard";
 import AIEmployeeProfile from "./pages/AIEmployeeProfile";
 import ApprovalsQueue from "./pages/ApprovalsQueue";
 import KnowledgeExplorer from "./pages/KnowledgeExplorer";
+import Connections from "./pages/Connections";
 import { SignIn } from "./pages/SignIn";
 import { SignUp } from "./pages/SignUp";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -40,6 +41,7 @@ function App() {
           />
           <Route path="approvals" element={<ApprovalsQueue />} />
           <Route path="knowledge" element={<KnowledgeExplorer />} />
+          <Route path="connections" element={<Connections />} />
           <Route
             path="settings"
             element={

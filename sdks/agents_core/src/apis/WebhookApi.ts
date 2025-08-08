@@ -13,17 +13,17 @@
  */
 
 
-import * as runtime from '../runtime';
+import * as runtime from '../runtime.js';
 import type {
   WebhookPost200Response,
   WebhookPostRequest,
-} from '../models/index';
+} from '../models/index.js';
 import {
     WebhookPost200ResponseFromJSON,
     WebhookPost200ResponseToJSON,
     WebhookPostRequestFromJSON,
     WebhookPostRequestToJSON,
-} from '../models/index';
+} from '../models/index.js';
 
 export interface WebhookPostOperationRequest {
     webhookPostRequest?: WebhookPostRequest;

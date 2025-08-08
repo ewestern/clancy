@@ -13,7 +13,7 @@
  */
 
 
-import * as runtime from '../runtime';
+import * as runtime from '../runtime.js';
 import type {
   OauthAuditPost200ResponseInner,
   OauthAuditPost400Response,
@@ -21,7 +21,7 @@ import type {
   OauthCallbackProviderGet200Response,
   OauthLaunchProviderGet302Response,
   OauthLaunchProviderGet400Response,
-} from '../models/index';
+} from '../models/index.js';
 import {
     OauthAuditPost200ResponseInnerFromJSON,
     OauthAuditPost200ResponseInnerToJSON,
@@ -35,10 +35,9 @@ import {
     OauthLaunchProviderGet302ResponseToJSON,
     OauthLaunchProviderGet400ResponseFromJSON,
     OauthLaunchProviderGet400ResponseToJSON,
-} from '../models/index';
+} from '../models/index.js';
 
 export interface OauthAuditPostOperationRequest {
-    orgId: string;
     oauthAuditPostRequest: OauthAuditPostRequest;
 }
 
@@ -52,8 +51,8 @@ export interface OauthCallbackProviderGetRequest {
 }
 
 export interface OauthLaunchProviderGetRequest {
-    orgId: string;
     scopes: Array<string>;
+    token: string;
     provider: string;
 }
 
@@ -65,13 +64,6 @@ export class OAuthApi extends runtime.BaseAPI {
     /**
      */
     async oauthAuditPostRaw(requestParameters: OauthAuditPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<OauthAuditPost200ResponseInner>>> {
-        if (requestParameters['orgId'] == null) {
-            throw new runtime.RequiredError(
-                'orgId',
-                'Required parameter "orgId" was null or undefined when calling oauthAuditPost().'
-            );
-        }
-
         if (requestParameters['oauthAuditPostRequest'] == null) {
             throw new runtime.RequiredError(
                 'oauthAuditPostRequest',
@@ -80,10 +72,6 @@ export class OAuthApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
-
-        if (requestParameters['orgId'] != null) {
-            queryParameters['orgId'] = requestParameters['orgId'];
-        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -186,17 +174,17 @@ export class OAuthApi extends runtime.BaseAPI {
      * Launch OAuth authorization flow
      */
     async oauthLaunchProviderGetRaw(requestParameters: OauthLaunchProviderGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters['orgId'] == null) {
-            throw new runtime.RequiredError(
-                'orgId',
-                'Required parameter "orgId" was null or undefined when calling oauthLaunchProviderGet().'
-            );
-        }
-
         if (requestParameters['scopes'] == null) {
             throw new runtime.RequiredError(
                 'scopes',
                 'Required parameter "scopes" was null or undefined when calling oauthLaunchProviderGet().'
+            );
+        }
+
+        if (requestParameters['token'] == null) {
+            throw new runtime.RequiredError(
+                'token',
+                'Required parameter "token" was null or undefined when calling oauthLaunchProviderGet().'
             );
         }
 
@@ -209,12 +197,12 @@ export class OAuthApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
-        if (requestParameters['orgId'] != null) {
-            queryParameters['orgId'] = requestParameters['orgId'];
-        }
-
         if (requestParameters['scopes'] != null) {
             queryParameters['scopes'] = requestParameters['scopes'];
+        }
+
+        if (requestParameters['token'] != null) {
+            queryParameters['token'] = requestParameters['token'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

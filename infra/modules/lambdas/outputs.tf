@@ -1,14 +1,4 @@
 # Lambda function ARNs
-output "agent_enrichment_function_arn" {
-  description = "ARN of the Agent Enrichment lambda function"
-  value       = aws_lambda_function.agent_enrichment.arn
-}
-
-output "agent_enrichment_function_name" {
-  description = "Name of the Agent Enrichment lambda function"
-  value       = aws_lambda_function.agent_enrichment.function_name
-}
-
 output "graph_creator_executor_function_arn" {
   description = "ARN of the Graph Creator Executor lambda function"
   value       = aws_lambda_function.graph_creator_executor.arn
@@ -29,6 +19,27 @@ output "main_agent_executor_function_name" {
   value       = aws_lambda_function.main_agent_executor.function_name
 }
 
+output "document_ingest_function_arn" {
+  description = "ARN of the Document Ingest lambda function"
+  value       = aws_lambda_function.document_ingest.arn
+}
+
+output "document_ingest_function_name" {
+  description = "Name of the Document Ingest lambda function"
+  value       = aws_lambda_function.document_ingest.function_name
+}
+
+# S3 bucket outputs
+output "documents_bucket_name" {
+  description = "Name of the S3 bucket for document storage"
+  value       = aws_s3_bucket.documents.bucket
+}
+
+output "documents_bucket_arn" {
+  description = "ARN of the S3 bucket for document storage"
+  value       = aws_s3_bucket.documents.arn
+}
+
 
 # IAM role
 output "lambda_execution_role_arn" {
@@ -40,9 +51,9 @@ output "lambda_execution_role_arn" {
 output "function_arns" {
   description = "Map of all lambda function ARNs"
   value = {
-    agent_enrichment      = aws_lambda_function.agent_enrichment.arn
     graph_creator         = aws_lambda_function.graph_creator_executor.arn
     main_agent_executor   = aws_lambda_function.main_agent_executor.arn
+    document_ingest       = aws_lambda_function.document_ingest.arn
   }
 }
 
@@ -50,8 +61,8 @@ output "function_arns" {
 output "function_names" {
   description = "Map of all lambda function names"
   value = {
-    agent_enrichment      = aws_lambda_function.agent_enrichment.function_name
     graph_creator         = aws_lambda_function.graph_creator_executor.function_name
     main_agent_executor   = aws_lambda_function.main_agent_executor.function_name
+    document_ingest       = aws_lambda_function.document_ingest.function_name
   }
 } 

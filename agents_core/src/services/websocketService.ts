@@ -9,8 +9,7 @@ import {
   StatusUpdateMessage,
   NotificationMessage,
 } from "../models/websocket.js";
-import { Event, EventSchema } from "@ewestern/events";
-import { Static, TSchema } from "@sinclair/typebox";
+import { Event } from "@ewestern/events";
 
 interface ConnectionInfo {
   ws: WebSocket;

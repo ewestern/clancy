@@ -12,36 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { WebhookPostRequestAnyOf3Phase } from './WebhookPostRequestAnyOf3Phase';
-import {
-    WebhookPostRequestAnyOf3PhaseFromJSON,
-    WebhookPostRequestAnyOf3PhaseFromJSONTyped,
-    WebhookPostRequestAnyOf3PhaseToJSON,
-    WebhookPostRequestAnyOf3PhaseToJSONTyped,
-} from './WebhookPostRequestAnyOf3Phase';
-import type { WebhookPostRequestAnyOf3AgentsInner } from './WebhookPostRequestAnyOf3AgentsInner';
-import {
-    WebhookPostRequestAnyOf3AgentsInnerFromJSON,
-    WebhookPostRequestAnyOf3AgentsInnerFromJSONTyped,
-    WebhookPostRequestAnyOf3AgentsInnerToJSON,
-    WebhookPostRequestAnyOf3AgentsInnerToJSONTyped,
-} from './WebhookPostRequestAnyOf3AgentsInner';
-import type { WebhookPostRequestAnyOf3WorkflowsInner } from './WebhookPostRequestAnyOf3WorkflowsInner';
-import {
-    WebhookPostRequestAnyOf3WorkflowsInnerFromJSON,
-    WebhookPostRequestAnyOf3WorkflowsInnerFromJSONTyped,
-    WebhookPostRequestAnyOf3WorkflowsInnerToJSON,
-    WebhookPostRequestAnyOf3WorkflowsInnerToJSONTyped,
-} from './WebhookPostRequestAnyOf3WorkflowsInner';
-import type { WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInner } from './WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInner';
-import {
-    WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInnerFromJSON,
-    WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInnerFromJSONTyped,
-    WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInnerToJSON,
-    WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInnerToJSONTyped,
-} from './WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInner';
-
+import { mapValues } from '../runtime.js';
 /**
  * 
  * @export
@@ -53,13 +24,19 @@ export interface WebhookPostRequestAnyOf3 {
      * @type {string}
      * @memberof WebhookPostRequestAnyOf3
      */
+    type: WebhookPostRequestAnyOf3TypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof WebhookPostRequestAnyOf3
+     */
     orgId: string;
     /**
      * 
      * @type {string}
      * @memberof WebhookPostRequestAnyOf3
      */
-    type: WebhookPostRequestAnyOf3TypeEnum;
+    userId: string;
     /**
      * 
      * @type {string}
@@ -68,28 +45,10 @@ export interface WebhookPostRequestAnyOf3 {
     timestamp: string;
     /**
      * 
-     * @type {WebhookPostRequestAnyOf3Phase}
+     * @type {string}
      * @memberof WebhookPostRequestAnyOf3
      */
-    phase?: WebhookPostRequestAnyOf3Phase;
-    /**
-     * 
-     * @type {Array<WebhookPostRequestAnyOf3WorkflowsInner>}
-     * @memberof WebhookPostRequestAnyOf3
-     */
-    workflows: Array<WebhookPostRequestAnyOf3WorkflowsInner>;
-    /**
-     * 
-     * @type {Array<WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInner>}
-     * @memberof WebhookPostRequestAnyOf3
-     */
-    unsatisfiedWorkflows: Array<WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInner>;
-    /**
-     * 
-     * @type {Array<WebhookPostRequestAnyOf3AgentsInner>}
-     * @memberof WebhookPostRequestAnyOf3
-     */
-    agents: Array<WebhookPostRequestAnyOf3AgentsInner>;
+    employeeId: string;
 }
 
 
@@ -97,7 +56,7 @@ export interface WebhookPostRequestAnyOf3 {
  * @export
  */
 export const WebhookPostRequestAnyOf3TypeEnum = {
-    Employeestateupdate: 'employeestateupdate'
+    Employeecreated: 'employeecreated'
 } as const;
 export type WebhookPostRequestAnyOf3TypeEnum = typeof WebhookPostRequestAnyOf3TypeEnum[keyof typeof WebhookPostRequestAnyOf3TypeEnum];
 
@@ -106,12 +65,11 @@ export type WebhookPostRequestAnyOf3TypeEnum = typeof WebhookPostRequestAnyOf3Ty
  * Check if a given object implements the WebhookPostRequestAnyOf3 interface.
  */
 export function instanceOfWebhookPostRequestAnyOf3(value: object): value is WebhookPostRequestAnyOf3 {
-    if (!('orgId' in value) || value['orgId'] === undefined) return false;
     if (!('type' in value) || value['type'] === undefined) return false;
+    if (!('orgId' in value) || value['orgId'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
-    if (!('workflows' in value) || value['workflows'] === undefined) return false;
-    if (!('unsatisfiedWorkflows' in value) || value['unsatisfiedWorkflows'] === undefined) return false;
-    if (!('agents' in value) || value['agents'] === undefined) return false;
+    if (!('employeeId' in value) || value['employeeId'] === undefined) return false;
     return true;
 }
 
@@ -125,13 +83,11 @@ export function WebhookPostRequestAnyOf3FromJSONTyped(json: any, ignoreDiscrimin
     }
     return {
         
-        'orgId': json['orgId'],
         'type': json['type'],
+        'orgId': json['orgId'],
+        'userId': json['userId'],
         'timestamp': json['timestamp'],
-        'phase': json['phase'] == null ? undefined : WebhookPostRequestAnyOf3PhaseFromJSON(json['phase']),
-        'workflows': ((json['workflows'] as Array<any>).map(WebhookPostRequestAnyOf3WorkflowsInnerFromJSON)),
-        'unsatisfiedWorkflows': ((json['unsatisfiedWorkflows'] as Array<any>).map(WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInnerFromJSON)),
-        'agents': ((json['agents'] as Array<any>).map(WebhookPostRequestAnyOf3AgentsInnerFromJSON)),
+        'employeeId': json['employeeId'],
     };
 }
 
@@ -146,13 +102,11 @@ export function WebhookPostRequestAnyOf3ToJSONTyped(value?: WebhookPostRequestAn
 
     return {
         
-        'orgId': value['orgId'],
         'type': value['type'],
+        'orgId': value['orgId'],
+        'userId': value['userId'],
         'timestamp': value['timestamp'],
-        'phase': WebhookPostRequestAnyOf3PhaseToJSON(value['phase']),
-        'workflows': ((value['workflows'] as Array<any>).map(WebhookPostRequestAnyOf3WorkflowsInnerToJSON)),
-        'unsatisfiedWorkflows': ((value['unsatisfiedWorkflows'] as Array<any>).map(WebhookPostRequestAnyOf3UnsatisfiedWorkflowsInnerToJSON)),
-        'agents': ((value['agents'] as Array<any>).map(WebhookPostRequestAnyOf3AgentsInnerToJSON)),
+        'employeeId': value['employeeId'],
     };
 }
 

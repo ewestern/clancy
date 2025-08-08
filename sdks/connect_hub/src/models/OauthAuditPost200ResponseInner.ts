@@ -12,14 +12,14 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { OauthAuditPost200ResponseInnerStatus } from './OauthAuditPost200ResponseInnerStatus';
+import { mapValues } from '../runtime.js';
+import type { OauthAuditPost200ResponseInnerStatus } from './OauthAuditPost200ResponseInnerStatus.js';
 import {
     OauthAuditPost200ResponseInnerStatusFromJSON,
     OauthAuditPost200ResponseInnerStatusFromJSONTyped,
     OauthAuditPost200ResponseInnerStatusToJSON,
     OauthAuditPost200ResponseInnerStatusToJSONTyped,
-} from './OauthAuditPost200ResponseInnerStatus';
+} from './OauthAuditPost200ResponseInnerStatus.js';
 
 /**
  * 
@@ -56,7 +56,13 @@ export interface OauthAuditPost200ResponseInner {
      * @type {Array<string>}
      * @memberof OauthAuditPost200ResponseInner
      */
-    missingScopes: Array<string>;
+    grantedCapabilities: Array<string>;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof OauthAuditPost200ResponseInner
+     */
+    missingCapabilities: Array<string>;
     /**
      * 
      * @type {string}
@@ -79,7 +85,8 @@ export function instanceOfOauthAuditPost200ResponseInner(value: object): value i
     if (!('providerDisplayName' in value) || value['providerDisplayName'] === undefined) return false;
     if (!('providerIcon' in value) || value['providerIcon'] === undefined) return false;
     if (!('status' in value) || value['status'] === undefined) return false;
-    if (!('missingScopes' in value) || value['missingScopes'] === undefined) return false;
+    if (!('grantedCapabilities' in value) || value['grantedCapabilities'] === undefined) return false;
+    if (!('missingCapabilities' in value) || value['missingCapabilities'] === undefined) return false;
     if (!('oauthUrl' in value) || value['oauthUrl'] === undefined) return false;
     return true;
 }
@@ -98,7 +105,8 @@ export function OauthAuditPost200ResponseInnerFromJSONTyped(json: any, ignoreDis
         'providerDisplayName': json['providerDisplayName'],
         'providerIcon': json['providerIcon'],
         'status': OauthAuditPost200ResponseInnerStatusFromJSON(json['status']),
-        'missingScopes': json['missingScopes'],
+        'grantedCapabilities': json['grantedCapabilities'],
+        'missingCapabilities': json['missingCapabilities'],
         'oauthUrl': json['oauthUrl'],
         'message': json['message'] == null ? undefined : json['message'],
     };
@@ -119,7 +127,8 @@ export function OauthAuditPost200ResponseInnerToJSONTyped(value?: OauthAuditPost
         'providerDisplayName': value['providerDisplayName'],
         'providerIcon': value['providerIcon'],
         'status': OauthAuditPost200ResponseInnerStatusToJSON(value['status']),
-        'missingScopes': value['missingScopes'],
+        'grantedCapabilities': value['grantedCapabilities'],
+        'missingCapabilities': value['missingCapabilities'],
         'oauthUrl': value['oauthUrl'],
         'message': value['message'],
     };

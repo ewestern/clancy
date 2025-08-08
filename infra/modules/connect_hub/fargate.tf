@@ -185,6 +185,34 @@ resource "aws_iam_role_policy" "connect_hub_service_secrets_policy" {
   })
 }
 
+// Adding policy to allow S3 access for document upload/download presigned URLs
+resource "aws_iam_role_policy" "connect_hub_service_s3_policy" {
+  name = "connect-hub-service-s3-permissions-${var.environment}"
+  role = aws_iam_role.task_role.name
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:GetObjectVersion"
+        ],
+        Resource = "arn:aws:s3:::clancy-documents-${var.environment}/*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:ListBucket"
+        ],
+        Resource = "arn:aws:s3:::clancy-documents-${var.environment}"
+      }
+    ]
+  })
+}
+
 
 resource "aws_ecs_task_definition" "connect_hub_service_definition" {
   container_definitions = local.container_definitions

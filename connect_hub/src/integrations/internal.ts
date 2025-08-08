@@ -28,10 +28,11 @@ import { Type, Static } from "@sinclair/typebox";
 import { humanFriendlyCron } from "../utils/cron.js";
 
 // @ts-ignore
+
 export const InternalWebhookEndpoint = {
   tags: ["webhooks"],
   description: "Internal webhook",
-  body: EventSchema,
+  body: Type.Record(Type.String(), Type.Any()),
 };
 
 // Parameter schema for cron trigger
@@ -44,7 +45,7 @@ const cronTriggerParamsSchema = Type.Object({
   }),
 });
 
-const cronTrigger: Trigger<Event> = {
+const cronTrigger: Trigger<Record<string, any>> = {
   id: "cron",
   description: "Executes a workflow on a schedule",
   paramsSchema: cronTriggerParamsSchema,
@@ -58,7 +59,7 @@ const cronTrigger: Trigger<Event> = {
   getTriggerRegistrations: async (
     db: Database,
     triggerId: string,
-    event: Event,
+    event: Record<string, any>,
   ) => {
     const registrations = await db
       .select()
@@ -72,7 +73,7 @@ const cronTrigger: Trigger<Event> = {
     }));
   },
   createEvents: async (
-    event: Event,
+    event: Record<string, any>,
     triggerRegistration: TriggerRegistration,
   ) => {
     const metadata = triggerRegistration.params.schedule;
@@ -88,10 +89,11 @@ const cronTrigger: Trigger<Event> = {
       return [
         {
           event: {
-            type: EventType.Cron,
+            type: EventType.RunIntent,
             timestamp: new Date().toISOString(),
-            orgId: event.orgId,
+            orgId: triggerRegistration.orgId,
             agentId: triggerRegistration.agentId,
+            executionId: `exec-internal.cron-${new Date().toISOString()}`,
           },
           partitionKey: triggerRegistration.id!,
         },
@@ -101,8 +103,11 @@ const cronTrigger: Trigger<Event> = {
       return [];
     }
   },
-  eventSatisfies: (event: Event) => {
-    return event.type === EventType.Cron;
+  eventSatisfies: (event: Record<string, any>) => {
+    if (event["detail-type"] === "Scheduled Event") {
+      return true;
+    }
+    return false;
   },
 };
 const triggers = [cronTrigger];
@@ -123,7 +128,8 @@ const webhooks = [
 //--------------------------------------------------------------------
 
 export class InternalProvider
-  implements ProviderRuntime<typeof InternalWebhookEndpoint, Event>
+  implements
+    ProviderRuntime<typeof InternalWebhookEndpoint, Record<string, any>>
 {
   private readonly dispatchTable = new Map<string, Capability<any, any>>();
   public readonly scopeMapping: Record<string, string[]>;
@@ -133,7 +139,7 @@ export class InternalProvider
     displayName: "Clancy Internal Services",
     description:
       "First-party services that do not require external OAuth credentials.",
-    icon: "https://www.clancyai.com/favicon.svg"
+    icon: "https://www.clancyai.com/favicon.svg",
     kind: ProviderKind.Internal,
     auth: ProviderAuth.None,
   } as const;
@@ -179,10 +185,10 @@ export class InternalProvider
   listCapabilities() {
     return Array.from(this.dispatchTable.values()).map((c) => c.meta);
   }
-  listTriggers(): Trigger<Event>[] {
+  listTriggers(): Trigger<Record<string, any>>[] {
     return triggers;
   }
-  getTrigger(triggerId: string): Trigger<Event> | undefined {
+  getTrigger(triggerId: string): Trigger<Record<string, any>> | undefined {
     return triggers.find((t) => t.id === triggerId);
   }
 }

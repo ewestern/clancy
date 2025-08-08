@@ -1,31 +1,54 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { KPICard } from "../components/KPICard";
 import { AIEmployeeCard } from "../components/AIEmployeeCard";
-import {
-  fetchKPIData,
-  fetchAIEmployees,
-} from "../api/stubs";
 import { useDashboard } from "../context/DashboardContext";
-import type { KPIData, AIEmployee } from "../types";
-import { useUser } from "@clerk/react-router";
+import type { KPIData } from "../types";
+import { useUser, useAuth } from "@clerk/react-router";
+import {
+  EmployeesApi,
+  ApprovalsApi,
+  Configuration,
+  type Employee,
+  ApprovalRequestStatusEnum,
+} from "@ewestern/agents_core_sdk";
 
 export function Dashboard() {
   const [kpiData, setKpiData] = useState<KPIData | null>(null);
-  const [employees, setEmployees] = useState<AIEmployee[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useUser();
+  const { getToken } = useAuth();
   const { refreshTrigger } = useDashboard();
+
+  const getAgentsCoreClient = useCallback(() => {
+    return new Configuration({
+      basePath: import.meta.env.VITE_AGENTS_CORE_URL,
+      accessToken: getToken() as Promise<string>,
+    });
+  }, [getToken]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [kpiResult, employeesResult] = await Promise.all([
-          fetchKPIData(),
-          fetchAIEmployees(),
+        const config = getAgentsCoreClient();
+        const employeesApi = new EmployeesApi(config);
+        const approvalsApi = new ApprovalsApi(config);
+
+        const [employeesResult, approvalsResult] = await Promise.all([
+          employeesApi.v1EmployeesGet(),
+          approvalsApi.v1ApprovalsGet({ status: ApprovalRequestStatusEnum.Pending }),
         ]);
-        setKpiData(kpiResult);
+
         setEmployees(employeesResult);
+        
+        // Compute KPI data
+        setKpiData({
+          aiEmployees: employeesResult.length,
+          aiEmployeesChange: 0, // TODO: Track changes
+          pendingApprovals: approvalsResult.length,
+          knowledgeItems: 1, // TODO: Get from ConnectHub when endpoint is available
+        });
       } catch (error) {
         console.error("Error loading dashboard data:", error);
       } finally {
@@ -34,19 +57,19 @@ export function Dashboard() {
     };
 
     loadData();
-  }, [refreshTrigger]); // Re-run when refreshTrigger changes
+  }, [refreshTrigger, getAgentsCoreClient]); // Re-run when refreshTrigger changes
 
-  const handleChat = (employee: AIEmployee) => {
+  const handleChat = (employee: Employee) => {
     console.log("Opening chat with:", employee.name);
     // TODO: Implement chat functionality
   };
 
-  const handlePermissions = (employee: AIEmployee) => {
+  const handlePermissions = (employee: Employee) => {
     console.log("Opening permissions for:", employee.name);
     // TODO: Implement permissions functionality
   };
 
-  const handleDeactivate = (employee: AIEmployee) => {
+  const handleDeactivate = (employee: Employee) => {
     console.log("Deactivating:", employee.name);
     // TODO: Implement deactivate functionality
   };

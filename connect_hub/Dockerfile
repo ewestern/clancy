@@ -8,18 +8,18 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm config set @ewestern:registry https://npm.pkg.github.com
 RUN npm config set //npm.pkg.github.com/:_authToken ${NPM_TOKEN}
+COPY package.json ./
+COPY package-lock.json ./
 
-
-# Install dependencies
-ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npm ci
 
-# Copy source code
-COPY . .
+COPY src ./src
+COPY tsconfig.json ./tsconfig.json
+COPY drizzle.config.ts ./drizzle.config.ts
+COPY migrations ./migrations
 
 # Build the application
 RUN npm run build
-RUN npm prune --omit=dev
 
 # Expose port
 EXPOSE 3000

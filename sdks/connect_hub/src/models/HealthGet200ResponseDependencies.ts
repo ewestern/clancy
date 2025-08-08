@@ -12,14 +12,14 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { HealthGet200ResponseDependenciesDatabase } from './HealthGet200ResponseDependenciesDatabase';
+import { mapValues } from '../runtime.js';
+import type { HealthGet200ResponseDependenciesDatabase } from './HealthGet200ResponseDependenciesDatabase.js';
 import {
     HealthGet200ResponseDependenciesDatabaseFromJSON,
     HealthGet200ResponseDependenciesDatabaseFromJSONTyped,
     HealthGet200ResponseDependenciesDatabaseToJSON,
     HealthGet200ResponseDependenciesDatabaseToJSONTyped,
-} from './HealthGet200ResponseDependenciesDatabase';
+} from './HealthGet200ResponseDependenciesDatabase.js';
 
 /**
  * 

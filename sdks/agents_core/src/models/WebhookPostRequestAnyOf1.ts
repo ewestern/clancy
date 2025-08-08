@@ -12,7 +12,15 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { mapValues } from '../runtime.js';
+import type { WebhookPostRequestAnyOf1ConnectionStatus } from './WebhookPostRequestAnyOf1ConnectionStatus.js';
+import {
+    WebhookPostRequestAnyOf1ConnectionStatusFromJSON,
+    WebhookPostRequestAnyOf1ConnectionStatusFromJSONTyped,
+    WebhookPostRequestAnyOf1ConnectionStatusToJSON,
+    WebhookPostRequestAnyOf1ConnectionStatusToJSONTyped,
+} from './WebhookPostRequestAnyOf1ConnectionStatus.js';
+
 /**
  * 
  * @export
@@ -30,25 +38,7 @@ export interface WebhookPostRequestAnyOf1 {
      * @type {string}
      * @memberof WebhookPostRequestAnyOf1
      */
-    agentId: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WebhookPostRequestAnyOf1
-     */
     orgId: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WebhookPostRequestAnyOf1
-     */
-    executionId: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WebhookPostRequestAnyOf1
-     */
-    timestamp: string;
     /**
      * 
      * @type {string}
@@ -60,7 +50,31 @@ export interface WebhookPostRequestAnyOf1 {
      * @type {string}
      * @memberof WebhookPostRequestAnyOf1
      */
-    jobDescription: string;
+    timestamp: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof WebhookPostRequestAnyOf1
+     */
+    providerId: string;
+    /**
+     * 
+     * @type {WebhookPostRequestAnyOf1ConnectionStatus}
+     * @memberof WebhookPostRequestAnyOf1
+     */
+    connectionStatus: WebhookPostRequestAnyOf1ConnectionStatus;
+    /**
+     * 
+     * @type {string}
+     * @memberof WebhookPostRequestAnyOf1
+     */
+    connectionId: string;
+    /**
+     * 
+     * @type {{ [key: string]: any; }}
+     * @memberof WebhookPostRequestAnyOf1
+     */
+    externalAccountMetadata: { [key: string]: any; };
 }
 
 
@@ -68,7 +82,7 @@ export interface WebhookPostRequestAnyOf1 {
  * @export
  */
 export const WebhookPostRequestAnyOf1TypeEnum = {
-    Runintent: 'runintent'
+    Providerconnectioncompleted: 'providerconnectioncompleted'
 } as const;
 export type WebhookPostRequestAnyOf1TypeEnum = typeof WebhookPostRequestAnyOf1TypeEnum[keyof typeof WebhookPostRequestAnyOf1TypeEnum];
 
@@ -78,12 +92,13 @@ export type WebhookPostRequestAnyOf1TypeEnum = typeof WebhookPostRequestAnyOf1Ty
  */
 export function instanceOfWebhookPostRequestAnyOf1(value: object): value is WebhookPostRequestAnyOf1 {
     if (!('type' in value) || value['type'] === undefined) return false;
-    if (!('agentId' in value) || value['agentId'] === undefined) return false;
     if (!('orgId' in value) || value['orgId'] === undefined) return false;
-    if (!('executionId' in value) || value['executionId'] === undefined) return false;
-    if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
     if (!('userId' in value) || value['userId'] === undefined) return false;
-    if (!('jobDescription' in value) || value['jobDescription'] === undefined) return false;
+    if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
+    if (!('providerId' in value) || value['providerId'] === undefined) return false;
+    if (!('connectionStatus' in value) || value['connectionStatus'] === undefined) return false;
+    if (!('connectionId' in value) || value['connectionId'] === undefined) return false;
+    if (!('externalAccountMetadata' in value) || value['externalAccountMetadata'] === undefined) return false;
     return true;
 }
 
@@ -98,12 +113,13 @@ export function WebhookPostRequestAnyOf1FromJSONTyped(json: any, ignoreDiscrimin
     return {
         
         'type': json['type'],
-        'agentId': json['agentId'],
         'orgId': json['orgId'],
-        'executionId': json['executionId'],
-        'timestamp': json['timestamp'],
         'userId': json['userId'],
-        'jobDescription': json['jobDescription'],
+        'timestamp': json['timestamp'],
+        'providerId': json['providerId'],
+        'connectionStatus': WebhookPostRequestAnyOf1ConnectionStatusFromJSON(json['connectionStatus']),
+        'connectionId': json['connectionId'],
+        'externalAccountMetadata': json['externalAccountMetadata'],
     };
 }
 
@@ -119,12 +135,13 @@ export function WebhookPostRequestAnyOf1ToJSONTyped(value?: WebhookPostRequestAn
     return {
         
         'type': value['type'],
-        'agentId': value['agentId'],
         'orgId': value['orgId'],
-        'executionId': value['executionId'],
-        'timestamp': value['timestamp'],
         'userId': value['userId'],
-        'jobDescription': value['jobDescription'],
+        'timestamp': value['timestamp'],
+        'providerId': value['providerId'],
+        'connectionStatus': WebhookPostRequestAnyOf1ConnectionStatusToJSON(value['connectionStatus']),
+        'connectionId': value['connectionId'],
+        'externalAccountMetadata': value['externalAccountMetadata'],
     };
 }
 

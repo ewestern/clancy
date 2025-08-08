@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Clancy AI - Autonomous Digital Workforce",
+  title: "Clancy AI - Your Digital Workforce",
   description:
     "Create AI employees with custom job descriptions who autonomously fulfill their roles across all your tools.",
   icons: {

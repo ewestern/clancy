@@ -12,16 +12,8 @@ import type {
   ContextConfigDefault,
 } from "fastify";
 import type { DecodePayloadType, FastifyJwtNamespace } from "@fastify/jwt";
-import type { TokenService } from "../services/tokenService.js";
-import type { AuditService } from "../services/auditService.js";
 import type { WebSocketService } from "../services/websocketService.js";
 import type { Database } from "../plugins/database.js";
-import type { SupervisorAgent } from "../supervisor.js";
-import type { AgentRegistry } from "../registry.js";
-import type { MemorySystem } from "../memory.js";
-import type { MultiAgentGraphCreator } from "../graphCreator.js";
-import type { IntentEmitter } from "../intentEmitter.js";
-import type { LLMProvider } from "./llm.js";
 import type { FastifyJWTOptions } from "@fastify/jwt";
 
 export type FastifyTypeBox = FastifyInstance<
@@ -52,28 +44,9 @@ export type FastifyReplyTypeBox<TSchema extends FastifySchema> = FastifyReply<
 >;
 
 declare module "fastify" {
-  export interface FastifyInstance
-    extends FastifyJwtNamespace<{
-      jwtVerify: "securityJwtVerify";
-    }> {
+  interface FastifyInstance {
     // Database
     db: Database;
-
-    // Core services
-    tokenService: TokenService;
-    auditService: AuditService;
-    llmProvider: LLMProvider;
-
-    // Agent-Core specific services
-    supervisor: SupervisorAgent;
-    agentRegistry: AgentRegistry;
-    memorySystem: MemorySystem;
-    graphCreator: MultiAgentGraphCreator;
-    intentEmitter: IntentEmitter;
     wsService: WebSocketService;
   }
-
-  //export interface FastifyRequest {
-  //  jwtVerify: (options?: unknown) => Promise<DecodePayload>;
-  //}
 }

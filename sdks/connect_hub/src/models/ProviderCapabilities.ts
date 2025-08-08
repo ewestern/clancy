@@ -12,28 +12,28 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { ProviderAuth } from './ProviderAuth';
+import { mapValues } from '../runtime.js';
+import type { ProviderAuth } from './ProviderAuth.js';
 import {
     ProviderAuthFromJSON,
     ProviderAuthFromJSONTyped,
     ProviderAuthToJSON,
     ProviderAuthToJSONTyped,
-} from './ProviderAuth';
-import type { ProviderKind } from './ProviderKind';
+} from './ProviderAuth.js';
+import type { ProviderKind } from './ProviderKind.js';
 import {
     ProviderKindFromJSON,
     ProviderKindFromJSONTyped,
     ProviderKindToJSON,
     ProviderKindToJSONTyped,
-} from './ProviderKind';
-import type { CapabilitySummary } from './CapabilitySummary';
+} from './ProviderKind.js';
+import type { CapabilitySummary } from './CapabilitySummary.js';
 import {
     CapabilitySummaryFromJSON,
     CapabilitySummaryFromJSONTyped,
     CapabilitySummaryToJSON,
     CapabilitySummaryToJSONTyped,
-} from './CapabilitySummary';
+} from './CapabilitySummary.js';
 
 /**
  * 

@@ -15,6 +15,27 @@
       "when": 1754321472142,
       "tag": "0001_cuddly_terror",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1754748307563,
+      "tag": "0002_narrow_captain_america",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1754773911062,
+      "tag": "0003_absurd_emma_frost",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1754950851504,
+      "tag": "0004_cloudy_black_bird",
+      "breakpoints": true
     }
   ]
 }

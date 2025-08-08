@@ -46,7 +46,7 @@ export const ErrorSchema = Type.Object(
     error: Type.String(),
     message: Type.String(),
     statusCode: Type.Number(),
-    timestamp: Type.String({ format: "date-time" }),
+    timestamp: Type.Optional(Type.String({ format: "date-time" })),
     path: Type.Optional(Type.String()),
     details: Type.Optional(Type.Unknown()),
   },
@@ -71,3 +71,16 @@ export enum OwnershipScope {
 export type OwnershipScopeType =
   | OwnershipScope.User
   | OwnershipScope.Organization;
+
+export const PaginatedResponseSchema = <A extends TSchema>(schema: A) =>
+  Type.Object({
+    data: Type.Array(schema),
+    total: Type.Number(),
+    page: Type.Number(),
+    limit: Type.Number(),
+  });
+
+export const SingleResponseSchema = <A extends TSchema>(schema: A) =>
+  Type.Object({
+    data: schema,
+  });

@@ -36,7 +36,7 @@ export function AgentConnectDisplay({
           : "The following workflows could not be automated and require manual resolution."}
       </p>
 
-      {/* Agent Cards */}
+      {/* Workflow Cards */}
       {agents.length > 0 && (
         <div>
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -77,7 +77,7 @@ export function AgentConnectDisplay({
 
       {agents.length === 0 && unsatisfiedWorkflows.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-gray-500">No agent data available yet.</p>
+                                  <p className="text-gray-500">No workflow data available yet.</p>
         </div>
       )}
     </div>

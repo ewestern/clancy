@@ -21,7 +21,14 @@ async function createAgentHandler(
   db: Database,
   agent: Static<typeof AgentSchema>,
 ) {
-  const [createdAgent] = await db.insert(agents).values(agent).returning();
+  if (!agent.employeeId) {
+    throw new Error("Employee ID is required");
+  }
+  const toInsert = {
+    ...agent,
+    employeeId: agent.employeeId!,
+  };
+  const [createdAgent] = await db.insert(agents).values(toInsert).returning();
   return createdAgent;
 }
 

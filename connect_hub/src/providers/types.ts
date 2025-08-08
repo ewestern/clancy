@@ -199,7 +199,7 @@ export interface WebhookEvent {
  */
 export interface ProviderRuntime<
   WebhookSchema extends FastifySchema = FastifySchema,
-  E extends WebhookEvent = WebhookEvent,
+  E = WebhookEvent,
 > {
   links?: string[];
   /** Retrieve a capability implementation by id (e.g. "chat.post") */

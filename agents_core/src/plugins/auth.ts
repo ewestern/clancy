@@ -1,11 +1,12 @@
-import { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
+import { FastifyRequest, FastifyReply } from "fastify";
 import buildGetJwks from "get-jwks";
-import fastifyJwt, { FastifyJWTOptions } from "@fastify/jwt";
+import fastifyJwt from "@fastify/jwt";
 import dotenv from "dotenv";
 dotenv.config();
 import { getAuth } from "@clerk/fastify";
+import fp from "fastify-plugin";
 
-export const registerAuth: FastifyPluginAsync = async (fastify) => {
+export const registerAuth = fp(async (fastify) => {
   const getJwks = buildGetJwks();
 
   fastify.register(fastifyJwt, {
@@ -32,8 +33,9 @@ export const registerAuth: FastifyPluginAsync = async (fastify) => {
     async function verifyClerk(request: FastifyRequest, reply: FastifyReply) {
       const { userId } = getAuth(request);
       if (!userId) {
-        reply.code(401).send({ error: "Unauthorized" });
+        return reply.code(401).send({ error: "Unauthorized" });
       }
+      return;
     },
   );
 
@@ -44,10 +46,11 @@ export const registerAuth: FastifyPluginAsync = async (fastify) => {
       reply: FastifyReply,
     ) {
       try {
-        await request.jwtVerify();
+        const decoded = await request.jwtVerify();
+        return decoded;
       } catch (err) {
-        reply.code(401).send({ error: "Unauthorized" });
+        return reply.code(401).send({ error: "Unauthorized" });
       }
     },
   );
-};
+});

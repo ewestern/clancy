@@ -12,21 +12,21 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { ProviderAuth } from './ProviderAuth';
+import { mapValues } from '../runtime.js';
+import type { ProviderAuth } from './ProviderAuth.js';
 import {
     ProviderAuthFromJSON,
     ProviderAuthFromJSONTyped,
     ProviderAuthToJSON,
     ProviderAuthToJSONTyped,
-} from './ProviderAuth';
-import type { ProviderKind } from './ProviderKind';
+} from './ProviderAuth.js';
+import type { ProviderKind } from './ProviderKind.js';
 import {
     ProviderKindFromJSON,
     ProviderKindFromJSONTyped,
     ProviderKindToJSON,
     ProviderKindToJSONTyped,
-} from './ProviderKind';
+} from './ProviderKind.js';
 
 /**
  * 

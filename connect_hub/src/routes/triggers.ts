@@ -51,6 +51,7 @@ export async function triggerRoutes(app: FastifyTypeBox) {
       reply: FastifyReplyTypeBox<typeof CreateTriggerRegistrationEndpoint>,
     ) => {
       const body = request.body;
+      request.log.info(`Creating trigger registration: ${JSON.stringify(body)}`);
       const auth = getAuth(request);
       if (!auth.orgId || !auth.userId) {
         reply.status(401).send({
@@ -107,7 +108,10 @@ export async function triggerRoutes(app: FastifyTypeBox) {
               eq(connections.status, ConnectionStatus.Active),
             ),
           });
-          if (!connection && provider?.metadata.kind === ProviderKind.External) {
+          if (
+            !connection &&
+            provider?.metadata.kind === ProviderKind.External
+          ) {
             throw new Error("Connection not found");
           }
           const toInsert = {
@@ -130,6 +134,7 @@ export async function triggerRoutes(app: FastifyTypeBox) {
 
       reply.status(201).send({
         id: triggerRegistration.id,
+        orgId: triggerRegistration.orgId,
         agentId: triggerRegistration.agentId,
         providerId: triggerRegistration.providerId,
         triggerId: triggerRegistration.triggerId,
