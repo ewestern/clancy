@@ -72,10 +72,10 @@ export function Header() {
 
           {/* Desktop CTA */}
           <div className="hidden lg:flex items-center space-x-4">
-            <Button variant="secondary" href="http://localhost:5173/signin">
+            <Button variant="secondary" href="https://app.clancyai.com/signin">
               Login
             </Button>
-            <Button variant="primary" href="http://localhost:5173/signup">
+            <Button variant="primary" href="https://app.clancyai.com/signup">
               Get Early Access
             </Button>
           </div>
@@ -110,14 +110,14 @@ export function Header() {
               <div className="flex flex-col space-y-2 pt-4 border-t border-slate-100">
                 <Button
                   variant="secondary"
-                  href="http://localhost:5173/signin"
+                  href="https://app.clancyai.com/signin"
                   size="sm"
                 >
                   Login
                 </Button>
                 <Button
                   variant="primary"
-                  href="http://localhost:5173/signup"
+                  href="https://app.clancyai.com/signup"
                   size="sm"
                 >
                   Get Early Access
