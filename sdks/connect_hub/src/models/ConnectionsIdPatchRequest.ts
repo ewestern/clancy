@@ -12,7 +12,15 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { mapValues } from '../runtime.js';
+import type { ConnectionStatus } from './ConnectionStatus.js';
+import {
+    ConnectionStatusFromJSON,
+    ConnectionStatusFromJSONTyped,
+    ConnectionStatusToJSON,
+    ConnectionStatusToJSONTyped,
+} from './ConnectionStatus.js';
+
 /**
  * 
  * @export
@@ -21,29 +29,24 @@ import { mapValues } from '../runtime';
 export interface ConnectionsIdPatchRequest {
     /**
      * 
+     * @type {ConnectionStatus}
+     * @memberof ConnectionsIdPatchRequest
+     */
+    status?: ConnectionStatus;
+    /**
+     * 
      * @type {string}
      * @memberof ConnectionsIdPatchRequest
      */
-    status: ConnectionsIdPatchRequestStatusEnum;
+    employeeId?: string;
 }
 
-
-/**
- * @export
- */
-export const ConnectionsIdPatchRequestStatusEnum = {
-    Active: 'active',
-    Inactive: 'inactive',
-    Error: 'error'
-} as const;
-export type ConnectionsIdPatchRequestStatusEnum = typeof ConnectionsIdPatchRequestStatusEnum[keyof typeof ConnectionsIdPatchRequestStatusEnum];
 
 
 /**
  * Check if a given object implements the ConnectionsIdPatchRequest interface.
  */
 export function instanceOfConnectionsIdPatchRequest(value: object): value is ConnectionsIdPatchRequest {
-    if (!('status' in value) || value['status'] === undefined) return false;
     return true;
 }
 
@@ -57,7 +60,8 @@ export function ConnectionsIdPatchRequestFromJSONTyped(json: any, ignoreDiscrimi
     }
     return {
         
-        'status': json['status'],
+        'status': json['status'] == null ? undefined : ConnectionStatusFromJSON(json['status']),
+        'employeeId': json['employeeId'] == null ? undefined : json['employeeId'],
     };
 }
 
@@ -72,7 +76,8 @@ export function ConnectionsIdPatchRequestToJSONTyped(value?: ConnectionsIdPatchR
 
     return {
         
-        'status': value['status'],
+        'status': ConnectionStatusToJSON(value['status']),
+        'employeeId': value['employeeId'],
     };
 }
 

@@ -12,14 +12,14 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { TriggerRegistrationConnection } from './TriggerRegistrationConnection';
+import { mapValues } from '../runtime.js';
+import type { TriggerRegistrationConnection } from './TriggerRegistrationConnection.js';
 import {
     TriggerRegistrationConnectionFromJSON,
     TriggerRegistrationConnectionFromJSONTyped,
     TriggerRegistrationConnectionToJSON,
     TriggerRegistrationConnectionToJSONTyped,
-} from './TriggerRegistrationConnection';
+} from './TriggerRegistrationConnection.js';
 
 /**
  * 
@@ -33,6 +33,12 @@ export interface TriggerRegistration {
      * @memberof TriggerRegistration
      */
     readonly id?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof TriggerRegistration
+     */
+    orgId: string;
     /**
      * 
      * @type {string}
@@ -87,6 +93,7 @@ export interface TriggerRegistration {
  * Check if a given object implements the TriggerRegistration interface.
  */
 export function instanceOfTriggerRegistration(value: object): value is TriggerRegistration {
+    if (!('orgId' in value) || value['orgId'] === undefined) return false;
     if (!('agentId' in value) || value['agentId'] === undefined) return false;
     if (!('providerId' in value) || value['providerId'] === undefined) return false;
     if (!('triggerId' in value) || value['triggerId'] === undefined) return false;
@@ -106,6 +113,7 @@ export function TriggerRegistrationFromJSONTyped(json: any, ignoreDiscriminator:
     return {
         
         'id': json['id'] == null ? undefined : json['id'],
+        'orgId': json['orgId'],
         'agentId': json['agentId'],
         'providerId': json['providerId'],
         'triggerId': json['triggerId'],
@@ -128,6 +136,7 @@ export function TriggerRegistrationToJSONTyped(value?: Omit<TriggerRegistration,
 
     return {
         
+        'orgId': value['orgId'],
         'agentId': value['agentId'],
         'providerId': value['providerId'],
         'triggerId': value['triggerId'],

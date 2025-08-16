@@ -12,7 +12,15 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { mapValues } from '../runtime.js';
+import type { WebhookPostRequestAnyOfAgentsInner } from './WebhookPostRequestAnyOfAgentsInner.js';
+import {
+    WebhookPostRequestAnyOfAgentsInnerFromJSON,
+    WebhookPostRequestAnyOfAgentsInnerFromJSONTyped,
+    WebhookPostRequestAnyOfAgentsInnerToJSON,
+    WebhookPostRequestAnyOfAgentsInnerToJSONTyped,
+} from './WebhookPostRequestAnyOfAgentsInner.js';
+
 /**
  * 
  * @export
@@ -36,6 +44,12 @@ export interface WebhookPostRequestAnyOf2 {
      * @type {string}
      * @memberof WebhookPostRequestAnyOf2
      */
+    userId: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof WebhookPostRequestAnyOf2
+     */
     timestamp: string;
     /**
      * 
@@ -45,22 +59,10 @@ export interface WebhookPostRequestAnyOf2 {
     agentId: string;
     /**
      * 
-     * @type {string}
+     * @type {WebhookPostRequestAnyOfAgentsInner}
      * @memberof WebhookPostRequestAnyOf2
      */
-    executionId: string;
-    /**
-     * 
-     * @type {any}
-     * @memberof WebhookPostRequestAnyOf2
-     */
-    resume: any | null;
-    /**
-     * 
-     * @type {string}
-     * @memberof WebhookPostRequestAnyOf2
-     */
-    userId: string;
+    agent: WebhookPostRequestAnyOfAgentsInner;
 }
 
 
@@ -68,7 +70,7 @@ export interface WebhookPostRequestAnyOf2 {
  * @export
  */
 export const WebhookPostRequestAnyOf2TypeEnum = {
-    Resumeintent: 'resumeintent'
+    Agentcreated: 'agentcreated'
 } as const;
 export type WebhookPostRequestAnyOf2TypeEnum = typeof WebhookPostRequestAnyOf2TypeEnum[keyof typeof WebhookPostRequestAnyOf2TypeEnum];
 
@@ -79,11 +81,10 @@ export type WebhookPostRequestAnyOf2TypeEnum = typeof WebhookPostRequestAnyOf2Ty
 export function instanceOfWebhookPostRequestAnyOf2(value: object): value is WebhookPostRequestAnyOf2 {
     if (!('type' in value) || value['type'] === undefined) return false;
     if (!('orgId' in value) || value['orgId'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
     if (!('agentId' in value) || value['agentId'] === undefined) return false;
-    if (!('executionId' in value) || value['executionId'] === undefined) return false;
-    if (!('resume' in value) || value['resume'] === undefined) return false;
-    if (!('userId' in value) || value['userId'] === undefined) return false;
+    if (!('agent' in value) || value['agent'] === undefined) return false;
     return true;
 }
 
@@ -99,11 +100,10 @@ export function WebhookPostRequestAnyOf2FromJSONTyped(json: any, ignoreDiscrimin
         
         'type': json['type'],
         'orgId': json['orgId'],
+        'userId': json['userId'],
         'timestamp': json['timestamp'],
         'agentId': json['agentId'],
-        'executionId': json['executionId'],
-        'resume': json['resume'],
-        'userId': json['userId'],
+        'agent': WebhookPostRequestAnyOfAgentsInnerFromJSON(json['agent']),
     };
 }
 
@@ -120,11 +120,10 @@ export function WebhookPostRequestAnyOf2ToJSONTyped(value?: WebhookPostRequestAn
         
         'type': value['type'],
         'orgId': value['orgId'],
+        'userId': value['userId'],
         'timestamp': value['timestamp'],
         'agentId': value['agentId'],
-        'executionId': value['executionId'],
-        'resume': value['resume'],
-        'userId': value['userId'],
+        'agent': WebhookPostRequestAnyOfAgentsInnerToJSON(value['agent']),
     };
 }
 

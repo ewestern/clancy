@@ -12,7 +12,15 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { mapValues } from '../runtime.js';
+import type { ConnectionStatus } from './ConnectionStatus.js';
+import {
+    ConnectionStatusFromJSON,
+    ConnectionStatusFromJSONTyped,
+    ConnectionStatusToJSON,
+    ConnectionStatusToJSONTyped,
+} from './ConnectionStatus.js';
+
 /**
  * 
  * @export
@@ -36,6 +44,12 @@ export interface Connection {
      * @type {string}
      * @memberof Connection
      */
+    userId: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Connection
+     */
     providerId: string;
     /**
      * 
@@ -45,10 +59,16 @@ export interface Connection {
     displayName: string;
     /**
      * 
-     * @type {string}
+     * @type {Array<string>}
      * @memberof Connection
      */
-    status: ConnectionStatusEnum;
+    capabilities: Array<string>;
+    /**
+     * 
+     * @type {ConnectionStatus}
+     * @memberof Connection
+     */
+    status: ConnectionStatus;
     /**
      * 
      * @type {{ [key: string]: any; }}
@@ -58,16 +78,6 @@ export interface Connection {
 }
 
 
-/**
- * @export
- */
-export const ConnectionStatusEnum = {
-    Active: 'active',
-    Inactive: 'inactive',
-    Error: 'error'
-} as const;
-export type ConnectionStatusEnum = typeof ConnectionStatusEnum[keyof typeof ConnectionStatusEnum];
-
 
 /**
  * Check if a given object implements the Connection interface.
@@ -75,8 +85,10 @@ export type ConnectionStatusEnum = typeof ConnectionStatusEnum[keyof typeof Conn
 export function instanceOfConnection(value: object): value is Connection {
     if (!('id' in value) || value['id'] === undefined) return false;
     if (!('orgId' in value) || value['orgId'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('providerId' in value) || value['providerId'] === undefined) return false;
     if (!('displayName' in value) || value['displayName'] === undefined) return false;
+    if (!('capabilities' in value) || value['capabilities'] === undefined) return false;
     if (!('status' in value) || value['status'] === undefined) return false;
     if (!('metadata' in value) || value['metadata'] === undefined) return false;
     return true;
@@ -94,9 +106,11 @@ export function ConnectionFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         
         'id': json['id'],
         'orgId': json['orgId'],
+        'userId': json['userId'],
         'providerId': json['providerId'],
         'displayName': json['displayName'],
-        'status': json['status'],
+        'capabilities': json['capabilities'],
+        'status': ConnectionStatusFromJSON(json['status']),
         'metadata': json['metadata'],
     };
 }
@@ -114,9 +128,11 @@ export function ConnectionToJSONTyped(value?: Connection | null, ignoreDiscrimin
         
         'id': value['id'],
         'orgId': value['orgId'],
+        'userId': value['userId'],
         'providerId': value['providerId'],
         'displayName': value['displayName'],
-        'status': value['status'],
+        'capabilities': value['capabilities'],
+        'status': ConnectionStatusToJSON(value['status']),
         'metadata': value['metadata'],
     };
 }

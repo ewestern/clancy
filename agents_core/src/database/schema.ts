@@ -39,7 +39,9 @@ export const agents = pgTable(
       .$type<Agent["capabilities"]>()
       .notNull(),
     trigger: jsonb("trigger").$type<Agent["trigger"]>().notNull(),
-    aiEmployeeId: uuid("ai_employee_id").references(() => aiEmployees.id),
+    employeeId: uuid("employee_id")
+      .references(() => employees.id)
+      .notNull(),
     lastActive: timestamp("last_active"),
     status: agentStatus("status").notNull().default(AgentStatus.Active),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -51,7 +53,7 @@ export const agents = pgTable(
   (table) => [index("agents_org_idx").on(table.orgId)],
 );
 
-export const aiEmployees = pgTable("ai_employees", {
+export const employees = pgTable("employees", {
   id: uuid("id").primaryKey().defaultRandom(),
   orgId: varchar("org_id", { length: 255 }).notNull(),
   userId: varchar("user_id", { length: 255 }).notNull(),

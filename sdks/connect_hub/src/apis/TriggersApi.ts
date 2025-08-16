@@ -13,17 +13,17 @@
  */
 
 
-import * as runtime from '../runtime';
+import * as runtime from '../runtime.js';
 import type {
   Trigger,
   TriggerRegistration,
-} from '../models/index';
+} from '../models/index.js';
 import {
     TriggerFromJSON,
     TriggerToJSON,
     TriggerRegistrationFromJSON,
     TriggerRegistrationToJSON,
-} from '../models/index';
+} from '../models/index.js';
 
 export interface TriggerRegistrationsPostRequest {
     triggerRegistration?: Omit<TriggerRegistration, 'id'|'createdAt'|'updatedAt'>;

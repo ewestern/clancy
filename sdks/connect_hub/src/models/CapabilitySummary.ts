@@ -12,21 +12,21 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { OwnershipScope } from './OwnershipScope';
+import { mapValues } from '../runtime.js';
+import type { OwnershipScope } from './OwnershipScope.js';
 import {
     OwnershipScopeFromJSON,
     OwnershipScopeFromJSONTyped,
     OwnershipScopeToJSON,
     OwnershipScopeToJSONTyped,
-} from './OwnershipScope';
-import type { CapabilityRisk } from './CapabilityRisk';
+} from './OwnershipScope.js';
+import type { CapabilityRisk } from './CapabilityRisk.js';
 import {
     CapabilityRiskFromJSON,
     CapabilityRiskFromJSONTyped,
     CapabilityRiskToJSON,
     CapabilityRiskToJSONTyped,
-} from './CapabilityRisk';
+} from './CapabilityRisk.js';
 
 /**
  * 

@@ -12,21 +12,21 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { HealthGet200ResponseDependencies } from './HealthGet200ResponseDependencies';
+import { mapValues } from '../runtime.js';
+import type { HealthGet200ResponseDependencies } from './HealthGet200ResponseDependencies.js';
 import {
     HealthGet200ResponseDependenciesFromJSON,
     HealthGet200ResponseDependenciesFromJSONTyped,
     HealthGet200ResponseDependenciesToJSON,
     HealthGet200ResponseDependenciesToJSONTyped,
-} from './HealthGet200ResponseDependencies';
-import type { HealthGet200ResponseStatus } from './HealthGet200ResponseStatus';
+} from './HealthGet200ResponseDependencies.js';
+import type { HealthGet200ResponseStatus } from './HealthGet200ResponseStatus.js';
 import {
     HealthGet200ResponseStatusFromJSON,
     HealthGet200ResponseStatusFromJSONTyped,
     HealthGet200ResponseStatusToJSON,
     HealthGet200ResponseStatusToJSONTyped,
-} from './HealthGet200ResponseStatus';
+} from './HealthGet200ResponseStatus.js';
 
 /**
  * 

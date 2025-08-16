@@ -72,3 +72,4 @@ reset-dev-database:
 	createdb $(DB_NAME) || true
 	npx tsx node_modules/.bin/drizzle-kit migrate
 	npx tsx node_modules/.bin/drizzle-kit push 
+	psql $(DB_NAME) -f test_data_connect_hub.sql

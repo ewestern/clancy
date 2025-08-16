@@ -1,14 +1,6 @@
 import type { Event } from "@ewestern/events";
 
-export interface AIEmployee {
-  id: string;
-  name: string;
-  role: string;
-  avatar?: string;
-  lastRun: string;
-  status: "idle" | "running" | "error";
-}
-
+// KPI data - computed from SDK calls
 export interface KPIData {
   aiEmployees: number;
   aiEmployeesChange: number;
@@ -16,6 +8,7 @@ export interface KPIData {
   knowledgeItems: number;
 }
 
+// Legacy approval request interface - will be replaced by SDK ApprovalRequest
 export interface ApprovalRequest {
   id: string;
   employeeId: string;
@@ -23,16 +16,6 @@ export interface ApprovalRequest {
   summary: string;
   slaHours: number;
   timestamp: string;
-}
-
-export interface KnowledgeItem {
-  id: string;
-  title: string;
-  type: "pdf" | "txt" | "doc" | "xlsx";
-  lastModified: string;
-  scope: string;
-  contributingEmployee: string;
-  visibility: "public" | "internal" | "confidential";
 }
 
 // Hiring Wizard Types

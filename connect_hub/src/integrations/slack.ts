@@ -193,6 +193,7 @@ const triggers: Trigger<WebhookEvent>[] = [
       return registrations.map((r) => ({
         id: r.triggerRegistration.id,
         agentId: r.triggerRegistration.agentId,
+        orgId: r.connection.orgId,
         providerId: r.triggerRegistration.providerId,
         connectionId: r.triggerRegistration.connectionId!,
         connection: {

@@ -1,7 +1,7 @@
 resource "aws_db_subnet_group" "connect_hub_db_subnet_group" {
   description = "Connect Hub Database Subnet Group"
   name        = "connect-hub-db-subnet-group-${var.environment}"
-  subnet_ids  = var.subnet_ids
+  subnet_ids  = var.db_subnet_ids
 }
 resource "aws_db_parameter_group" "connect_hub_db_parameter_group" {
   name_prefix = "connect-hub-pg-${var.environment}"

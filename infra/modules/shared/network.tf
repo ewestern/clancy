@@ -46,54 +46,41 @@ resource "aws_internet_gateway" "gw" {
 }
 
 locals {
-
+  # Determine NAT AZs based on strategy
+  nat_azs = var.nat_strategy == "single" ? [var.single_nat_az] : var.ecs_azs
+  
+  # All subnet maps for outputs
   all_public_subnets = {
-    for az in var.availability_zones : az =>
-    az == "us-east-1a" ? aws_subnet.subnet_public_2a[0].id :
-    az == "us-east-1b" ? aws_subnet.subnet_public_2b[0].id :
-    az == "us-east-1c" ? aws_subnet.subnet_public_2c[0].id : null
+    for az in var.alb_azs : az => aws_subnet.public_subnets[az].id
   }
 
-  all_private_subnets = {
-    for az in var.availability_zones : az =>
-    az == "us-east-1a" ? aws_subnet.subnet_private_2a[0].id :
-    az == "us-east-1b" ? aws_subnet.subnet_private_2b[0].id :
-    az == "us-east-1c" ? aws_subnet.subnet_private_2c[0].id : null
+  all_ecs_private_subnets = {
+    for az in var.ecs_azs : az => aws_subnet.ecs_private_subnets[az].id
+  }
+  
+  all_db_private_subnets = {
+    for az in var.db_azs : az => aws_subnet.db_subnets[az].id
   }
 }
 
 # EIPs for NAT Gateways
-resource "aws_eip" "nat_2a" {
-  count  = contains(var.availability_zones, "us-east-1a") ? 1 : 0
-  domain = "vpc"
-}
-resource "aws_eip" "nat_2b" {
-  count  = contains(var.availability_zones, "us-east-1b") ? 1 : 0
-  domain = "vpc"
-}
-resource "aws_eip" "nat_2c" {
-  count  = contains(var.availability_zones, "us-east-1c") ? 1 : 0
-  domain = "vpc"
+resource "aws_eip" "nat_gateways" {
+  for_each = toset(local.nat_azs)
+  domain   = "vpc"
+  tags = {
+    Name = "${var.environment}-nat-eip-${each.key}"
+  }
 }
 
 # NAT Gateways
-resource "aws_nat_gateway" "nat_2a" {
-  count         = contains(var.availability_zones, "us-east-1a") ? 1 : 0
-  allocation_id = aws_eip.nat_2a[0].id
-  subnet_id     = aws_subnet.subnet_public_2a[0].id
+resource "aws_nat_gateway" "nat_gateways" {
+  for_each      = toset(local.nat_azs)
+  allocation_id = aws_eip.nat_gateways[each.key].id
+  subnet_id     = aws_subnet.public_subnets[each.key].id
   depends_on    = [aws_internet_gateway.gw]
-}
-resource "aws_nat_gateway" "nat_2b" {
-  count         = contains(var.availability_zones, "us-east-1b") ? 1 : 0
-  allocation_id = aws_eip.nat_2b[0].id
-  subnet_id     = aws_subnet.subnet_public_2b[0].id
-  depends_on    = [aws_internet_gateway.gw]
-}
-resource "aws_nat_gateway" "nat_2c" {
-  count         = contains(var.availability_zones, "us-east-1c") ? 1 : 0
-  allocation_id = aws_eip.nat_2c[0].id
-  subnet_id     = aws_subnet.subnet_public_2c[0].id
-  depends_on    = [aws_internet_gateway.gw]
+  tags = {
+    Name = "${var.environment}-nat-${each.key}"
+  }
 }
 
 resource "aws_route_table" "public" {
@@ -108,180 +95,105 @@ resource "aws_route_table" "public" {
   }
 }
 
-# Private route tables
-resource "aws_route_table" "private_2a" {
-  count  = contains(var.availability_zones, "us-east-1a") ? 1 : 0
-  vpc_id = aws_vpc.vpc.id
+# ECS Private route tables (with NAT Gateway routes)
+resource "aws_route_table" "ecs_private" {
+  for_each = var.nat_strategy == "single" ? toset(["single"]) : toset(var.ecs_azs)
+  vpc_id   = aws_vpc.vpc.id
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat_2a[0].id
+    nat_gateway_id = var.nat_strategy == "single" ? aws_nat_gateway.nat_gateways[var.single_nat_az].id : aws_nat_gateway.nat_gateways[each.key].id
   }
   tags = {
-    Name = "clancy-${var.environment}-private-route-table-2a"
+    Name = var.nat_strategy == "single" ? "${var.environment}-ecs-private-route-table" : "${var.environment}-ecs-private-route-table-${each.key}"
   }
 }
 
-resource "aws_route_table" "private_2b" {
-  count  = contains(var.availability_zones, "us-east-1b") ? 1 : 0
+# DB Private route table (no NAT Gateway, VPC-local only)
+resource "aws_route_table" "db_private" {
   vpc_id = aws_vpc.vpc.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat_2b[0].id
-  }
   tags = {
-    Name = "clancy-${var.environment}-private-route-table-2b"
-  }
-}
-
-resource "aws_route_table" "private_2c" {
-  count  = contains(var.availability_zones, "us-east-1c") ? 1 : 0
-  vpc_id = aws_vpc.vpc.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat_2c[0].id
-  }
-  tags = {
-    Name = "clancy-${var.environment}-private-route-table-2c"
+    Name = "${var.environment}-db-private-route-table"
   }
 }
 
 # Subnets
-resource "aws_subnet" "subnet_public_2a" {
-  count                                          = contains(var.availability_zones, "us-east-1a") ? 1 : 0
-  assign_ipv6_address_on_creation                = "false"
-  availability_zone                              = "us-east-1a"
-  cidr_block                                     = var.subnet_cidrs["public_2a"]
-  enable_dns64                                   = "false"
-  enable_resource_name_dns_a_record_on_launch    = "false"
-  enable_resource_name_dns_aaaa_record_on_launch = "false"
-  ipv6_native                                    = "false"
-  map_public_ip_on_launch                        = true
-  private_dns_hostname_type_on_launch            = "ip-name"
-  vpc_id                                         = aws_vpc.vpc.id
+
+# Public subnets for ALB
+resource "aws_subnet" "public_subnets" {
+  for_each                        = toset(var.alb_azs)
+  assign_ipv6_address_on_creation = false
+  availability_zone               = each.key
+  cidr_block                     = var.subnet_cidrs.public[each.key]
+  enable_dns64                   = false
+  enable_resource_name_dns_a_record_on_launch    = false
+  enable_resource_name_dns_aaaa_record_on_launch = false
+  ipv6_native                    = false
+  map_public_ip_on_launch        = true
+  private_dns_hostname_type_on_launch = "ip-name"
+  vpc_id                         = aws_vpc.vpc.id
   tags = {
-    Name = "${var.environment}-public-subnet-2a"
+    Name = "${var.environment}-public-subnet-${each.key}"
   }
 }
-resource "aws_subnet" "subnet_private_2a" {
-  count                                          = contains(var.availability_zones, "us-east-1a") ? 1 : 0
-  assign_ipv6_address_on_creation                = "false"
-  availability_zone                              = "us-east-1a"
-  cidr_block                                     = var.subnet_cidrs["private_2a"]
-  enable_dns64                                   = "false"
-  enable_resource_name_dns_a_record_on_launch    = "false"
-  enable_resource_name_dns_aaaa_record_on_launch = "false"
-  ipv6_native                                    = "false"
-  map_public_ip_on_launch                        = "false"
-  private_dns_hostname_type_on_launch            = "ip-name"
-  vpc_id                                         = aws_vpc.vpc.id
+
+# ECS Private subnets (with NAT Gateway access)
+resource "aws_subnet" "ecs_private_subnets" {
+  for_each                        = toset(var.ecs_azs)
+  assign_ipv6_address_on_creation = false
+  availability_zone               = each.key
+  cidr_block                     = var.subnet_cidrs.ecs_private[each.key]
+  enable_dns64                   = false
+  enable_resource_name_dns_a_record_on_launch    = false
+  enable_resource_name_dns_aaaa_record_on_launch = false
+  ipv6_native                    = false
+  map_public_ip_on_launch        = false
+  private_dns_hostname_type_on_launch = "ip-name"
+  vpc_id                         = aws_vpc.vpc.id
   tags = {
-    Name = "${var.environment}-private-subnet-2a"
+    Name = "${var.environment}-ecs-private-subnet-${each.key}"
   }
 }
-resource "aws_subnet" "subnet_private_2b" {
-  count                                          = contains(var.availability_zones, "us-east-1b") ? 1 : 0
-  assign_ipv6_address_on_creation                = "false"
-  availability_zone                              = "us-east-1b"
-  cidr_block                                     = var.subnet_cidrs["private_2b"]
-  enable_dns64                                   = "false"
-  enable_resource_name_dns_a_record_on_launch    = "false"
-  enable_resource_name_dns_aaaa_record_on_launch = "false"
-  ipv6_native                                    = "false"
-  map_public_ip_on_launch                        = false
-  private_dns_hostname_type_on_launch            = "ip-name"
-  vpc_id                                         = aws_vpc.vpc.id
+
+# DB Private subnets (no NAT Gateway, VPC-local only)
+resource "aws_subnet" "db_subnets" {
+  for_each                        = toset(var.db_azs)
+  assign_ipv6_address_on_creation = false
+  availability_zone               = each.key
+  cidr_block                     = var.subnet_cidrs.db_private[each.key]
+  enable_dns64                   = false
+  enable_resource_name_dns_a_record_on_launch    = false
+  enable_resource_name_dns_aaaa_record_on_launch = false
+  ipv6_native                    = false
+  map_public_ip_on_launch        = false
+  private_dns_hostname_type_on_launch = "ip-name"
+  vpc_id                         = aws_vpc.vpc.id
   tags = {
-    Name = "${var.environment}-private-subnet-2b"
+    Name = "${var.environment}-db-subnet-${each.key}"
   }
 }
-resource "aws_subnet" "subnet_public_2b" {
-  count                                          = contains(var.availability_zones, "us-east-1b") ? 1 : 0
-  assign_ipv6_address_on_creation                = "false"
-  availability_zone                              = "us-east-1b"
-  cidr_block                                     = var.subnet_cidrs["public_2b"]
-  enable_dns64                                   = "false"
-  enable_resource_name_dns_a_record_on_launch    = "false"
-  enable_resource_name_dns_aaaa_record_on_launch = "false"
-  ipv6_native                                    = "false"
-  map_public_ip_on_launch                        = true
-  private_dns_hostname_type_on_launch            = "ip-name"
-  vpc_id                                         = aws_vpc.vpc.id
-  tags = {
-    Name = "${var.environment}-public-subnet-2b"
-  }
-}
-resource "aws_subnet" "subnet_private_2c" {
-  count                                          = contains(var.availability_zones, "us-east-1c") ? 1 : 0
-  assign_ipv6_address_on_creation                = "false"
-  availability_zone                              = "us-east-1c"
-  cidr_block                                     = var.subnet_cidrs["private_2c"]
-  enable_dns64                                   = "false"
-  enable_resource_name_dns_a_record_on_launch    = "false"
-  enable_resource_name_dns_aaaa_record_on_launch = "false"
-  ipv6_native                                    = "false"
-  map_public_ip_on_launch                        = false
-  private_dns_hostname_type_on_launch            = "ip-name"
-  vpc_id                                         = aws_vpc.vpc.id
-  tags = {
-    Name = "${var.environment}-private-subnet-2c"
-  }
-}
-resource "aws_subnet" "subnet_public_2c" {
-  count                                          = contains(var.availability_zones, "us-east-1c") ? 1 : 0
-  assign_ipv6_address_on_creation                = "false"
-  availability_zone                              = "us-east-1c"
-  cidr_block                                     = var.subnet_cidrs["public_2c"]
-  enable_dns64                                   = "false"
-  enable_resource_name_dns_a_record_on_launch    = "false"
-  enable_resource_name_dns_aaaa_record_on_launch = "false"
-  ipv6_native                                    = "false"
-  map_public_ip_on_launch                        = "true"
-  private_dns_hostname_type_on_launch            = "ip-name"
-  vpc_id                                         = aws_vpc.vpc.id
-  tags = {
-    Name = "${var.environment}-public-subnet-2c"
-  }
-}
+
+
 
 # Route table associations
-resource "aws_route_table_association" "public_2a" {
-  count          = contains(var.availability_zones, "us-east-1a") ? 1 : 0
-  subnet_id      = aws_subnet.subnet_public_2a[0].id
+
+# Public subnet associations
+resource "aws_route_table_association" "public" {
+  for_each       = toset(var.alb_azs)
+  subnet_id      = aws_subnet.public_subnets[each.key].id
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_route_table_association" "private_2a" {
-  count          = contains(var.availability_zones, "us-east-1a") ? 1 : 0
-  subnet_id      = aws_subnet.subnet_private_2a[0].id
-  #route_table_id = aws_route_table.public.id
-  route_table_id = aws_route_table.private_2a[0].id
+# ECS private subnet associations
+resource "aws_route_table_association" "ecs_private" {
+  for_each = toset(var.ecs_azs)
+  subnet_id = aws_subnet.ecs_private_subnets[each.key].id
+  route_table_id = var.nat_strategy == "single" ? aws_route_table.ecs_private["single"].id : aws_route_table.ecs_private[each.key].id
 }
 
-resource "aws_route_table_association" "private_2b" {
-  count          = contains(var.availability_zones, "us-east-1b") ? 1 : 0
-  subnet_id      = aws_subnet.subnet_private_2b[0].id
-  #route_table_id = aws_route_table.public.id
-  route_table_id = aws_route_table.private_2b[0].id
-}
-
-resource "aws_route_table_association" "public_2b" {
-  count          = contains(var.availability_zones, "us-east-1b") ? 1 : 0
-  subnet_id      = aws_subnet.subnet_public_2b[0].id
-  route_table_id = aws_route_table.public.id
-}
-
-resource "aws_route_table_association" "public_2c" {
-  count          = contains(var.availability_zones, "us-east-1c") ? 1 : 0
-  subnet_id      = aws_subnet.subnet_public_2c[0].id
-  route_table_id = aws_route_table.public.id
-}
-
-resource "aws_route_table_association" "private_2c" {
-  count          = contains(var.availability_zones, "us-east-1c") ? 1 : 0
-  subnet_id      = aws_subnet.subnet_private_2c[0].id
-  route_table_id = aws_route_table.private_2c[0].id
-  #route_table_id = aws_route_table.public.id
+# DB private subnet associations (no NAT Gateway)
+resource "aws_route_table_association" "db_private" {
+  for_each       = toset(var.db_azs)
+  subnet_id      = aws_subnet.db_subnets[each.key].id
+  route_table_id = aws_route_table.db_private.id
 }

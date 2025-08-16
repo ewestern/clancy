@@ -44,38 +44,15 @@ Parameters:
   OpenaiApiKey:
     Type: String
     Description: OpenAI API Key
+  DocumentsBucketName:
+    Type: String
+    Description: S3 bucket name for document storage
+  ConnectHubAuthToken:
+    Type: String
+    Description: Authentication token for Lambda to ConnectHub communication
+    Default: lambda-secret
 
 Resources:
-  # Agent Enrichment Lambda - EventBridge pipe enrichment step
-  AgentEnrichmentFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: src/agent-enrichment/
-      Handler: handler.lambdaHandler
-      Description: Enriches events with agent metadata from agents_core
-      Environment:
-        Variables:
-          NODE_ENV: !Ref Environment
-          AGENTS_CORE_API_URL: !Ref AgentsCoreApiUrl
-          CONNECT_HUB_API_URL: !Ref ConnectHubApiUrl
-          KINESIS_STREAM_NAME: !Ref KinesisStreamName
-          CHECKPOINTER_DB_URL: !Ref CheckpointerDbUrl
-      Policies:
-        - Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Action:
-                - kinesis:PutRecord
-                - kinesis:PutRecords
-              Resource: !Sub "arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/${KinesisStreamName}"
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Target: "es2020"
-        Sourcemap: true
-        EntryPoints:
-          - handler.ts
-
   # Graph Creator Executor Lambda - Handles graph creator workflows
   GraphCreatorExecutorFunction:
     Type: AWS::Serverless::Function
@@ -139,6 +116,43 @@ Resources:
         EntryPoints:
           - handler.ts
 
+  # Document Ingestion Lambda - Handles document processing and embedding
+  DocumentIngestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/document-ingest/
+      Handler: handler.handler
+      Description: Processes uploaded documents and generates embeddings
+      Timeout: 900
+      MemorySize: 1024
+      Environment:
+        Variables:
+          NODE_ENV: !Ref Environment
+          CONNECT_HUB_API_URL: !Ref ConnectHubApiUrl
+          DOCUMENTS_BUCKET_NAME: !Ref DocumentsBucketName
+          CONNECT_HUB_AUTH_TOKEN: !Ref ConnectHubAuthToken
+          OPENAI_API_KEY: !Ref OpenaiApiKey
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:GetObjectVersion
+              Resource: !Sub "arn:aws:s3:::${DocumentsBucketName}/*"
+            - Effect: Allow
+              Action:
+                - s3:ListBucket
+              Resource: !Sub "arn:aws:s3:::${DocumentsBucketName}"
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: false
+        Target: es2020
+        Sourcemap: true
+        EntryPoints:
+          - handler.ts
+
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
     Properties:
@@ -173,3 +187,10 @@ Outputs:
     Value: !GetAtt MainAgentExecutorFunction.Arn
     Export:
       Name: !Sub "${AWS::StackName}-MainAgentExecutorFunctionArn"
+
+  # Document Ingest Function
+  DocumentIngestFunctionArn:
+    Description: Document Ingest Lambda Function ARN
+    Value: !GetAtt DocumentIngestFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-DocumentIngestFunctionArn"

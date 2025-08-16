@@ -3,11 +3,13 @@ import swagger from "@fastify/swagger";
 import apiReference from "@scalar/fastify-api-reference";
 import fastifyWebsocket from "@fastify/websocket";
 import cors from "@fastify/cors";
+import fastifyStatic from "@fastify/static";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import packageJson from "../package.json" with { type: "json" };
 import { registerRoutes } from "./routes/index.js";
 import registerOauthProviders from "./plugins/oauth_providers.js";
 import registerDatabase from "./plugins/database.js";
+import { registerAuth } from "./plugins/auth.js";
 import fastifyRawBody from "fastify-raw-body";
 import { clerkPlugin } from "@clerk/fastify";
 
@@ -21,7 +23,7 @@ export async function createApp() {
     origin: true,
     methods: ["GET", "POST", "HEAD", "PUT", "DELETE", "OPTIONS"],
   });
-  // Promote ?sessionToken=... to Authorization header so Clerk can validate the request
+  // Promote ?sessionToken=... to Authorization header so Clerk can validate websocket requests
   // This must run before the clerkPlugin registration so it executes earlier in the onRequest phase.
   app.addHook("onRequest", async (request) => {
     const { sessionToken } = request.query as {
@@ -35,6 +37,8 @@ export async function createApp() {
     publishableKey: process.env.CLERK_PUBLISHABLE_KEY!,
     secretKey: process.env.CLERK_SECRET_KEY!,
   });
+
+  await app.register(registerAuth);
 
   // Register Swagger for OpenAPI generation
   await app.register(swagger, {
@@ -107,6 +111,12 @@ export async function createApp() {
   // Register raw body
   await app.register(fastifyRawBody, {
     global: false,
+  });
+
+  // Register static file serving for OAuth redirect pages
+  await app.register(fastifyStatic, {
+    root: new URL("../public", import.meta.url).pathname,
+    prefix: "/oauth/",
   });
 
   // Register routes

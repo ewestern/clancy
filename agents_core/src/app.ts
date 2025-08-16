@@ -13,7 +13,6 @@ import packageJson from "../package.json" with { type: "json" };
 // Import plugins
 import { registerDatabase } from "./plugins/database.js";
 import { registerAuth } from "./plugins/auth.js";
-import { registerEventBus } from "./plugins/eventBus.js";
 
 import { clerkPlugin } from "@clerk/fastify";
 import { registerRoutes } from "./routes/index.js";
@@ -113,7 +112,6 @@ export async function createApp() {
 
   await app.register(registerDatabase);
   await app.register(registerAuth);
-  await app.register(registerEventBus);
 
   // Request/Response logging hooks
   app.addHook("onRequest", async (request) => {

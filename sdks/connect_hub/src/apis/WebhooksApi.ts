@@ -13,20 +13,17 @@
  */
 
 
-import * as runtime from '../runtime';
+import * as runtime from '../runtime.js';
 import type {
-  WebhooksInternalPostRequest,
   WebhooksSlackPostRequest,
-} from '../models/index';
+} from '../models/index.js';
 import {
-    WebhooksInternalPostRequestFromJSON,
-    WebhooksInternalPostRequestToJSON,
     WebhooksSlackPostRequestFromJSON,
     WebhooksSlackPostRequestToJSON,
-} from '../models/index';
+} from '../models/index.js';
 
-export interface WebhooksInternalPostOperationRequest {
-    webhooksInternalPostRequest?: WebhooksInternalPostRequest;
+export interface WebhooksInternalPostRequest {
+    requestBody?: { [key: string]: any; };
 }
 
 export interface WebhooksSlackPostOperationRequest {
@@ -41,7 +38,7 @@ export class WebhooksApi extends runtime.BaseAPI {
     /**
      * Internal webhook
      */
-    async webhooksInternalPostRaw(requestParameters: WebhooksInternalPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async webhooksInternalPostRaw(requestParameters: WebhooksInternalPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -53,7 +50,7 @@ export class WebhooksApi extends runtime.BaseAPI {
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: WebhooksInternalPostRequestToJSON(requestParameters['webhooksInternalPostRequest']),
+            body: requestParameters['requestBody'],
         }, initOverrides);
 
         return new runtime.VoidApiResponse(response);
@@ -62,7 +59,7 @@ export class WebhooksApi extends runtime.BaseAPI {
     /**
      * Internal webhook
      */
-    async webhooksInternalPost(requestParameters: WebhooksInternalPostOperationRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+    async webhooksInternalPost(requestParameters: WebhooksInternalPostRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.webhooksInternalPostRaw(requestParameters, initOverrides);
     }
 

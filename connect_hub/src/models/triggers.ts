@@ -9,6 +9,7 @@ const ParamsSchema = Type.Unknown({
 export const TriggerRegistrationSchema = Type.Object(
   {
     id: Type.ReadonlyOptional(Type.String({ readOnly: true })),
+    orgId: Type.String(),
     agentId: Type.String(),
     providerId: Type.String(),
     triggerId: Type.String(),

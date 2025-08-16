@@ -71,3 +71,4 @@ reset-dev-database:
 	createdb $(DB_NAME) || true
 	npx drizzle-kit migrate
 	npx tsx node_modules/.bin/drizzle-kit push 
+	psql $(DB_NAME) -f test_data_agents_core.sql

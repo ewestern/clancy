@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Search,
   FileText,
@@ -10,196 +10,305 @@ import {
   Filter,
   X,
 } from "lucide-react";
-import { fetchKnowledgeItems } from "../api/stubs";
+import {
+  DocumentsApi,
+  Configuration,
+  type Document,
+  TagsApi,
+  Tag,
+  DocumentsGetRequest
+} from "@ewestern/connect_hub_sdk";
+import { useAuth } from "@clerk/react-router";
 
-interface DocumentItem {
-  id: string;
-  title: string;
-  type: "pdf" | "doc" | "txt" | "xlsx";
-  lastModified: string;
-  scope: string;
-  contributingEmployee: string;
-  size?: string;
-  url?: string;
-}
-
-interface ScopeNode {
+interface TagNode {
   id: string;
   name: string;
   count: number;
-  children?: ScopeNode[];
+  children?: TagNode[];
 }
 
+//interface Tag {
+//  id: string;
+//  name: string;
+//  count: number;
+//}
+
 const KnowledgeExplorer: React.FC = () => {
-  const [documents, setDocuments] = useState<DocumentItem[]>([]);
-  const [filteredDocuments, setFilteredDocuments] = useState<DocumentItem[]>(
-    [],
-  );
-  const [selectedScope, setSelectedScope] = useState<string>("all");
+  const { getToken } = useAuth();
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
+  const [selectedFilter, setSelectedFilter] = useState<string>("all");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [selectedDocument, setSelectedDocument] = useState<DocumentItem | null>(
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(
     null,
   );
-  const [expandedScopes, setExpandedScopes] = useState<Set<string>>(
-    new Set(["all"]),
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(
+    new Set(["all", "tags"]),
   );
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [tagsLoading, setTagsLoading] = useState(true);
+  const [showTagInput, setShowTagInput] = useState<string | null>(null);
+  const [newTagName, setNewTagName] = useState("");
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
-  // Mock scopes tree structure
-  const scopeTree: ScopeNode[] = [
-    {
-      id: "all",
-      name: "All Documents",
-      count: 0,
-    },
-    {
-      id: "finance",
-      name: "Finance",
-      count: 0,
-      children: [
-        { id: "finance.invoices", name: "Invoices", count: 0 },
-        { id: "finance.reports", name: "Reports", count: 0 },
-        { id: "finance.policies", name: "Policies", count: 0 },
-      ],
-    },
-    {
-      id: "sales",
-      name: "Sales",
-      count: 0,
-      children: [
-        { id: "sales.presentations", name: "Presentations", count: 0 },
-        { id: "sales.proposals", name: "Proposals", count: 0 },
-        { id: "sales.contracts", name: "Contracts", count: 0 },
-      ],
-    },
-    {
-      id: "support",
-      name: "Support",
-      count: 0,
-      children: [
-        { id: "support.guidelines", name: "Guidelines", count: 0 },
-        { id: "support.faqs", name: "FAQs", count: 0 },
-      ],
-    },
-    {
-      id: "public",
-      name: "Public",
-      count: 0,
-    },
-  ];
+  const getConnectHubConfig = useCallback(() => {
+    return new Configuration({
+      basePath: import.meta.env.VITE_CONNECT_HUB_URL,
+      accessToken: getToken() as Promise<string>,
+    });
+  }, [getToken]);
+
+  // Manual tags API calls (until SDK is regenerated)
+  const fetchTags = useCallback(async () => {
+    const config = getConnectHubConfig();
+    const tagsApi = new TagsApi(config);
+    return tagsApi.tagsGet();
+  }, [getConnectHubConfig]);
+
+  const addTagToDocument = useCallback(async (documentId: string, tagId: string) => {
+    const config = getConnectHubConfig();
+    const tagsApi = new TagsApi(config);
+    return tagsApi.documentsDocumentIdTagsPost({
+      documentId,
+      documentsDocumentIdTagsPostRequest: {
+        tagId: tagId,
+      },
+    });
+  }, [getConnectHubConfig]);
+
+  const removeTagFromDocument = useCallback(async (documentId: string, tagId: string) => {
+    const config = getConnectHubConfig();
+    const tagsApi = new TagsApi(config);
+    return tagsApi.documentsDocumentIdTagsTagIdDelete({
+      documentId,
+      tagId,
+    });
+  }, [getConnectHubConfig]);
+
+  // Build dynamic tag tree from flat tags using dot notation
+  const buildTagTree = (tags: Tag[]): TagNode[] => {
+    const tagMap = new Map<string, TagNode>();
+    
+    tags.forEach(tag => {
+      const parts = tag.name.split('.');
+      let currentPath = '';
+      
+      parts.forEach((part) => {
+        const parentPath = currentPath;
+        currentPath = currentPath ? `${currentPath}.${part}` : part;
+        
+        if (!tagMap.has(currentPath)) {
+          tagMap.set(currentPath, {
+            id: currentPath,
+            name: part,
+            count: 0,
+            ///count: index === parts.length - 1 ? tag.count : 0,
+            children: [],
+          });
+        }
+        
+        if (parentPath && tagMap.has(parentPath)) {
+          const parent = tagMap.get(parentPath)!;
+          const child = tagMap.get(currentPath)!;
+          if (!parent.children!.find(c => c.id === child.id)) {
+            parent.children!.push(child);
+          }
+        }
+      });
+    });
+    
+    // Return only root level tags (no dots)
+    return Array.from(tagMap.values()).filter(tag => !tag.id.includes('.'));
+  };
+
+  const tagTree = buildTagTree(tags);
 
   useEffect(() => {
-    const loadDocuments = async () => {
+    const loadData = async () => {
       try {
-        const data = await fetchKnowledgeItems();
-        // Transform to DocumentItem format
-        const docs: DocumentItem[] = data.map((item) => ({
-          id: item.id,
-          title: item.title,
-          type: item.type as "pdf" | "doc" | "txt" | "xlsx",
-          lastModified: item.lastModified,
-          scope: item.scope,
-          contributingEmployee: item.contributingEmployee,
-          size: "2.4 MB", // Mock size
-          url: "#",
-        }));
-        setDocuments(docs);
-        setFilteredDocuments(docs);
+        const config = getConnectHubConfig();
+        const documentsApi = new DocumentsApi(config);
+        
+        // Load documents and tags in parallel
+        const [documentsResponse, tagsData] = await Promise.all([
+          documentsApi.documentsGet(),
+          fetchTags(),
+        ]);
+        
+        setDocuments(documentsResponse.data);
+        setFilteredDocuments(documentsResponse.data);
+        setTags(tagsData.data);
       } catch (error) {
-        console.error("Failed to load knowledge items:", error);
+        console.error("Failed to load data:", error);
       } finally {
         setLoading(false);
+        setTagsLoading(false);
       }
     };
 
-    loadDocuments();
-  }, []);
+    loadData();
+  }, [getConnectHubConfig, fetchTags]);
 
-  // Update counts in scope tree
-  const updateScopeCounts = (
-    tree: ScopeNode[],
-    docs: DocumentItem[],
-  ): ScopeNode[] => {
-    return tree.map((node) => {
-      const count =
-        node.id === "all"
-          ? docs.length
-          : docs.filter(
-              (doc) =>
-                doc.scope === node.id || doc.scope.startsWith(node.id + "."),
-            ).length;
+  const refreshDocuments = useCallback(async () => {
+    try {
+      const config = getConnectHubConfig();
+      const documentsApi = new DocumentsApi(config);
+      const [documentsResponse, tagsData] = await Promise.all([
+        documentsApi.documentsGet(),
+        fetchTags(),
+      ]);
+      setDocuments(documentsResponse.data);
+      setFilteredDocuments(documentsResponse.data);
+      setTags(tagsData.data);
+    } catch (error) {
+      console.error("Failed to refresh documents:", error);
+    }
+  }, [getConnectHubConfig, fetchTags]);
 
-      return {
-        ...node,
-        count,
-        children: node.children
-          ? updateScopeCounts(node.children, docs)
-          : undefined,
-      };
-    });
+  const handleUploadClick = () => {
+    setUploadError(null);
+    fileInputRef.current?.click();
   };
 
-  const scopeTreeWithCounts = updateScopeCounts(scopeTree, documents);
+  const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await uploadDocument(file);
+    // reset input so same file can be reselected if desired
+    event.target.value = "";
+  };
 
-  // Filter documents based on selected scope and search
+  const uploadDocument = async (file: File) => {
+    setIsUploading(true);
+    setUploadError(null);
+    try {
+      const config = getConnectHubConfig();
+      const documentsApi = new DocumentsApi(config);
+
+      // 1) Get presigned URL
+      const presign = await documentsApi.documentsPresignPost({
+        documentsPresignPostRequest: {
+          filename: file.name,
+          mimeType: file.type || "application/octet-stream",
+          sizeBytes: file.size,
+          ownershipScope: "organization",
+        },
+      });
+
+      // 2) Upload to S3 via PUT
+      const putRes = await fetch(presign.uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type || "application/octet-stream",
+        },
+        body: file,
+      });
+      if (!putRes.ok) {
+        throw new Error(`S3 upload failed with status ${putRes.status}`);
+      }
+
+      // 3) Finalize
+      await documentsApi.documentsFinalizePost({
+        documentsFinalizePostRequest: {
+          documentId: presign.documentId,
+          key: presign.key,
+        },
+      });
+
+      // 4) Refresh list
+      await refreshDocuments();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Upload failed";
+      setUploadError(message);
+      console.error("Upload error:", err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Filter documents based on selected filter, tags, and search
   useEffect(() => {
-    let filtered = documents;
+    const applyFilters = async () => {
 
-    // Filter by scope
-    if (selectedScope !== "all") {
-      filtered = filtered.filter(
-        (doc) =>
-          doc.scope === selectedScope ||
-          doc.scope.startsWith(selectedScope + "."),
-      );
-    }
+      const config = getConnectHubConfig();
+      const documentsApi = new DocumentsApi(config);
+      const req : DocumentsGetRequest = {}
+      if (selectedTags.length > 0) {
+        req.tags = selectedTags;
+      }
+      if (searchQuery) {
+        req.q = searchQuery;
+      }
+      const response = await documentsApi.documentsGet(req);
+      setFilteredDocuments(response.data);
 
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (doc) =>
-          doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          doc.contributingEmployee
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()),
-      );
-    }
+      // Filter by ownership scope (client-side)
+      if (selectedFilter === "my-documents") {
+        // TODO: Filter by current user ID when available
+        setFilteredDocuments(response.data.filter((doc) => doc.ownershipScope === "user"));
+      } else if (selectedFilter === "organization") {
+        setFilteredDocuments(response.data.filter((doc) => doc.ownershipScope === "organization"));
+      }
+    };
+    applyFilters();
+  }, [documents, selectedFilter, selectedTags, searchQuery, getConnectHubConfig, refreshDocuments]);
 
-    setFilteredDocuments(filtered);
-  }, [documents, selectedScope, searchQuery]);
-
-  const getFileIcon = (type: string) => {
-    switch (type) {
-      case "pdf":
-        return <FileText className="w-5 h-5 text-red-500" />;
-      case "doc":
-        return <FileText className="w-5 h-5 text-blue-500" />;
-      case "xlsx":
-        return <FileText className="w-5 h-5 text-green-500" />;
-      default:
-        return <File className="w-5 h-5 text-slate-500" />;
+  const getFileIcon = (mimeType: string) => {
+    if (mimeType.includes("pdf")) {
+      return <FileText className="w-5 h-5 text-red-500" />;
+    } else if (mimeType.includes("word") || mimeType.includes("document")) {
+      return <FileText className="w-5 h-5 text-blue-500" />;
+    } else if (mimeType.includes("sheet") || mimeType.includes("excel")) {
+      return <FileText className="w-5 h-5 text-green-500" />;
+    } else {
+      return <File className="w-5 h-5 text-slate-500" />;
     }
   };
 
-  const toggleScope = (scopeId: string) => {
-    setExpandedScopes((prev) => {
+  const toggleNode = (nodeId: string) => {
+    setExpandedNodes((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(scopeId)) {
-        newSet.delete(scopeId);
+      if (newSet.has(nodeId)) {
+        newSet.delete(nodeId);
       } else {
-        newSet.add(scopeId);
+        newSet.add(nodeId);
       }
       return newSet;
     });
   };
 
-  const handleDocumentClick = (doc: DocumentItem) => {
+  const handleDocumentClick = (doc: Document) => {
     setSelectedDocument(doc);
   };
 
-  const renderScopeNode = (node: ScopeNode, depth: number = 0) => {
-    const isExpanded = expandedScopes.has(node.id);
-    const isSelected = selectedScope === node.id;
+  const toggleTag = (tagName: string) => {
+    setSelectedTags(prev => {
+      if (prev.includes(tagName)) {
+        return prev.filter(t => t !== tagName);
+      } else {
+        return [...prev, tagName];
+      }
+    });
+  };
+
+  const handleAddTag = async (documentId: string) => {
+    if (!newTagName.trim()) return;
+    
+    const success = await addTagToDocument(documentId, newTagName.trim());
+    if (success) {
+      setNewTagName("");
+      setShowTagInput(null);
+      await refreshDocuments(); // Refresh to see the new tag
+    }
+  };
+
+  const renderTagNode = (node: TagNode, depth: number = 0) => {
+    const isExpanded = expandedNodes.has(node.id);
+    const isSelected = selectedTags.includes(node.id);
     const hasChildren = node.children && node.children.length > 0;
 
     return (
@@ -210,9 +319,9 @@ const KnowledgeExplorer: React.FC = () => {
           }`}
           style={{ paddingLeft: `${8 + depth * 16}px` }}
           onClick={() => {
-            setSelectedScope(node.id);
+            toggleTag(node.id);
             if (hasChildren) {
-              toggleScope(node.id);
+              toggleNode(node.id);
             }
           }}
         >
@@ -232,7 +341,7 @@ const KnowledgeExplorer: React.FC = () => {
         </div>
         {hasChildren && isExpanded && (
           <div>
-            {node.children?.map((child) => renderScopeNode(child, depth + 1))}
+            {node.children?.map((child) => renderTagNode(child, depth + 1))}
           </div>
         )}
       </div>
@@ -268,8 +377,70 @@ const KnowledgeExplorer: React.FC = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-1">
-            {scopeTreeWithCounts.map((node) => renderScopeNode(node))}
+          <div className="space-y-4">
+            {/* Filter Section */}
+            <div>
+              <h3 className="text-sm font-medium text-slate-800 mb-2">Filters</h3>
+              <div className="space-y-1">
+                <div
+                  className={`flex items-center space-x-2 px-2 py-1.5 rounded cursor-pointer hover:bg-slate-100 ${
+                    selectedFilter === "all" ? "bg-primary-50 text-primary-600" : "text-slate-700"
+                  }`}
+                  onClick={() => setSelectedFilter("all")}
+                >
+                  <span className="flex-1 text-sm font-medium">All Documents</span>
+                  <span className="text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                    {documents.length}
+                  </span>
+                </div>
+                <div
+                  className={`flex items-center space-x-2 px-2 py-1.5 rounded cursor-pointer hover:bg-slate-100 ${
+                    selectedFilter === "my-documents" ? "bg-primary-50 text-primary-600" : "text-slate-700"
+                  }`}
+                  onClick={() => setSelectedFilter("my-documents")}
+                >
+                  <span className="flex-1 text-sm font-medium">My Documents</span>
+                  <span className="text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                    {documents.filter(d => d.ownershipScope === "user").length}
+                  </span>
+                </div>
+                <div
+                  className={`flex items-center space-x-2 px-2 py-1.5 rounded cursor-pointer hover:bg-slate-100 ${
+                    selectedFilter === "organization" ? "bg-primary-50 text-primary-600" : "text-slate-700"
+                  }`}
+                  onClick={() => setSelectedFilter("organization")}
+                >
+                  <span className="flex-1 text-sm font-medium">Organization</span>
+                  <span className="text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                    {documents.filter(d => d.ownershipScope === "organization").length}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tags Section */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-slate-800">Tags</h3>
+                {selectedTags.length > 0 && (
+                  <button
+                    onClick={() => setSelectedTags([])}
+                    className="text-xs text-slate-500 hover:text-slate-700"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              {tagsLoading ? (
+                <div className="text-xs text-slate-500">Loading tags...</div>
+              ) : tagTree.length === 0 ? (
+                <div className="text-xs text-slate-500">No tags yet</div>
+              ) : (
+                <div className="space-y-1">
+                  {tagTree.map((node) => renderTagNode(node))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -281,14 +452,35 @@ const KnowledgeExplorer: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-slate-800">
-                {selectedScope === "all"
+                {selectedFilter === "all"
                   ? "All Documents"
-                  : scopeTreeWithCounts.find((s) => s.id === selectedScope)
-                      ?.name || selectedScope}
+                  : selectedFilter === "my-documents"
+                  ? "My Documents"
+                  : "Organization Documents"}
               </h1>
-              <p className="text-slate-600 mt-1">
-                {filteredDocuments.length} documents
-              </p>
+              <div className="mt-1">
+                <p className="text-slate-600">
+                  {filteredDocuments.length} documents
+                </p>
+                {selectedTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {selectedTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center px-2 py-1 text-xs bg-primary-100 text-primary-800 rounded-full"
+                      >
+                        {tag}
+                        <button
+                          onClick={() => toggleTag(tag)}
+                          className="ml-1 text-primary-600 hover:text-primary-800"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex items-center space-x-2">
               <button className="inline-flex items-center px-3 py-1.5 text-sm border border-slate-300 rounded hover:bg-slate-50">
@@ -300,8 +492,33 @@ const KnowledgeExplorer: React.FC = () => {
                 <option>Sort by Name</option>
                 <option>Sort by Type</option>
               </select>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.txt,.md,.csv,.ppt,.pptx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                className="hidden"
+                onChange={handleFileSelected}
+              />
+              <button
+                className="inline-flex items-center px-3 py-1.5 text-sm border border-slate-300 rounded bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-60"
+                onClick={handleUploadClick}
+                disabled={isUploading}
+                title={isUploading ? "Uploading..." : "Upload a document"}
+              >
+                {isUploading ? (
+                  <span className="flex items-center">
+                    <span className="mr-2 h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                    Uploading
+                  </span>
+                ) : (
+                  <span>Upload</span>
+                )}
+              </button>
             </div>
           </div>
+          {uploadError && (
+            <div className="mt-3 text-sm text-red-600">{uploadError}</div>
+          )}
         </div>
 
         {/* Document List */}
@@ -329,53 +546,118 @@ const KnowledgeExplorer: React.FC = () => {
                   >
                     <div className="flex items-start space-x-3">
                       <div className="flex-shrink-0">
-                        {getFileIcon(doc.type)}
+                        {getFileIcon(doc.mimeType || '')}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-medium text-slate-800 truncate">
-                          {doc.title}
+                          {doc.title || 'Untitled Document'}
                         </h3>
                         <p className="text-xs text-slate-500 mt-1">
-                          {doc.type.toUpperCase()} • {doc.size}
+                          {doc.mimeType?.split('/')[1]?.toUpperCase() || 'DOCUMENT'} • {doc.sizeBytes ? `${Math.round(parseInt(doc.sizeBytes) / 1024)} KB` : 'Unknown size'}
                         </p>
                         <p className="text-xs text-slate-600 mt-2">
                           Modified{" "}
-                          {new Date(doc.lastModified).toLocaleDateString()}
+                          {new Date(doc.updatedAt).toLocaleDateString()}
                         </p>
                         <p className="text-xs text-slate-500">
-                          by {doc.contributingEmployee}
+                          by {doc.uploaderUserId || 'Unknown'}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full font-medium ${
-                          doc.scope === "finance"
-                            ? "bg-blue-100 text-blue-800"
-                            : doc.scope === "sales"
-                              ? "bg-purple-100 text-purple-800"
-                              : doc.scope === "support"
-                                ? "bg-orange-100 text-orange-800"
-                                : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {doc.scope}
-                      </span>
-                      <div className="flex items-center space-x-1">
-                        <button
-                          className="p-1 text-slate-400 hover:text-slate-600"
-                          title="Download"
-                          onClick={(e) => e.stopPropagation()}
+                    {/* Tags section */}
+                    <div className="mt-3 pt-3 border-t border-slate-100">
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {doc.tags.map((tag) => (
+                          <span
+                            key={tag.id}
+                            className="inline-flex items-center px-2 py-1 text-xs bg-slate-100 text-slate-700 rounded-full"
+                          >
+                            {tag.name}
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                // Find tag ID and remove
+                                const tagId = doc.tags.find(t => t.name === tag.name)?.id;
+                                if (tagId) {
+                                  const success = await removeTagFromDocument(doc.documentId, tagId);
+                                  if (success) await refreshDocuments();
+                                }
+                              }}
+                              className="ml-1 text-slate-500 hover:text-slate-700"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                        {showTagInput === doc.documentId ? (
+                          <div className="flex items-center space-x-1">
+                            <input
+                              type="text"
+                              value={newTagName}
+                              onChange={(e) => setNewTagName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleAddTag(doc.documentId);
+                                } else if (e.key === 'Escape') {
+                                  setShowTagInput(null);
+                                  setNewTagName("");
+                                }
+                              }}
+                              placeholder="Tag name"
+                              className="text-xs px-2 py-1 border border-slate-300 rounded w-20"
+                              autoFocus
+                            />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddTag(doc.documentId);
+                              }}
+                              className="text-xs text-primary-600 hover:text-primary-800"
+                            >
+                              Add
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowTagInput(doc.documentId);
+                              setNewTagName("");
+                            }}
+                            className="inline-flex items-center px-2 py-1 text-xs text-slate-500 border border-dashed border-slate-300 rounded-full hover:border-slate-400"
+                          >
+                            + Tag
+                          </button>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full font-medium ${
+                            doc.ownershipScope === "organization"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-purple-100 text-purple-800"
+                          }`}
                         >
-                          <Download className="w-3 h-3" />
-                        </button>
-                        <button
-                          className="p-1 text-slate-400 hover:text-slate-600"
-                          title="Open in new tab"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                        </button>
+                          {String(doc.ownershipScope) || 'unknown'}
+                        </span>
+                        <div className="flex items-center space-x-1">
+                          <button
+                            className="p-1 text-slate-400 hover:text-slate-600"
+                            title="Download"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Download className="w-3 h-3" />
+                          </button>
+                          <button
+                            className="p-1 text-slate-400 hover:text-slate-600"
+                            title="Open in new tab"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -393,11 +675,11 @@ const KnowledgeExplorer: React.FC = () => {
             <div className="flex items-center justify-between p-6 border-b border-slate-200">
               <div>
                 <h2 className="text-xl font-semibold text-slate-800">
-                  {selectedDocument.title}
+                  {selectedDocument.title || 'Untitled Document'}
                 </h2>
                 <p className="text-sm text-slate-600">
-                  {selectedDocument.type.toUpperCase()} • Modified{" "}
-                  {new Date(selectedDocument.lastModified).toLocaleDateString()}
+                  {selectedDocument.mimeType?.split('/')[1]?.toUpperCase() || 'DOCUMENT'} • Modified{" "}
+                  {new Date(selectedDocument.updatedAt).toLocaleDateString()}
                 </p>
               </div>
               <button
@@ -412,7 +694,7 @@ const KnowledgeExplorer: React.FC = () => {
               {/* Document preview area */}
               <div className="flex-1 bg-slate-50 flex items-center justify-center">
                 <div className="text-center">
-                  {getFileIcon(selectedDocument.type)}
+                  {getFileIcon(selectedDocument.mimeType || '')}
                   <p className="text-slate-600 mt-2">
                     Document preview not available
                   </p>
@@ -431,26 +713,28 @@ const KnowledgeExplorer: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm font-medium text-slate-600">
-                      Contributing Employee
+                      Uploaded By
                     </label>
                     <p className="text-sm text-slate-800">
-                      {selectedDocument.contributingEmployee}
+                      {selectedDocument.uploaderUserId || 'Unknown'}
                     </p>
                   </div>
+                  {/*}
                   <div>
                     <label className="text-sm font-medium text-slate-600">
-                      Scope
+                      Ownership Scope
                     </label>
                     <p className="text-sm text-slate-800">
-                      {selectedDocument.scope}
+                      {selectedDocument.ownershipScope || 'Unknown'}
                     </p>
                   </div>
+                  */}
                   <div>
                     <label className="text-sm font-medium text-slate-600">
                       Last Modified
                     </label>
                     <p className="text-sm text-slate-800">
-                      {new Date(selectedDocument.lastModified).toLocaleString()}
+                      {new Date(selectedDocument.updatedAt).toLocaleString()}
                     </p>
                   </div>
                   <div>
@@ -458,7 +742,7 @@ const KnowledgeExplorer: React.FC = () => {
                       File Size
                     </label>
                     <p className="text-sm text-slate-800">
-                      {selectedDocument.size}
+                      {selectedDocument.sizeBytes ? `${Math.round(parseInt(selectedDocument.sizeBytes) / 1024)} KB` : 'Unknown'}
                     </p>
                   </div>
 

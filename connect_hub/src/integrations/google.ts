@@ -506,6 +506,9 @@ export class GoogleProvider implements ProviderRuntime {
     description: "Integrated Google productivity and collaboration tools",
     icon: "https://developers.google.com/identity/images/g-logo.png",
     docsUrl: "https://developers.google.com/workspace",
+    links: [
+      "https://console.cloud.google.com/auth/clients/650222929087-s1f2qid234aa7ajs6mtlccovlvl0ghmb.apps.googleusercontent.com?inv=1&invt=Ab5ZBQ&project=clancy-464816",
+    ],
     kind: ProviderKind.External,
     auth: ProviderAuth.OAuth2,
   } as const;

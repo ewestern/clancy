@@ -13,17 +13,17 @@
  */
 
 
-import * as runtime from '../runtime';
+import * as runtime from '../runtime.js';
 import type {
   Employee,
   V1AgentsPost400Response,
-} from '../models/index';
+} from '../models/index.js';
 import {
     EmployeeFromJSON,
     EmployeeToJSON,
     V1AgentsPost400ResponseFromJSON,
     V1AgentsPost400ResponseToJSON,
-} from '../models/index';
+} from '../models/index.js';
 
 export interface V1EmployeesIdGetRequest {
     id: string;

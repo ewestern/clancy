@@ -13,14 +13,14 @@
  */
 
 
-import * as runtime from '../runtime';
+import * as runtime from '../runtime.js';
 import type {
   HealthGet200Response,
-} from '../models/index';
+} from '../models/index.js';
 import {
     HealthGet200ResponseFromJSON,
     HealthGet200ResponseToJSON,
-} from '../models/index';
+} from '../models/index.js';
 
 /**
  * 

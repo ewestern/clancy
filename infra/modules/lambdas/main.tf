@@ -8,10 +8,10 @@ resource "null_resource" "build_lambdas" {
     tsconfig = filemd5("${local.lambdas_path}/template.yaml")
     graph_creator_executor = filemd5("${local.lambdas_path}/src/graph-creator-executor/handler.ts")
     main_agent_executor = filemd5("${local.lambdas_path}/src/main-agent-executor/handler.ts")
+    document_ingest = filemd5("${local.lambdas_path}/src/document-ingest/handler.ts")
     shared_graphCreator = filemd5("${local.lambdas_path}/src/shared/graphCreator.ts")
     shared_index = filemd5("${local.lambdas_path}/src/shared/index.ts")
     shared_utils = filemd5("${local.lambdas_path}/src/shared/utils.ts")
-    agent_enrichment = filemd5("${local.lambdas_path}/src/agent-enrichment/handler.ts")
   }
 
   provisioner "local-exec" {
@@ -20,13 +20,7 @@ resource "null_resource" "build_lambdas" {
 }
 
 # Archive data sources for each lambda function
-data "archive_file" "agent_enrichment" {
-  type        = "zip"
-  source_dir  = "${local.sam_build_path}/AgentEnrichmentFunction"
-  output_path = "${path.module}/.terraform/archives/agent-enrichment.zip"
-  
-  depends_on = [null_resource.build_lambdas]
-}
+
 
 data "archive_file" "graph_creator_executor" {
   type        = "zip"
@@ -40,6 +34,14 @@ data "archive_file" "main_agent_executor" {
   type        = "zip"
   source_dir  = "${local.sam_build_path}/MainAgentExecutorFunction"
   output_path = "${path.module}/.terraform/archives/main-agent-executor.zip"
+  
+  depends_on = [null_resource.build_lambdas]
+}
+
+data "archive_file" "document_ingest" {
+  type        = "zip"
+  source_dir  = "${local.sam_build_path}/DocumentIngestFunction"
+  output_path = "${path.module}/.terraform/archives/document-ingest.zip"
   
   depends_on = [null_resource.build_lambdas]
 }
@@ -99,11 +101,7 @@ resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
 }
 
 # CloudWatch log groups
-resource "aws_cloudwatch_log_group" "agent_enrichment" {
-  name              = "/aws/lambda/${local.function_names.agent_enrichment}"
-  retention_in_days = var.log_retention_days
-  tags              = local.common_tags
-}
+
 
 resource "aws_cloudwatch_log_group" "graph_creator_executor" {
   name              = "/aws/lambda/${local.function_names.graph_creator}"
@@ -118,37 +116,6 @@ resource "aws_cloudwatch_log_group" "main_agent_executor" {
 }
 
 
-# Lambda function: Agent Enrichment
-resource "aws_lambda_function" "agent_enrichment" {
-  filename         = data.archive_file.agent_enrichment.output_path
-  function_name    = local.function_names.agent_enrichment
-  role            = aws_iam_role.lambda_execution_role.arn
-  handler         = "handler.lambdaHandler"
-  runtime         = "nodejs22.x"
-  timeout         = var.lambda_timeout
-  memory_size     = var.lambda_memory_size
-  
-  source_code_hash = data.archive_file.agent_enrichment.output_base64sha256
-
-  environment {
-    variables = local.enrichment_env_vars
-  }
-
-  dynamic "vpc_config" {
-    for_each = local.vpc_config != null ? [local.vpc_config] : []
-    content {
-      subnet_ids         = vpc_config.value.subnet_ids
-      security_group_ids = vpc_config.value.security_group_ids
-    }
-  }
-
-  depends_on = [
-    aws_iam_role_policy_attachment.lambda_basic_execution,
-    aws_cloudwatch_log_group.agent_enrichment,
-  ]
-
-  tags = local.common_tags
-}
 
 # Lambda function: Graph Creator Executor
 resource "aws_lambda_function" "graph_creator_executor" {
@@ -212,4 +179,200 @@ resource "aws_lambda_function" "main_agent_executor" {
   ]
 
   tags = local.common_tags
+}
+
+# =============================================================================
+# S3 Bucket for Document Storage
+# =============================================================================
+
+resource "aws_s3_bucket" "documents" {
+  bucket = local.documents_bucket_name
+  tags   = local.common_tags
+}
+
+resource "aws_s3_bucket_versioning" "documents" {
+  bucket = aws_s3_bucket.documents.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "documents" {
+  bucket = aws_s3_bucket.documents.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_cors_configuration" "documents" {
+  bucket = aws_s3_bucket.documents.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "PUT", "POST"]
+    allowed_origins = var.allowed_cors_origins
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "documents" {
+  bucket = aws_s3_bucket.documents.id
+
+  rule {
+    id     = "document_lifecycle"
+    status = "Enabled"
+
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+
+    transition {
+      days          = 90
+      storage_class = "GLACIER"
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = 30
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "documents" {
+  bucket = aws_s3_bucket.documents.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# =============================================================================
+# Document Ingestion Lambda Function
+# =============================================================================
+
+# Additional IAM role for document ingestion Lambda
+resource "aws_iam_role" "document_ingest_role" {
+  name = "${var.project_name}-${var.environment}-document-ingest-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = local.common_tags
+}
+
+# Basic execution policy for document ingest Lambda
+resource "aws_iam_role_policy_attachment" "document_ingest_basic_execution" {
+  role       = aws_iam_role.document_ingest_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# VPC access policy for document ingest Lambda (if VPC enabled)
+resource "aws_iam_role_policy_attachment" "document_ingest_vpc_access" {
+  count      = local.vpc_enabled ? 1 : 0
+  role       = aws_iam_role.document_ingest_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+# S3 access policy for document ingest Lambda
+resource "aws_iam_role_policy" "document_ingest_s3_access" {
+  name = "${var.project_name}-${var.environment}-document-ingest-s3-policy"
+  role = aws_iam_role.document_ingest_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion"
+        ]
+        Resource = "${aws_s3_bucket.documents.arn}/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = aws_s3_bucket.documents.arn
+      }
+    ]
+  })
+}
+
+# CloudWatch log group for document ingest Lambda
+resource "aws_cloudwatch_log_group" "document_ingest" {
+  name              = "/aws/lambda/${local.function_names.document_ingest}"
+  retention_in_days = var.log_retention_days
+  tags              = local.common_tags
+}
+
+# Document Ingestion Lambda Function
+resource "aws_lambda_function" "document_ingest" {
+  filename         = data.archive_file.document_ingest.output_path
+  function_name    = local.function_names.document_ingest
+  role            = aws_iam_role.document_ingest_role.arn
+  handler         = "handler.handler"
+  runtime         = "nodejs22.x"
+  timeout         = var.document_ingest_timeout
+  memory_size     = var.document_ingest_memory_size
+  
+  source_code_hash = data.archive_file.document_ingest.output_base64sha256
+
+  environment {
+    variables = local.document_ingest_env_vars
+  }
+
+  dynamic "vpc_config" {
+    for_each = local.vpc_config != null ? [local.vpc_config] : []
+    content {
+      subnet_ids         = vpc_config.value.subnet_ids
+      security_group_ids = vpc_config.value.security_group_ids
+    }
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.document_ingest_basic_execution,
+    aws_cloudwatch_log_group.document_ingest,
+  ]
+
+  tags = local.common_tags
+}
+
+# S3 bucket notification to trigger document ingest Lambda
+resource "aws_s3_bucket_notification" "document_ingest_trigger" {
+  bucket = aws_s3_bucket.documents.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.document_ingest.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "org/"
+    filter_suffix       = ""
+  }
+
+  depends_on = [aws_lambda_permission.allow_bucket]
+}
+
+# Lambda permission to allow S3 to invoke the function
+resource "aws_lambda_permission" "allow_bucket" {
+  statement_id  = "AllowExecutionFromS3Bucket"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.document_ingest.function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.documents.arn
 }

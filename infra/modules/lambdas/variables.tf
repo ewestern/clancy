@@ -99,3 +99,21 @@ variable "checkpointer_db_url" {
   description = "URL of the Checkpointer database"
   type        = string
 }
+
+variable "document_ingest_timeout" {
+  description = "Timeout for document ingestion lambda in seconds"
+  type        = number
+  default     = 900 # 15 minutes for document processing
+}
+
+variable "document_ingest_memory_size" {
+  description = "Memory size for document ingestion lambda in MB"
+  type        = number
+  default     = 1024 # Higher memory for PDF/DOCX processing
+}
+
+variable "allowed_cors_origins" {
+  description = "List of allowed CORS origins for S3 bucket"
+  type        = list(string)
+  default     = ["*"] # Allow all origins by default, should be restricted per environment
+}

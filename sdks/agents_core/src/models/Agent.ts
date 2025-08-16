@@ -12,28 +12,28 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { AgentStatus } from './AgentStatus';
+import { mapValues } from '../runtime.js';
+import type { AgentStatus } from './AgentStatus.js';
 import {
     AgentStatusFromJSON,
     AgentStatusFromJSONTyped,
     AgentStatusToJSON,
     AgentStatusToJSONTyped,
-} from './AgentStatus';
-import type { V1AgentsIdPutRequestTrigger } from './V1AgentsIdPutRequestTrigger';
+} from './AgentStatus.js';
+import type { V1AgentsIdPutRequestTrigger } from './V1AgentsIdPutRequestTrigger.js';
 import {
     V1AgentsIdPutRequestTriggerFromJSON,
     V1AgentsIdPutRequestTriggerFromJSONTyped,
     V1AgentsIdPutRequestTriggerToJSON,
     V1AgentsIdPutRequestTriggerToJSONTyped,
-} from './V1AgentsIdPutRequestTrigger';
-import type { V1AgentsIdPutRequestCapabilitiesInner } from './V1AgentsIdPutRequestCapabilitiesInner';
+} from './V1AgentsIdPutRequestTrigger.js';
+import type { V1AgentsIdPutRequestCapabilitiesInner } from './V1AgentsIdPutRequestCapabilitiesInner.js';
 import {
     V1AgentsIdPutRequestCapabilitiesInnerFromJSON,
     V1AgentsIdPutRequestCapabilitiesInnerFromJSONTyped,
     V1AgentsIdPutRequestCapabilitiesInnerToJSON,
     V1AgentsIdPutRequestCapabilitiesInnerToJSONTyped,
-} from './V1AgentsIdPutRequestCapabilitiesInner';
+} from './V1AgentsIdPutRequestCapabilitiesInner.js';
 
 /**
  * 
@@ -71,6 +71,12 @@ export interface Agent {
      * @memberof Agent
      */
     userId: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Agent
+     */
+    employeeId?: string;
     /**
      * 
      * @type {AgentStatus}
@@ -129,6 +135,7 @@ export function AgentFromJSONTyped(json: any, ignoreDiscriminator: boolean): Age
         'name': json['name'],
         'description': json['description'],
         'userId': json['userId'],
+        'employeeId': json['employeeId'] == null ? undefined : json['employeeId'],
         'status': AgentStatusFromJSON(json['status']),
         'capabilities': ((json['capabilities'] as Array<any>).map(V1AgentsIdPutRequestCapabilitiesInnerFromJSON)),
         'trigger': V1AgentsIdPutRequestTriggerFromJSON(json['trigger']),
@@ -152,6 +159,7 @@ export function AgentToJSONTyped(value?: Agent | null, ignoreDiscriminator: bool
         'name': value['name'],
         'description': value['description'],
         'userId': value['userId'],
+        'employeeId': value['employeeId'],
         'status': AgentStatusToJSON(value['status']),
         'capabilities': ((value['capabilities'] as Array<any>).map(V1AgentsIdPutRequestCapabilitiesInnerToJSON)),
         'trigger': V1AgentsIdPutRequestTriggerToJSON(value['trigger']),

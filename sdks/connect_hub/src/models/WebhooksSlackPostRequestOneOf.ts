@@ -12,21 +12,21 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { WebhooksSlackPostRequestOneOfAuthorizationsInner } from './WebhooksSlackPostRequestOneOfAuthorizationsInner';
+import { mapValues } from '../runtime.js';
+import type { WebhooksSlackPostRequestOneOfAuthorizationsInner } from './WebhooksSlackPostRequestOneOfAuthorizationsInner.js';
 import {
     WebhooksSlackPostRequestOneOfAuthorizationsInnerFromJSON,
     WebhooksSlackPostRequestOneOfAuthorizationsInnerFromJSONTyped,
     WebhooksSlackPostRequestOneOfAuthorizationsInnerToJSON,
     WebhooksSlackPostRequestOneOfAuthorizationsInnerToJSONTyped,
-} from './WebhooksSlackPostRequestOneOfAuthorizationsInner';
-import type { WebhooksSlackPostRequestOneOfEvent } from './WebhooksSlackPostRequestOneOfEvent';
+} from './WebhooksSlackPostRequestOneOfAuthorizationsInner.js';
+import type { WebhooksSlackPostRequestOneOfEvent } from './WebhooksSlackPostRequestOneOfEvent.js';
 import {
     WebhooksSlackPostRequestOneOfEventFromJSON,
     WebhooksSlackPostRequestOneOfEventFromJSONTyped,
     WebhooksSlackPostRequestOneOfEventToJSON,
     WebhooksSlackPostRequestOneOfEventToJSONTyped,
-} from './WebhooksSlackPostRequestOneOfEvent';
+} from './WebhooksSlackPostRequestOneOfEvent.js';
 
 /**
  * 

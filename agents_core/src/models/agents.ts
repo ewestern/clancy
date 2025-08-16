@@ -17,6 +17,7 @@ export const AgentSchema = Type.Object(
     name: Type.String(),
     description: Type.String(),
     userId: Type.String(),
+    employeeId: Type.ReadonlyOptional(Type.String()),
     status: Ref(AgentStatusSchema),
     capabilities: Type.Array(
       Type.Object({

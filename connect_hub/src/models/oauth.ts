@@ -41,8 +41,8 @@ export const OAuthNeedsResponseSchema = Type.Array(
 
 // OAuth Launch Request Schema
 export const OAuthLaunchQuerySchema = Type.Object({
-  orgId: Type.String(),
   scopes: Type.Array(Type.String()),
+  token: Type.String(),
 });
 
 // OAuth Callback Params Schema
@@ -196,7 +196,8 @@ export const OAuthAuditProviderResultSchema = Type.Object({
     Type.Literal("needs_auth"),
     Type.Literal("needs_scope_upgrade"),
   ]),
-  missingScopes: Type.Array(Type.String()),
+  grantedCapabilities: Type.Array(Type.String()),
+  missingCapabilities: Type.Array(Type.String()),
   oauthUrl: Type.String(),
   message: Type.Optional(Type.String()),
 });

@@ -13,12 +13,12 @@
  */
 
 
-import * as runtime from '../runtime';
+import * as runtime from '../runtime.js';
 import type {
   Agent,
   V1AgentsIdPutRequest,
   V1AgentsPost400Response,
-} from '../models/index';
+} from '../models/index.js';
 import {
     AgentFromJSON,
     AgentToJSON,
@@ -26,7 +26,7 @@ import {
     V1AgentsIdPutRequestToJSON,
     V1AgentsPost400ResponseFromJSON,
     V1AgentsPost400ResponseToJSON,
-} from '../models/index';
+} from '../models/index.js';
 
 export interface V1AgentsGetRequest {
     orgId: string;

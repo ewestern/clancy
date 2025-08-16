@@ -2,13 +2,14 @@ import { Static, Type } from "@sinclair/typebox";
 
 export enum EventType {
     LLMUsage = "llmusage",
+    RequestApproval = "requestapproval",
+    RequestHumanFeedback = "requesthumanfeedback",
+
     Cron = "cron",
     EmployeeStateUpdate = "employeestateupdate",
-    HumanFeedbackResponse = "humanfeedbackresponse",
     ProviderConnectionCompleted = "providerconnectioncompleted",
     RunIntent = "runintent",
     ResumeIntent = "resumeintent",
-    RequestHumanFeedback = "requesthumanfeedback",
     EmployeeCreated = "employeecreated",
     AgentCreated = "agentcreated",
 }
@@ -51,34 +52,37 @@ export const RunIntentEventSchema = Type.Object({
     type: Type.Literal(EventType.RunIntent),
     agentId: Type.String(),
     orgId: Type.String(),
+    userId: Type.String(),
     executionId: Type.String(),
     timestamp: Type.String(),
+    details: Type.Any()
 })
 
-export const GraphCreatorRunIntentEventSchema = Type.Composite([
-    RunIntentEventSchema,
-    Type.Object({
-        userId: Type.String(),
-        jobDescription: Type.String(),
-        agentId: Type.Literal("graph-creator"),
-    })
-])
+//export const GraphCreatorRunIntentEventSchema = Type.Composite([
+//    RunIntentEventSchema,
+//    Type.Object({
+//        userId: Type.String(),
+//        jobDescription: Type.String(),
+//        agentId: Type.Literal("graph-creator"),
+//    })
+//])
 
 export const ResumeIntentEventSchema = Type.Object({
     type: Type.Literal(EventType.ResumeIntent),
     orgId: Type.String(),
+    userId: Type.String(),
     timestamp: Type.String(),
     agentId: Type.String(),
     executionId: Type.String(),
     resume: Type.Any(),
 })
 
-export const GraphCreatorResumeIntentEventSchema = Type.Composite([
-    ResumeIntentEventSchema,
-    Type.Object({
-        userId: Type.String(),
-    })
-])
+//export const GraphCreatorResumeIntentEventSchema = Type.Composite([
+//    ResumeIntentEventSchema,
+//    Type.Object({
+//        userId: Type.String(),
+//    })
+//])
 
 export const TextRequestSchema = Type.Object({
     type: Type.Literal("text"),
@@ -94,12 +98,38 @@ export const RequestHumanFeedbackEventSchema = Type.Object({
     userId: Type.String(),
     orgId: Type.String(),
     timestamp: Type.String(),
-    executionId: Type.Optional(Type.String()),
+    executionId: Type.String(),
     request: Type.Union([
         TextRequestSchema,
         OptionsRequestSchema,
     ])
 })
+
+export const FormattedApprovalRequestSchema = Type.Object({
+  request: Type.Any(),
+  capabilityName: Type.String(),
+  capabilityDescription: Type.String(),
+  providerName: Type.String(),
+  providerDescription: Type.String(),
+  schema: Type.Any(),
+})
+
+export const RequestApprovalEventSchema = Type.Object({
+    type: Type.Literal(EventType.RequestApproval),
+    userId: Type.String(),
+    orgId: Type.String(),
+    timestamp: Type.String(),
+    executionId: Type.String(),
+    request: Type.Any()
+})
+
+//export const ApprovalResponseEventSchema = Type.Object({
+//    type: Type.Literal(EventType.ApprovalResponse),
+//    userId: Type.String(),
+//    orgId: Type.String(),
+//    timestamp: Type.String(),
+//    executionId: Type.String(),
+//})
 
 
 export const ProviderConnectionCompletedEventSchema = Type.Object({
@@ -115,6 +145,7 @@ export const ProviderConnectionCompletedEventSchema = Type.Object({
 
 
 export const WorkflowSchema = Type.Object({
+    originalDescription: Type.String(),
     description: Type.String(),
     steps: Type.Array(Type.Object({
         description: Type.String(),
@@ -162,29 +193,21 @@ export const EmployeeCreatedEventSchema = Type.Object({
     employeeId: Type.String(),
 })
 
-// Trigger
-
-export const CronEventSchema = Type.Object({
-    orgId: Type.String(),
-    timestamp: Type.String(),
-    type: Type.Literal(EventType.Cron),
-    agentId: Type.String(),
-})
-
-
 
 export const EventSchema = Type.Union([
-    CronEventSchema,
 
-    // graph creator
-    GraphCreatorRunIntentEventSchema,
-    GraphCreatorResumeIntentEventSchema,
+    //GraphCreatorRunIntentEventSchema,
+    //GraphCreatorResumeIntentEventSchema,
+
     EmployeeStateUpdateEventSchema,
     ProviderConnectionCompletedEventSchema,
     AgentCreatedEventSchema,
     EmployeeCreatedEventSchema,
 
     RequestHumanFeedbackEventSchema,
+    RequestApprovalEventSchema,
+
+    //ApprovalResponseEventSchema,
     LLMUsageEventSchema,
     RunIntentEventSchema,
     ResumeIntentEventSchema,
@@ -196,10 +219,11 @@ export type Event = Static<typeof EventSchema>
 
 export type RunIntentEvent = Static<typeof RunIntentEventSchema>
 export type ResumeIntentEvent = Static<typeof ResumeIntentEventSchema>
-export type GraphCreatorRunIntentEvent = Static<typeof GraphCreatorRunIntentEventSchema>
-export type GraphCreatorResumeIntentEvent = Static<typeof GraphCreatorResumeIntentEventSchema>
+//export type GraphCreatorRunIntentEvent = Static<typeof GraphCreatorRunIntentEventSchema>
+//export type GraphCreatorResumeIntentEvent = Static<typeof GraphCreatorResumeIntentEventSchema>
 export type RequestHumanFeedbackEvent = Static<typeof RequestHumanFeedbackEventSchema>
 export type ProviderConnectionCompletedEvent= Static<typeof ProviderConnectionCompletedEventSchema>
 export type EmployeeStateUpdateEvent = Static<typeof EmployeeStateUpdateEventSchema>
-export type CronEvent = Static<typeof CronEventSchema>
 export type LLMUsageEvent = Static<typeof LLMUsageEventSchema>
+export type RequestApprovalEvent = Static<typeof RequestApprovalEventSchema>
+export type FormattedApprovalRequest = Static<typeof FormattedApprovalRequestSchema>

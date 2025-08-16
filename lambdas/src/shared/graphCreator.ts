@@ -1,11 +1,5 @@
-import { tool } from "@langchain/core/tools";
-import {
-  StateGraph,
-  START,
-  END,
-  Send,
-  Annotation,
-} from "@langchain/langgraph";
+import { tool, ToolRunnableConfig } from "@langchain/core/tools";
+import { StateGraph, START, END, Send, Annotation } from "@langchain/langgraph";
 import { RunnableConfig } from "@langchain/core/runnables";
 import { interrupt, Command } from "@langchain/langgraph";
 import { ChatAnthropic } from "@langchain/anthropic";
@@ -17,11 +11,12 @@ import {
   Configuration,
   CapabilitiesApi,
   TriggersApi,
-} from "@clancy/connect_hub_sdk";
+} from "@ewestern/connect_hub_sdk";
 import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
 import { CompiledStateGraph } from "@langchain/langgraph";
 import { Static, Type } from "@sinclair/typebox";
-import { WorkflowSchema, AgentPrototypeSchema } from "@ewestern/events"
+import { WorkflowSchema, AgentPrototypeSchema } from "@ewestern/events";
+import { ToolMessage } from "@langchain/core/messages";
 
 const WORKFLOW_BREAKDOWN_PROMPT = `
 You are an expert in breaking down job descriptions into a set of workflows capable of being performed by an AI agent.
@@ -46,17 +41,18 @@ You MUST call get_capabilities and get_triggers before you produce your final an
 Do not respond with a final answer until both calls have been made.
 You MUST only return capability ids and trigger ids that you obtained by calling the provided tools.
 If a required capability/trigger isn't returned by the tool, list the workflow as unsatisfied instead of inventing a new id.
+You may ask the user for clarification or feedback if needed, but do not ask the same question twice, and be respectful of the user's time.
 `;
 
 //You may ask the user for clarification or feedback if needed.
 
 const AGENT_CREATOR_PROMPT = `
 You are an expert in creating LLM agents.
-You will be given a workflow, including a set of capabilities and triggers that are required to perform the workflows.
+You will be given a workflow, as well as an initial set of capabilities and triggers that the agent will use to perform the workflow.
 Create a prompt that will be used to guide the agent's behavior.
-You may ask the user for clarification or feedback if needed.
-`;
+You may ask the user for clarification or feedback if needed, but do not ask the same question twice, and be respectful of the user's time.
 
+`;
 
 interface MessageInput {
   messages: {
@@ -65,8 +61,8 @@ interface MessageInput {
   }[];
 }
 
-export const AgentSchema = Type.Recursive(This => Type.Object(
-  {
+export const AgentSchema = Type.Recursive((This) =>
+  Type.Object({
     id: Type.ReadonlyOptional(Type.String()),
     name: Type.String(),
     description: Type.String(),
@@ -74,43 +70,49 @@ export const AgentSchema = Type.Recursive(This => Type.Object(
       Type.Object({
         providerId: Type.String(),
         id: Type.String(),
-      }),
+      })
     ),
     trigger: Type.Object({
       providerId: Type.String(),
       id: Type.String(),
       triggerParams: Type.Unknown({
-        description: "Parameters for the trigger in the format specified by the get_triggers tool.",
+        description:
+          "Parameters for the trigger in the format specified by the get_triggers tool.",
       }),
     }),
     prompt: Type.String(),
     //subagents: Type.Array(This),
-  }
-));
-
-const UnsatisfiedWorkflowSchema = Type.Object(
-  {
-    description: Type.String({
-      description: "A description of the workflow.",
-    }),
-    explanation: Type.String({
-      description: "An explanation of why the workflow could not be satisfied.",
-    }),
-  }
+  })
 );
 
-export const AiEmployeeSchema = Type.Object(
-  {
-    name: Type.String({
-      description: "A human-friendly name for the AI employee.",
-    }),
-    description: Type.String({
-      description: "What the AI employee does.",
-    }),
-    unsatisfiedWorkflows: Type.Array(UnsatisfiedWorkflowSchema),
-    agents: Type.Array(AgentSchema),
-  }
-);
+const UnsatisfiedWorkflowSchema = Type.Object({
+  description: Type.String({
+    description: "A description of the workflow.",
+  }),
+  explanation: Type.String({
+    description: "An explanation of why the workflow could not be satisfied.",
+  }),
+});
+
+export const AiEmployeeSchema = Type.Object({
+  name: Type.String({
+    description: "A human-friendly name for the AI employee.",
+  }),
+  description: Type.String({
+    description: "What the AI employee does.",
+  }),
+  unsatisfiedWorkflows: Type.Array(UnsatisfiedWorkflowSchema),
+  agents: Type.Array(AgentSchema),
+});
+
+const ConversationEntry = Type.Object({
+  question: Type.String(),
+  answer: Type.String(),
+  nodeContext: Type.String({
+    description: "Which node/agent asked this question",
+  }),
+  timestamp: Type.String(),
+});
 
 const GraphState = Annotation.Root({
   ...createReactAgentAnnotation().spec,
@@ -127,6 +129,12 @@ const GraphState = Annotation.Root({
     default: () => [],
   }),
   unsatisfiedWorkflows: Annotation<Static<typeof UnsatisfiedWorkflowSchema>[]>({
+    reducer: (acc, curr) => {
+      return [...acc, ...curr];
+    },
+    default: () => [],
+  }),
+  humanFeedbackHistory: Annotation<Static<typeof ConversationEntry>[]>({
     reducer: (acc, curr) => {
       return [...acc, ...curr];
     },
@@ -153,6 +161,12 @@ const SubgraphState = Annotation.Root({
     },
     default: () => null,
   }),
+  humanFeedbackHistory: Annotation<Static<typeof ConversationEntry>[]>({
+    reducer: (acc, curr) => {
+      return [...acc, ...curr];
+    },
+    default: () => [],
+  }),
 });
 
 export class GraphCreator {
@@ -169,7 +183,6 @@ export class GraphCreator {
     this.model = model;
     this.checkpointer = PostgresSaver.fromConnString(checkpointerDbUrl);
 
-    this.checkpointer.setup();
   }
   async getLLm() {
     const llm = new ChatAnthropic({
@@ -197,12 +210,11 @@ export class GraphCreator {
     return this.stream(command, config);
   }
 
-
-
   fanOut(state: typeof GraphState.State) {
     return state.workflows.map((workflow) => {
       return new Send(this.WORKFLOW_SUBGRAPH_AGENT, {
         workflow: workflow,
+        humanFeedbackHistory: state.humanFeedbackHistory,
       });
     });
   }
@@ -217,10 +229,16 @@ export class GraphCreator {
         this.WORKFLOW_BREAKDOWN_AGENT,
         this.workflowBreakdownAgent.bind(this)
       )
-      .addNode(this.WORKFLOW_SUBGRAPH_AGENT, this.workflowSubgraphNode.bind(this))
+      .addNode(
+        this.WORKFLOW_SUBGRAPH_AGENT,
+        this.workflowSubgraphNode.bind(this)
+      )
       .addNode(this.JOIN, this.joiner.bind(this))
       .addEdge(START, this.WORKFLOW_BREAKDOWN_AGENT)
-      .addConditionalEdges(this.WORKFLOW_BREAKDOWN_AGENT, this.fanOut.bind(this))
+      .addConditionalEdges(
+        this.WORKFLOW_BREAKDOWN_AGENT,
+        this.fanOut.bind(this)
+      )
       .addEdge(this.WORKFLOW_SUBGRAPH_AGENT, this.JOIN)
       .addEdge(this.JOIN, END);
 
@@ -229,15 +247,12 @@ export class GraphCreator {
     return agent;
   }
 
-
-
   async workflowBreakdownAgent(state: typeof GraphState.State) {
     const llm = await this.getLLm();
     const agent = createReactAgent({
       name: this.WORKFLOW_BREAKDOWN_AGENT,
       llm: llm,
-      tools: [
-      ],
+      tools: [],
       checkpointer: this.checkpointer,
       prompt: WORKFLOW_BREAKDOWN_PROMPT,
       responseFormat: Type.Object({
@@ -254,31 +269,41 @@ export class GraphCreator {
 
   async workflowSubgraphNode(state: {
     workflow: Static<typeof WorkflowSchema>;
+    humanFeedbackHistory: Static<typeof ConversationEntry>[];
   }) {
     const builder = new StateGraph(SubgraphState)
-      .addNode(this.WORKFLOW_MATCHER_AGENT, this.workflowMatcherAgent.bind(this))
+      .addNode(
+        this.WORKFLOW_MATCHER_AGENT,
+        this.workflowMatcherAgent.bind(this)
+      )
       .addNode(
         this.WORKFLOW_AGENT_CREATOR_AGENT,
         this.workflowAgentCreator.bind(this)
       )
       .addEdge(START, this.WORKFLOW_MATCHER_AGENT)
-      .addConditionalEdges(this.WORKFLOW_MATCHER_AGENT, this.skipUnsatisfied.bind(this))
+      .addConditionalEdges(
+        this.WORKFLOW_MATCHER_AGENT,
+        this.skipUnsatisfied.bind(this)
+      )
       .addEdge(this.WORKFLOW_AGENT_CREATOR_AGENT, END);
     const agent = builder.compile({ checkpointer: this.checkpointer });
     const result = await agent.invoke({
       workflow: state.workflow,
+      humanFeedbackHistory: state.humanFeedbackHistory,
     });
 
     if (result.agent) {
       return {
         agents: [result.agent],
         unsatisfiedWorkflows: [],
-      }
+        humanFeedbackHistory: result.humanFeedbackHistory,
+      };
     } else {
       return {
         agents: [],
         unsatisfiedWorkflows: [result.unsatisfiedWorkflow],
-      }
+        humanFeedbackHistory: result.humanFeedbackHistory,
+      };
     }
   }
 
@@ -292,7 +317,7 @@ export class GraphCreator {
       name: this.WORKFLOW_MATCHER_AGENT,
       llm: llm,
       tools: [
-        //this.getHumanInputTool(),
+        ///this.getHumanInputTool(),
         this.getCapabilitiesTool(),
         this.getTriggersTool(),
       ],
@@ -307,18 +332,22 @@ export class GraphCreator {
       messages: [
         {
           role: "user",
-          content: JSON.stringify(state.workflow),
+          content: JSON.stringify({
+            workflow: state.workflow,
+            humanFeedbackHistory: state.humanFeedbackHistory,
+          }),
         },
       ],
     });
+
     if (result.structuredResponse.agent) {
       return {
         agent: result.structuredResponse.agent,
-      }
+      };
     } else {
       return {
         unsatisfiedWorkflow: result.structuredResponse.unsatisfiedWorkflow,
-      }
+      };
     }
   }
 
@@ -328,7 +357,7 @@ export class GraphCreator {
       name: this.WORKFLOW_AGENT_CREATOR_AGENT,
       llm: llm,
       tools: [
-        //this.getHumanInputTool(),
+        //this.getHumanInputTool()
       ],
       prompt: AGENT_CREATOR_PROMPT,
       responseFormat: Type.Object({
@@ -339,7 +368,11 @@ export class GraphCreator {
       messages: [
         {
           role: "user",
-          content: JSON.stringify(state.agent),
+          content: JSON.stringify({
+            workflow: state.workflow,
+            agent: state.agent,
+            humanFeedbackHistory: state.humanFeedbackHistory,
+          }),
         },
       ],
     });
@@ -349,6 +382,7 @@ export class GraphCreator {
   }
 
   async stream(input: MessageInput | Command, config: RunnableConfig) {
+    await this.checkpointer.setup();
     const graph = await this.createGraph();
     return graph.stream(input, {
       ...config,
@@ -359,18 +393,41 @@ export class GraphCreator {
 
   getHumanInputTool() {
     return tool(
-      async (input: any, config: RunnableConfig) => {
+      async (input: any, config: ToolRunnableConfig) => {
         const response = await interrupt(input);
-        return response;
+        return new Command({
+          update: {
+            humanFeedbackHistory: [
+              {
+                question: input,
+                answer: response,
+                nodeContext: config.toolCall?.id!,
+                timestamp: new Date().toISOString(),
+              }
+            ],
+            messages: [
+              new ToolMessage({
+                content: JSON.stringify(response),
+                tool_call_id: config.toolCall?.id!,
+              })
+            ]
+          }
+
+        })
       },
       {
         name: "human_input",
-        description: "Used to ask the user for questions related to Agent design.",
-        schema: Type.Object({
-          question: Type.String({
-            description: "A question that the user should answer.",
-          }),
-        }, { additionalProperties: false }),
+        description:
+          `Used to ask the user for clarifications of the job description.
+          Use only non-technical language.`,
+        schema: Type.Object(
+          {
+            question: Type.String({
+              description: "A question that the user should answer.",
+            }),
+          },
+          { additionalProperties: false }
+        ),
       }
     );
   }

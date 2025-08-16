@@ -58,35 +58,38 @@ async function processStream(
     if (isInterrupted(chunk)) {
       const interrupt = chunk[INTERRUPT][0];
       const question = (interrupt.value as any)?.question;
-      
+
       if (question) {
         console.log("\n🚨 INTERRUPT: The GraphCreator needs your input!");
         console.log("=".repeat(50));
-        
+
         // Get user input
         const userResponse = await getUserInput(question);
-        
+
         console.log(`\n✅ Got your response: "${userResponse}"`);
         console.log("Resuming GraphCreator...\n");
-        
+
         // Resume the graph with the user's response
         const resumeCommand = new Command({ resume: userResponse });
-        
+
         // Start a new stream with the resume command
         const newStream = await graphCreator.resume(resumeCommand, config);
-        
+
         // Recursively process the new stream
         await processStream(graphCreator, newStream, config);
         return; // Exit this stream processing since we've moved to a new one
       }
     }
   }
-  
+
   console.log("\n🎉 GraphCreator stream completed successfully!");
 }
 
 async function main() {
-  const graphCreator = new GraphCreator(process.env.CHECKPOINTER_DB_URL!, "claude-sonnet-4-0");
+  const graphCreator = new GraphCreator(
+    process.env.CHECKPOINTER_DB_URL!,
+    "claude-sonnet-4-0"
+  );
 
   const config = {
     callbacks: [callbacks],
@@ -100,9 +103,8 @@ async function main() {
   try {
     console.log("🚀 Starting GraphCreator...");
     const stream = await graphCreator.start(JOB_DESCRIPTION, config);
-    
+
     await processStream(graphCreator, stream, config);
-    
   } catch (error) {
     console.error("❌ Error occurred:", error);
   } finally {

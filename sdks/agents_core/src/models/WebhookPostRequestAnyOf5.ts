@@ -12,15 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { WebhookPostRequestAnyOf3AgentsInner } from './WebhookPostRequestAnyOf3AgentsInner';
-import {
-    WebhookPostRequestAnyOf3AgentsInnerFromJSON,
-    WebhookPostRequestAnyOf3AgentsInnerFromJSONTyped,
-    WebhookPostRequestAnyOf3AgentsInnerToJSON,
-    WebhookPostRequestAnyOf3AgentsInnerToJSONTyped,
-} from './WebhookPostRequestAnyOf3AgentsInner';
-
+import { mapValues } from '../runtime.js';
 /**
  * 
  * @export
@@ -38,13 +30,13 @@ export interface WebhookPostRequestAnyOf5 {
      * @type {string}
      * @memberof WebhookPostRequestAnyOf5
      */
-    orgId: string;
+    userId: string;
     /**
      * 
      * @type {string}
      * @memberof WebhookPostRequestAnyOf5
      */
-    userId: string;
+    orgId: string;
     /**
      * 
      * @type {string}
@@ -56,13 +48,13 @@ export interface WebhookPostRequestAnyOf5 {
      * @type {string}
      * @memberof WebhookPostRequestAnyOf5
      */
-    agentId: string;
+    executionId: string;
     /**
      * 
-     * @type {WebhookPostRequestAnyOf3AgentsInner}
+     * @type {any}
      * @memberof WebhookPostRequestAnyOf5
      */
-    agent: WebhookPostRequestAnyOf3AgentsInner;
+    request: any | null;
 }
 
 
@@ -70,7 +62,7 @@ export interface WebhookPostRequestAnyOf5 {
  * @export
  */
 export const WebhookPostRequestAnyOf5TypeEnum = {
-    Agentcreated: 'agentcreated'
+    Requestapproval: 'requestapproval'
 } as const;
 export type WebhookPostRequestAnyOf5TypeEnum = typeof WebhookPostRequestAnyOf5TypeEnum[keyof typeof WebhookPostRequestAnyOf5TypeEnum];
 
@@ -80,11 +72,11 @@ export type WebhookPostRequestAnyOf5TypeEnum = typeof WebhookPostRequestAnyOf5Ty
  */
 export function instanceOfWebhookPostRequestAnyOf5(value: object): value is WebhookPostRequestAnyOf5 {
     if (!('type' in value) || value['type'] === undefined) return false;
-    if (!('orgId' in value) || value['orgId'] === undefined) return false;
     if (!('userId' in value) || value['userId'] === undefined) return false;
+    if (!('orgId' in value) || value['orgId'] === undefined) return false;
     if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
-    if (!('agentId' in value) || value['agentId'] === undefined) return false;
-    if (!('agent' in value) || value['agent'] === undefined) return false;
+    if (!('executionId' in value) || value['executionId'] === undefined) return false;
+    if (!('request' in value) || value['request'] === undefined) return false;
     return true;
 }
 
@@ -99,11 +91,11 @@ export function WebhookPostRequestAnyOf5FromJSONTyped(json: any, ignoreDiscrimin
     return {
         
         'type': json['type'],
-        'orgId': json['orgId'],
         'userId': json['userId'],
+        'orgId': json['orgId'],
         'timestamp': json['timestamp'],
-        'agentId': json['agentId'],
-        'agent': WebhookPostRequestAnyOf3AgentsInnerFromJSON(json['agent']),
+        'executionId': json['executionId'],
+        'request': json['request'],
     };
 }
 
@@ -119,11 +111,11 @@ export function WebhookPostRequestAnyOf5ToJSONTyped(value?: WebhookPostRequestAn
     return {
         
         'type': value['type'],
-        'orgId': value['orgId'],
         'userId': value['userId'],
+        'orgId': value['orgId'],
         'timestamp': value['timestamp'],
-        'agentId': value['agentId'],
-        'agent': WebhookPostRequestAnyOf3AgentsInnerToJSON(value['agent']),
+        'executionId': value['executionId'],
+        'request': value['request'],
     };
 }
 

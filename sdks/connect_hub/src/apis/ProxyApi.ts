@@ -13,17 +13,17 @@
  */
 
 
-import * as runtime from '../runtime';
+import * as runtime from '../runtime.js';
 import type {
   OauthAuditPost400Response,
   ProxyProviderIdCapabilityIdPostRequest,
-} from '../models/index';
+} from '../models/index.js';
 import {
     OauthAuditPost400ResponseFromJSON,
     OauthAuditPost400ResponseToJSON,
     ProxyProviderIdCapabilityIdPostRequestFromJSON,
     ProxyProviderIdCapabilityIdPostRequestToJSON,
-} from '../models/index';
+} from '../models/index.js';
 
 export interface ProxyProviderIdCapabilityIdPostOperationRequest {
     providerId: string;

@@ -12,28 +12,28 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { AgentStatus } from './AgentStatus';
+import { mapValues } from '../runtime.js';
+import type { AgentStatus } from './AgentStatus.js';
 import {
     AgentStatusFromJSON,
     AgentStatusFromJSONTyped,
     AgentStatusToJSON,
     AgentStatusToJSONTyped,
-} from './AgentStatus';
-import type { V1AgentsIdPutRequestTrigger } from './V1AgentsIdPutRequestTrigger';
+} from './AgentStatus.js';
+import type { V1AgentsIdPutRequestTrigger } from './V1AgentsIdPutRequestTrigger.js';
 import {
     V1AgentsIdPutRequestTriggerFromJSON,
     V1AgentsIdPutRequestTriggerFromJSONTyped,
     V1AgentsIdPutRequestTriggerToJSON,
     V1AgentsIdPutRequestTriggerToJSONTyped,
-} from './V1AgentsIdPutRequestTrigger';
-import type { V1AgentsIdPutRequestCapabilitiesInner } from './V1AgentsIdPutRequestCapabilitiesInner';
+} from './V1AgentsIdPutRequestTrigger.js';
+import type { V1AgentsIdPutRequestCapabilitiesInner } from './V1AgentsIdPutRequestCapabilitiesInner.js';
 import {
     V1AgentsIdPutRequestCapabilitiesInnerFromJSON,
     V1AgentsIdPutRequestCapabilitiesInnerFromJSONTyped,
     V1AgentsIdPutRequestCapabilitiesInnerToJSON,
     V1AgentsIdPutRequestCapabilitiesInnerToJSONTyped,
-} from './V1AgentsIdPutRequestCapabilitiesInner';
+} from './V1AgentsIdPutRequestCapabilitiesInner.js';
 
 /**
  * 
@@ -65,6 +65,12 @@ export interface V1AgentsIdPutRequest {
      * @memberof V1AgentsIdPutRequest
      */
     userId?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof V1AgentsIdPutRequest
+     */
+    employeeId?: string;
     /**
      * 
      * @type {AgentStatus}
@@ -114,6 +120,7 @@ export function V1AgentsIdPutRequestFromJSONTyped(json: any, ignoreDiscriminator
         'name': json['name'] == null ? undefined : json['name'],
         'description': json['description'] == null ? undefined : json['description'],
         'userId': json['userId'] == null ? undefined : json['userId'],
+        'employeeId': json['employeeId'] == null ? undefined : json['employeeId'],
         'status': json['status'] == null ? undefined : AgentStatusFromJSON(json['status']),
         'capabilities': json['capabilities'] == null ? undefined : ((json['capabilities'] as Array<any>).map(V1AgentsIdPutRequestCapabilitiesInnerFromJSON)),
         'trigger': json['trigger'] == null ? undefined : V1AgentsIdPutRequestTriggerFromJSON(json['trigger']),
@@ -136,6 +143,7 @@ export function V1AgentsIdPutRequestToJSONTyped(value?: V1AgentsIdPutRequest | n
         'name': value['name'],
         'description': value['description'],
         'userId': value['userId'],
+        'employeeId': value['employeeId'],
         'status': AgentStatusToJSON(value['status']),
         'capabilities': value['capabilities'] == null ? undefined : ((value['capabilities'] as Array<any>).map(V1AgentsIdPutRequestCapabilitiesInnerToJSON)),
         'trigger': V1AgentsIdPutRequestTriggerToJSON(value['trigger']),

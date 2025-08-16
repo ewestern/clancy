@@ -18,7 +18,7 @@ export async function proxyRoutes(app: FastifyTypeBox) {
     async (request, reply) => {
       console.log("Proxy request", JSON.stringify(request.body));
       const { providerId, capabilityId } = request.params;
-      const { userId, orgId, params } = request.body;
+      const { orgId, userId, params } = request.body;
 
       const provider = registry.getProvider(providerId);
       if (!provider) {
@@ -31,18 +31,6 @@ export async function proxyRoutes(app: FastifyTypeBox) {
       if (!capability) {
         return reply.status(404).send({
           error: "Capability not found",
-        });
-      }
-      const ownershipScope = capability.meta.ownershipScope;
-      let ownerId;
-      if (ownershipScope === OwnershipScope.User) {
-        ownerId = userId;
-      } else if (ownershipScope === OwnershipScope.Organization) {
-        ownerId = orgId;
-      } else {
-        return reply.status(400).send({
-          error: "Invalid ownership scope",
-          message: `Capability ${capabilityId} requires ${ownershipScope} scope, but ${ownershipScope} was provided`,
         });
       }
 
@@ -59,17 +47,16 @@ export async function proxyRoutes(app: FastifyTypeBox) {
           .where(
             and(
               eq(connections.providerId, providerId),
+              eq(connections.userId, userId),
               eq(connections.orgId, orgId),
-              eq(tokens.ownershipScope, ownershipScope),
-              eq(tokens.ownerId, ownerId),
               isNotNull(tokens.tokenPayload),
             ),
           );
 
         if (results.length === 0) {
-          return reply.status(400).send({
+          return reply.status(401).send({
             error: "Unauthorized",
-            message: `No token found for provider ${providerId} with ${ownershipScope} scope for owner ${ownerId}`,
+            message: `No token found for provider ${providerId} for user ${userId} in org ${orgId}`,
           });
         }
 
@@ -83,7 +70,7 @@ export async function proxyRoutes(app: FastifyTypeBox) {
         );
 
         if (!hasRequiredScopes) {
-          return reply.status(400).send({
+          return reply.status(403).send({
             error: "Insufficient permissions",
             message: `Token lacks required scopes: ${requiredScopes.filter((scope) => !tokenScopes.includes(scope)).join(", ")}`,
           });

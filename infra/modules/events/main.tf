@@ -37,8 +37,8 @@ resource "aws_kinesis_stream" "clancy_stream" {
     stream_mode = "ON_DEMAND"
   }
 }
-resource "aws_cloudwatch_event_bus" "clancy_main_event_bus" {
-  name = "clancy-main-${var.environment}"
+data "aws_cloudwatch_event_bus" "default" {
+  name = "default"
 }
 
 resource "aws_glue_catalog_database" "clancy_events_database" {
@@ -173,7 +173,7 @@ resource "aws_pipes_pipe" "event_bus_pipe" {
   name       = "clancy-eventbus-staging"
   role_arn   = aws_iam_role.pipes_role.arn
   source     = aws_kinesis_stream.clancy_stream.arn
-  target     = aws_cloudwatch_event_bus.clancy_main_event_bus.arn
+  target     = data.aws_cloudwatch_event_bus.default.arn
   log_configuration {
     level = "ERROR"
     cloudwatch_logs_log_destination {
@@ -206,7 +206,7 @@ resource "aws_cloudwatch_event_api_destination" "connect_hub" {
   invocation_endpoint              = "${var.connect_hub_lb_endpoint}/*"
   http_method                      = "POST"
   invocation_rate_limit_per_second = 20
-  connection_arn                   = aws_cloudwatch_event_connection.clancy_staging_connection.arn
+  connection_arn                   = aws_cloudwatch_event_connection.clancy_connection.arn
 }
 
 resource "aws_cloudwatch_event_api_destination" "agents_core" {
@@ -215,22 +215,27 @@ resource "aws_cloudwatch_event_api_destination" "agents_core" {
   invocation_endpoint              = "${var.agents_core_lb_endpoint}/*"
   http_method                      = "POST"
   invocation_rate_limit_per_second = 20
-  connection_arn                   = aws_cloudwatch_event_connection.clancy_staging_connection.arn
+  connection_arn                   = aws_cloudwatch_event_connection.clancy_connection.arn
+}
+locals {
+  authorization_endpoint = "https://${aws_cognito_user_pool_domain.main.domain}.auth.us-east-1.amazoncognito.com/oauth2/token"
 }
 
-resource "aws_cloudwatch_event_connection" "clancy_staging_connection" {
-  name               = "clancy-connection-staging"
-  description        = "Clancy Staging Connection"
+resource "aws_cloudwatch_event_connection" "clancy_connection" {
+  name               = "clancy-connection-${var.environment}"
+  description        = "Clancy Connection"
   authorization_type = "OAUTH_CLIENT_CREDENTIALS"
 
   auth_parameters {
+    ##invocation_http_parameters {
+    ##}
     oauth {
       client_parameters {
         client_id = aws_cognito_user_pool_client.clancy_user_pool_client.id
         client_secret = aws_cognito_user_pool_client.clancy_user_pool_client.client_secret
       }
       http_method = "POST"
-      authorization_endpoint = "https://${aws_cognito_user_pool_domain.main.domain}.auth.us-east-1.amazoncognito.com/oauth2/token"
+      authorization_endpoint = local.authorization_endpoint
       oauth_http_parameters {
         body {
           key             = "scope"
@@ -245,6 +250,94 @@ resource "aws_cloudwatch_event_connection" "clancy_staging_connection" {
       }
     }
   }
+}
+
+# IAM role for EventBridge to invoke Agents Core API destination
+resource "aws_iam_role" "eventbridge_agents_core_role" {
+  name = "eventbridge-agents-core-role-${var.environment}"
+  path = "/service-role/"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "events.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# IAM policy for invoking API destinations
+resource "aws_iam_policy" "eventbridge_agents_core_policy" {
+  name        = "eventbridge-agents-core-policy-${var.environment}"
+  description = "Policy for EventBridge to invoke Agents Core API destination"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "events:InvokeApiDestination",
+        ]
+        Resource = aws_cloudwatch_event_api_destination.agents_core.arn
+      }
+    ]
+  })
+}
+
+# Attach policy to Agents Core role
+resource "aws_iam_role_policy_attachment" "eventbridge_agents_core_attachment" {
+  role       = aws_iam_role.eventbridge_agents_core_role.name
+  policy_arn = aws_iam_policy.eventbridge_agents_core_policy.arn
+}
+
+# IAM role for EventBridge to invoke Connect Hub API destination
+resource "aws_iam_role" "eventbridge_connect_hub_role" {
+  name = "eventbridge-connect-hub-role-${var.environment}"
+  path = "/service-role/"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "events.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# IAM policy for invoking Connect Hub API destination
+resource "aws_iam_policy" "eventbridge_connect_hub_policy" {
+  name        = "eventbridge-connect-hub-policy-${var.environment}"
+  description = "Policy for EventBridge to invoke Connect Hub API destination"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "events:InvokeApiDestination"
+        ]
+        Resource = aws_cloudwatch_event_api_destination.connect_hub.arn
+      }
+    ]
+  })
+}
+
+# Attach policy to Connect Hub role
+resource "aws_iam_role_policy_attachment" "eventbridge_connect_hub_attachment" {
+  role       = aws_iam_role.eventbridge_connect_hub_role.name
+  policy_arn = aws_iam_policy.eventbridge_connect_hub_policy.arn
 }
 
 

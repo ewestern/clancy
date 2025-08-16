@@ -14,7 +14,7 @@ import {
   FastifyReplyTypeBox,
 } from "../types/fastify.js";
 import { Agent, AgentSchema, AgentStatusSchema } from "../models/agents.js";
-import { agents, aiEmployees } from "../database/schema.js";
+import { agents, employees } from "../database/schema.js";
 import { TriggersApi, Configuration } from "@ewestern/connect_hub_sdk";
 import { getAuth } from "@clerk/fastify";
 import { eq } from "drizzle-orm";
@@ -29,6 +29,7 @@ async function createTriggerRegistration(agent: Agent, token: Promise<string>) {
   const triggersApi = new TriggersApi(configuration);
   const triggerRegistrations = await triggersApi.triggerRegistrationsPost({
     triggerRegistration: {
+      orgId: agent.orgId,
       agentId: agent.id!,
       params: agent.trigger.triggerParams,
       providerId: agent.trigger.providerId,
@@ -55,8 +56,8 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
       reply: FastifyReplyTypeBox<typeof CreateEmployeeEndpoint>,
     ) => {
       // steps: create employee, create agents, create trigger-registrations, publish event
-      const auth = getAuth(request);
-      if (!auth.userId) {
+      const {getToken, userId, orgId} = getAuth(request);
+      if (!userId) {
         return reply.status(401).send({
           error: "Unauthorized",
           message: "Unauthorized",
@@ -65,25 +66,28 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
         });
       }
 
-      const orgId = auth.orgId;
       const { agents: newAgents, ...employee } = request.body;
       return fastify.db.transaction(async (tx) => {
         const [createdEmployee] = await tx
-          .insert(aiEmployees)
+          .insert(employees)
           .values(employee)
           .returning();
         if (!createdEmployee) {
           throw new Error("Failed to create employee");
         }
+        const toInsert = newAgents.map((agent) => ({
+          ...agent,
+          employeeId: createdEmployee.id,
+        }));
         const createdAgents = await tx
           .insert(agents)
-          .values(newAgents)
+          .values(toInsert)
           .returning();
         const triggerRegistrations = await Promise.all(
           createdAgents.map((agent) =>
             createTriggerRegistration(
               agent,
-              auth.getToken() as Promise<string>,
+              getToken() as Promise<string>,
             ),
           ),
         );
@@ -116,7 +120,7 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
       request: FastifyRequestTypeBox<typeof GetEmployeesEndpoint>,
       reply: FastifyReplyTypeBox<typeof GetEmployeesEndpoint>,
     ) => {
-      const employees = await fastify.db.query.aiEmployees.findMany({
+      const employees = await fastify.db.query.employees.findMany({
         with: {
           agents: true,
         },
@@ -135,8 +139,8 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
       reply: FastifyReplyTypeBox<typeof GetEmployeeEndpoint>,
     ) => {
       const { id } = request.params;
-      const employee = await fastify.db.query.aiEmployees.findFirst({
-        where: eq(aiEmployees.id, id),
+      const employee = await fastify.db.query.employees.findFirst({
+        where: eq(employees.id, id),
         with: {
           agents: true,
         },

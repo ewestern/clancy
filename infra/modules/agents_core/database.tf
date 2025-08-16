@@ -1,13 +1,11 @@
 
 
-locals {
-}
 
 
 resource "aws_db_subnet_group" "agents_core_service_db_subnet_group" {
   description = "Agents Core Service Database Subnet Group"
   name        = "agents-core-service-db-subnet-group-${var.environment}"
-  subnet_ids  = var.subnet_ids
+  subnet_ids  = var.db_subnet_ids
 }
 resource "aws_db_parameter_group" "agents_core_service_db_parameter_group" {
   name_prefix = "agents-core-service-pg-${var.environment}"

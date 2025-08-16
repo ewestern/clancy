@@ -13,14 +13,14 @@
  */
 
 
-import * as runtime from '../runtime';
+import * as runtime from '../runtime.js';
 import type {
   Provider,
-} from '../models/index';
+} from '../models/index.js';
 import {
     ProviderFromJSON,
     ProviderToJSON,
-} from '../models/index';
+} from '../models/index.js';
 
 /**
  * 

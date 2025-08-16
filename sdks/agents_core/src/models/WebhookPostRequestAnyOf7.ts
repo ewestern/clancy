@@ -12,15 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
-import type { WebhookPostRequestAnyOf7Request } from './WebhookPostRequestAnyOf7Request';
-import {
-    WebhookPostRequestAnyOf7RequestFromJSON,
-    WebhookPostRequestAnyOf7RequestFromJSONTyped,
-    WebhookPostRequestAnyOf7RequestToJSON,
-    WebhookPostRequestAnyOf7RequestToJSONTyped,
-} from './WebhookPostRequestAnyOf7Request';
-
+import { mapValues } from '../runtime.js';
 /**
  * 
  * @export
@@ -38,7 +30,7 @@ export interface WebhookPostRequestAnyOf7 {
      * @type {string}
      * @memberof WebhookPostRequestAnyOf7
      */
-    userId: string;
+    agentId: string;
     /**
      * 
      * @type {string}
@@ -50,19 +42,25 @@ export interface WebhookPostRequestAnyOf7 {
      * @type {string}
      * @memberof WebhookPostRequestAnyOf7
      */
-    timestamp: string;
+    userId: string;
     /**
      * 
      * @type {string}
      * @memberof WebhookPostRequestAnyOf7
      */
-    executionId?: string;
+    executionId: string;
     /**
      * 
-     * @type {WebhookPostRequestAnyOf7Request}
+     * @type {string}
      * @memberof WebhookPostRequestAnyOf7
      */
-    request: WebhookPostRequestAnyOf7Request;
+    timestamp: string;
+    /**
+     * 
+     * @type {any}
+     * @memberof WebhookPostRequestAnyOf7
+     */
+    details: any | null;
 }
 
 
@@ -70,7 +68,7 @@ export interface WebhookPostRequestAnyOf7 {
  * @export
  */
 export const WebhookPostRequestAnyOf7TypeEnum = {
-    Requesthumanfeedback: 'requesthumanfeedback'
+    Runintent: 'runintent'
 } as const;
 export type WebhookPostRequestAnyOf7TypeEnum = typeof WebhookPostRequestAnyOf7TypeEnum[keyof typeof WebhookPostRequestAnyOf7TypeEnum];
 
@@ -80,10 +78,12 @@ export type WebhookPostRequestAnyOf7TypeEnum = typeof WebhookPostRequestAnyOf7Ty
  */
 export function instanceOfWebhookPostRequestAnyOf7(value: object): value is WebhookPostRequestAnyOf7 {
     if (!('type' in value) || value['type'] === undefined) return false;
-    if (!('userId' in value) || value['userId'] === undefined) return false;
+    if (!('agentId' in value) || value['agentId'] === undefined) return false;
     if (!('orgId' in value) || value['orgId'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
+    if (!('executionId' in value) || value['executionId'] === undefined) return false;
     if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
-    if (!('request' in value) || value['request'] === undefined) return false;
+    if (!('details' in value) || value['details'] === undefined) return false;
     return true;
 }
 
@@ -98,11 +98,12 @@ export function WebhookPostRequestAnyOf7FromJSONTyped(json: any, ignoreDiscrimin
     return {
         
         'type': json['type'],
-        'userId': json['userId'],
+        'agentId': json['agentId'],
         'orgId': json['orgId'],
+        'userId': json['userId'],
+        'executionId': json['executionId'],
         'timestamp': json['timestamp'],
-        'executionId': json['executionId'] == null ? undefined : json['executionId'],
-        'request': WebhookPostRequestAnyOf7RequestFromJSON(json['request']),
+        'details': json['details'],
     };
 }
 
@@ -118,11 +119,12 @@ export function WebhookPostRequestAnyOf7ToJSONTyped(value?: WebhookPostRequestAn
     return {
         
         'type': value['type'],
-        'userId': value['userId'],
+        'agentId': value['agentId'],
         'orgId': value['orgId'],
-        'timestamp': value['timestamp'],
+        'userId': value['userId'],
         'executionId': value['executionId'],
-        'request': WebhookPostRequestAnyOf7RequestToJSON(value['request']),
+        'timestamp': value['timestamp'],
+        'details': value['details'],
     };
 }
 

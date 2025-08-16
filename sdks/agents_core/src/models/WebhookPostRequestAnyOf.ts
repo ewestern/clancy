@@ -12,7 +12,36 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { mapValues } from '../runtime.js';
+import type { WebhookPostRequestAnyOfPhase } from './WebhookPostRequestAnyOfPhase.js';
+import {
+    WebhookPostRequestAnyOfPhaseFromJSON,
+    WebhookPostRequestAnyOfPhaseFromJSONTyped,
+    WebhookPostRequestAnyOfPhaseToJSON,
+    WebhookPostRequestAnyOfPhaseToJSONTyped,
+} from './WebhookPostRequestAnyOfPhase.js';
+import type { WebhookPostRequestAnyOfAgentsInner } from './WebhookPostRequestAnyOfAgentsInner.js';
+import {
+    WebhookPostRequestAnyOfAgentsInnerFromJSON,
+    WebhookPostRequestAnyOfAgentsInnerFromJSONTyped,
+    WebhookPostRequestAnyOfAgentsInnerToJSON,
+    WebhookPostRequestAnyOfAgentsInnerToJSONTyped,
+} from './WebhookPostRequestAnyOfAgentsInner.js';
+import type { WebhookPostRequestAnyOfUnsatisfiedWorkflowsInner } from './WebhookPostRequestAnyOfUnsatisfiedWorkflowsInner.js';
+import {
+    WebhookPostRequestAnyOfUnsatisfiedWorkflowsInnerFromJSON,
+    WebhookPostRequestAnyOfUnsatisfiedWorkflowsInnerFromJSONTyped,
+    WebhookPostRequestAnyOfUnsatisfiedWorkflowsInnerToJSON,
+    WebhookPostRequestAnyOfUnsatisfiedWorkflowsInnerToJSONTyped,
+} from './WebhookPostRequestAnyOfUnsatisfiedWorkflowsInner.js';
+import type { WebhookPostRequestAnyOfWorkflowsInner } from './WebhookPostRequestAnyOfWorkflowsInner.js';
+import {
+    WebhookPostRequestAnyOfWorkflowsInnerFromJSON,
+    WebhookPostRequestAnyOfWorkflowsInnerFromJSONTyped,
+    WebhookPostRequestAnyOfWorkflowsInnerToJSON,
+    WebhookPostRequestAnyOfWorkflowsInnerToJSONTyped,
+} from './WebhookPostRequestAnyOfWorkflowsInner.js';
+
 /**
  * 
  * @export
@@ -30,19 +59,37 @@ export interface WebhookPostRequestAnyOf {
      * @type {string}
      * @memberof WebhookPostRequestAnyOf
      */
-    timestamp: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WebhookPostRequestAnyOf
-     */
     type: WebhookPostRequestAnyOfTypeEnum;
     /**
      * 
      * @type {string}
      * @memberof WebhookPostRequestAnyOf
      */
-    agentId: string;
+    timestamp: string;
+    /**
+     * 
+     * @type {WebhookPostRequestAnyOfPhase}
+     * @memberof WebhookPostRequestAnyOf
+     */
+    phase?: WebhookPostRequestAnyOfPhase;
+    /**
+     * 
+     * @type {Array<WebhookPostRequestAnyOfWorkflowsInner>}
+     * @memberof WebhookPostRequestAnyOf
+     */
+    workflows: Array<WebhookPostRequestAnyOfWorkflowsInner>;
+    /**
+     * 
+     * @type {Array<WebhookPostRequestAnyOfUnsatisfiedWorkflowsInner>}
+     * @memberof WebhookPostRequestAnyOf
+     */
+    unsatisfiedWorkflows: Array<WebhookPostRequestAnyOfUnsatisfiedWorkflowsInner>;
+    /**
+     * 
+     * @type {Array<WebhookPostRequestAnyOfAgentsInner>}
+     * @memberof WebhookPostRequestAnyOf
+     */
+    agents: Array<WebhookPostRequestAnyOfAgentsInner>;
 }
 
 
@@ -50,7 +97,7 @@ export interface WebhookPostRequestAnyOf {
  * @export
  */
 export const WebhookPostRequestAnyOfTypeEnum = {
-    Cron: 'cron'
+    Employeestateupdate: 'employeestateupdate'
 } as const;
 export type WebhookPostRequestAnyOfTypeEnum = typeof WebhookPostRequestAnyOfTypeEnum[keyof typeof WebhookPostRequestAnyOfTypeEnum];
 
@@ -60,9 +107,11 @@ export type WebhookPostRequestAnyOfTypeEnum = typeof WebhookPostRequestAnyOfType
  */
 export function instanceOfWebhookPostRequestAnyOf(value: object): value is WebhookPostRequestAnyOf {
     if (!('orgId' in value) || value['orgId'] === undefined) return false;
-    if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
     if (!('type' in value) || value['type'] === undefined) return false;
-    if (!('agentId' in value) || value['agentId'] === undefined) return false;
+    if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
+    if (!('workflows' in value) || value['workflows'] === undefined) return false;
+    if (!('unsatisfiedWorkflows' in value) || value['unsatisfiedWorkflows'] === undefined) return false;
+    if (!('agents' in value) || value['agents'] === undefined) return false;
     return true;
 }
 
@@ -77,9 +126,12 @@ export function WebhookPostRequestAnyOfFromJSONTyped(json: any, ignoreDiscrimina
     return {
         
         'orgId': json['orgId'],
-        'timestamp': json['timestamp'],
         'type': json['type'],
-        'agentId': json['agentId'],
+        'timestamp': json['timestamp'],
+        'phase': json['phase'] == null ? undefined : WebhookPostRequestAnyOfPhaseFromJSON(json['phase']),
+        'workflows': ((json['workflows'] as Array<any>).map(WebhookPostRequestAnyOfWorkflowsInnerFromJSON)),
+        'unsatisfiedWorkflows': ((json['unsatisfiedWorkflows'] as Array<any>).map(WebhookPostRequestAnyOfUnsatisfiedWorkflowsInnerFromJSON)),
+        'agents': ((json['agents'] as Array<any>).map(WebhookPostRequestAnyOfAgentsInnerFromJSON)),
     };
 }
 
@@ -95,9 +147,12 @@ export function WebhookPostRequestAnyOfToJSONTyped(value?: WebhookPostRequestAny
     return {
         
         'orgId': value['orgId'],
-        'timestamp': value['timestamp'],
         'type': value['type'],
-        'agentId': value['agentId'],
+        'timestamp': value['timestamp'],
+        'phase': WebhookPostRequestAnyOfPhaseToJSON(value['phase']),
+        'workflows': ((value['workflows'] as Array<any>).map(WebhookPostRequestAnyOfWorkflowsInnerToJSON)),
+        'unsatisfiedWorkflows': ((value['unsatisfiedWorkflows'] as Array<any>).map(WebhookPostRequestAnyOfUnsatisfiedWorkflowsInnerToJSON)),
+        'agents': ((value['agents'] as Array<any>).map(WebhookPostRequestAnyOfAgentsInnerToJSON)),
     };
 }
 

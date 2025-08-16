@@ -7,6 +7,8 @@ import { webhookRoutes } from "./webhooks.js";
 import { triggerRoutes } from "./triggers.js";
 import { providersRoutes } from "./providers.js";
 import { connectionRoutes } from "./connection.js";
+import { documentsRoutes } from "./documents.js";
+import { tagsRoutes } from "./tags.js";
 
 export async function registerRoutes(app: FastifyTypeBox) {
   // Register health routes
@@ -18,6 +20,8 @@ export async function registerRoutes(app: FastifyTypeBox) {
   await app.register(triggerRoutes);
   await app.register(providersRoutes);
   await app.register(connectionRoutes);
+  await app.register(documentsRoutes);
+  await app.register(tagsRoutes);
 
   app.log.info("All routes registered successfully");
 }

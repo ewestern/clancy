@@ -49,7 +49,7 @@ export async function healthRoutes(app: FastifyTypeBox) {
       const response = {
         status: isHealthy ? ("healthy" as const) : ("unhealthy" as const),
         timestamp: new Date().toISOString(),
-        version: app.config.nodeEnv === "development" ? "0.1.0-dev" : "0.1.0",
+        version: "0.1.0",
         uptime: Date.now() - startTime,
         dependencies: {
           database: dbStatus,

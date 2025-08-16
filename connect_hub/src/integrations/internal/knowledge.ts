@@ -54,7 +54,7 @@ export type KnowledgeWriteParams = Static<typeof knowledgeWriteParamsSchema>;
 
 async function executeKnowledgeSearch(
   params: KnowledgeSearchParams,
-  ctx: ExecutionContext,
+  ctx: ExecutionContext & { orgId: string },
 ): Promise<KnowledgeSearchDocument[]> {
   const { query, threshold = 0.8, limit = 5 } = params;
 

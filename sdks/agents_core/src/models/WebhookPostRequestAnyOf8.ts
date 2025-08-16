@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
+import { mapValues } from '../runtime.js';
 /**
  * 
  * @export
@@ -36,6 +36,12 @@ export interface WebhookPostRequestAnyOf8 {
      * @type {string}
      * @memberof WebhookPostRequestAnyOf8
      */
+    userId: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof WebhookPostRequestAnyOf8
+     */
     timestamp: string;
     /**
      * 
@@ -51,34 +57,10 @@ export interface WebhookPostRequestAnyOf8 {
     executionId: string;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof WebhookPostRequestAnyOf8
      */
-    model: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof WebhookPostRequestAnyOf8
-     */
-    promptTokens: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof WebhookPostRequestAnyOf8
-     */
-    completionTokens: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof WebhookPostRequestAnyOf8
-     */
-    totalTokens: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof WebhookPostRequestAnyOf8
-     */
-    prompt: string;
+    resume: any | null;
 }
 
 
@@ -86,7 +68,7 @@ export interface WebhookPostRequestAnyOf8 {
  * @export
  */
 export const WebhookPostRequestAnyOf8TypeEnum = {
-    Llmusage: 'llmusage'
+    Resumeintent: 'resumeintent'
 } as const;
 export type WebhookPostRequestAnyOf8TypeEnum = typeof WebhookPostRequestAnyOf8TypeEnum[keyof typeof WebhookPostRequestAnyOf8TypeEnum];
 
@@ -97,14 +79,11 @@ export type WebhookPostRequestAnyOf8TypeEnum = typeof WebhookPostRequestAnyOf8Ty
 export function instanceOfWebhookPostRequestAnyOf8(value: object): value is WebhookPostRequestAnyOf8 {
     if (!('type' in value) || value['type'] === undefined) return false;
     if (!('orgId' in value) || value['orgId'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
     if (!('agentId' in value) || value['agentId'] === undefined) return false;
     if (!('executionId' in value) || value['executionId'] === undefined) return false;
-    if (!('model' in value) || value['model'] === undefined) return false;
-    if (!('promptTokens' in value) || value['promptTokens'] === undefined) return false;
-    if (!('completionTokens' in value) || value['completionTokens'] === undefined) return false;
-    if (!('totalTokens' in value) || value['totalTokens'] === undefined) return false;
-    if (!('prompt' in value) || value['prompt'] === undefined) return false;
+    if (!('resume' in value) || value['resume'] === undefined) return false;
     return true;
 }
 
@@ -120,14 +99,11 @@ export function WebhookPostRequestAnyOf8FromJSONTyped(json: any, ignoreDiscrimin
         
         'type': json['type'],
         'orgId': json['orgId'],
+        'userId': json['userId'],
         'timestamp': json['timestamp'],
         'agentId': json['agentId'],
         'executionId': json['executionId'],
-        'model': json['model'],
-        'promptTokens': json['promptTokens'],
-        'completionTokens': json['completionTokens'],
-        'totalTokens': json['totalTokens'],
-        'prompt': json['prompt'],
+        'resume': json['resume'],
     };
 }
 
@@ -144,14 +120,11 @@ export function WebhookPostRequestAnyOf8ToJSONTyped(value?: WebhookPostRequestAn
         
         'type': value['type'],
         'orgId': value['orgId'],
+        'userId': value['userId'],
         'timestamp': value['timestamp'],
         'agentId': value['agentId'],
         'executionId': value['executionId'],
-        'model': value['model'],
-        'promptTokens': value['promptTokens'],
-        'completionTokens': value['completionTokens'],
-        'totalTokens': value['totalTokens'],
-        'prompt': value['prompt'],
+        'resume': value['resume'],
     };
 }
 

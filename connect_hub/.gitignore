@@ -67,7 +67,8 @@ jspm_packages/
 
 # Gatsby files
 .cache/
-public
+# Note: we include our public/ directory for OAuth redirect pages
+# public
 
 # Storybook build outputs
 .out

@@ -22,6 +22,7 @@ locals {
     agent_enrichment      = "${var.project_name}-${var.environment}-agent-enrichment"
     graph_creator         = "${var.project_name}-${var.environment}-graph-creator-executor"
     main_agent_executor   = "${var.project_name}-${var.environment}-main-agent-executor"
+    document_ingest       = "${var.project_name}-${var.environment}-document-ingest"
   }
 
   # Path to lambdas directory relative to module
@@ -48,6 +49,15 @@ locals {
   # Environment variables specific to executor functions
   executor_env_vars = merge(local.common_env_vars, {
   })
+
+  # Environment variables specific to document ingestion
+  document_ingest_env_vars = merge(local.common_env_vars, {
+    DOCUMENTS_BUCKET_NAME = local.documents_bucket_name
+    CONNECT_HUB_AUTH_TOKEN = "lambda-secret" # TODO: Use proper M2M token
+  })
+
+  # S3 bucket name for documents
+  documents_bucket_name = "${var.project_name}-documents-${var.environment}"
 
   # VPC configuration
   vpc_config = length(var.vpc_subnet_ids) > 0 ? {

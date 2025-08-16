@@ -13,24 +13,27 @@
  */
 
 
-import * as runtime from '../runtime';
+import * as runtime from '../runtime.js';
 import type {
   CapabilitiesProviderIdCapabilityIdGet404Response,
-  ConnectionsGet200ResponseInner,
+  ConnectionsGet200Response,
+  ConnectionsIdPatch200Response,
   ConnectionsIdPatchRequest,
-} from '../models/index';
+} from '../models/index.js';
 import {
     CapabilitiesProviderIdCapabilityIdGet404ResponseFromJSON,
     CapabilitiesProviderIdCapabilityIdGet404ResponseToJSON,
-    ConnectionsGet200ResponseInnerFromJSON,
-    ConnectionsGet200ResponseInnerToJSON,
+    ConnectionsGet200ResponseFromJSON,
+    ConnectionsGet200ResponseToJSON,
+    ConnectionsIdPatch200ResponseFromJSON,
+    ConnectionsIdPatch200ResponseToJSON,
     ConnectionsIdPatchRequestFromJSON,
     ConnectionsIdPatchRequestToJSON,
-} from '../models/index';
+} from '../models/index.js';
 
 export interface ConnectionsIdPatchOperationRequest {
     id: string;
-    connectionsIdPatchRequest: ConnectionsIdPatchRequest;
+    connectionsIdPatchRequest?: ConnectionsIdPatchRequest;
 }
 
 /**
@@ -41,7 +44,7 @@ export class ConnectionApi extends runtime.BaseAPI {
     /**
      * Get all connections
      */
-    async connectionsGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ConnectionsGet200ResponseInner>>> {
+    async connectionsGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ConnectionsGet200Response>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -61,13 +64,13 @@ export class ConnectionApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ConnectionsGet200ResponseInnerFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => ConnectionsGet200ResponseFromJSON(jsonValue));
     }
 
     /**
      * Get all connections
      */
-    async connectionsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ConnectionsGet200ResponseInner>> {
+    async connectionsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ConnectionsGet200Response> {
         const response = await this.connectionsGetRaw(initOverrides);
         return await response.value();
     }
@@ -75,18 +78,11 @@ export class ConnectionApi extends runtime.BaseAPI {
     /**
      * Update connection status
      */
-    async connectionsIdPatchRaw(requestParameters: ConnectionsIdPatchOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ConnectionsGet200ResponseInner>> {
+    async connectionsIdPatchRaw(requestParameters: ConnectionsIdPatchOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ConnectionsIdPatch200Response>> {
         if (requestParameters['id'] == null) {
             throw new runtime.RequiredError(
                 'id',
                 'Required parameter "id" was null or undefined when calling connectionsIdPatch().'
-            );
-        }
-
-        if (requestParameters['connectionsIdPatchRequest'] == null) {
-            throw new runtime.RequiredError(
-                'connectionsIdPatchRequest',
-                'Required parameter "connectionsIdPatchRequest" was null or undefined when calling connectionsIdPatch().'
             );
         }
 
@@ -104,13 +100,13 @@ export class ConnectionApi extends runtime.BaseAPI {
             body: ConnectionsIdPatchRequestToJSON(requestParameters['connectionsIdPatchRequest']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => ConnectionsGet200ResponseInnerFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => ConnectionsIdPatch200ResponseFromJSON(jsonValue));
     }
 
     /**
      * Update connection status
      */
-    async connectionsIdPatch(requestParameters: ConnectionsIdPatchOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ConnectionsGet200ResponseInner> {
+    async connectionsIdPatch(requestParameters: ConnectionsIdPatchOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ConnectionsIdPatch200Response> {
         const response = await this.connectionsIdPatchRaw(requestParameters, initOverrides);
         return await response.value();
     }
