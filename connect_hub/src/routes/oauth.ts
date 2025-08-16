@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { eq, and } from "drizzle-orm";
+import { eq, and, arrayOverlaps, inArray } from "drizzle-orm";
 import type {
   FastifyTypeBox,
   FastifyRequestTypeBox,
@@ -13,6 +13,8 @@ import {
   OauthStatus,
   OAuthCallbackQuery,
   OAuthAuditEndpointSchema,
+  OauthConnectionStatus,
+  OauthConnectionStatusSchema,
 } from "../models/oauth.js";
 import { registry } from "../integrations.js";
 import { connections, tokens, oauthTransactions } from "../database/schema.js";
@@ -40,6 +42,11 @@ async function validateOAuthCallback(db: Database, state: string) {
   return oauthTransactionResult[0];
 }
 
+//function auditProvider(connection: typeof connections.$inferSelect, requestedCapabilities: Set<string>){
+//
+//
+//}
+
 // Helper function to get provider and metadata
 async function getProviderAndSecrets(app: FastifyTypeBox, providerId: string) {
   const providerSecrets = await app.getProviderSecrets(providerId);
@@ -59,26 +66,6 @@ async function getProviderAndSecrets(app: FastifyTypeBox, providerId: string) {
   return { provider, providerSecrets };
 }
 
-async function getBestConnection(
-  db: Database,
-  orgId: string,
-  userId: string,
-  providerId: string,
-) {
-  const connectionsResult = await db
-    .select()
-    .from(connections)
-    .where(
-      and(
-        eq(connections.orgId, orgId),
-        eq(connections.userId, userId),
-        eq(connections.providerId, providerId),
-        eq(connections.status, ConnectionStatus.Active),
-      ),
-    );
-  return connectionsResult[0] || null;
-}
-
 // Helper function to update or create connection
 async function updateOrCreateConnection(
   db: Database,
@@ -86,7 +73,6 @@ async function updateOrCreateConnection(
   tokenPayload: Record<string, unknown>,
   externalScopes: string[],
   externalAccountMetadata: Record<string, unknown>,
-  orgId: string,
   providerId: string,
 ) {
   await db.transaction(async (tx) => {
@@ -95,7 +81,7 @@ async function updateOrCreateConnection(
       .from(connections)
       .where(
         and(
-          eq(connections.orgId, orgId),
+          eq(connections.orgId, oauthTransaction.orgId),
           eq(connections.providerId, providerId),
           eq(connections.status, ConnectionStatus.Active),
         ),
@@ -166,7 +152,7 @@ async function updateOrCreateConnection(
           userId: oauthTransaction.userId,
           capabilities: oauthTransaction.capabilities,
           externalAccountMetadata: externalAccountMetadata,
-          orgId: orgId,
+          orgId: oauthTransaction.orgId,
           providerId: providerId,
           status: ConnectionStatus.Active,
         })
@@ -199,8 +185,6 @@ async function handleCallbackError(
   callbackParams: OAuthCallbackQuery,
   error: unknown,
 ) {
-  console.error(`OAuth callback error for ${providerId}:`, error);
-
   // Try to send failure message if we have an oauth transaction
   try {
     const oauthTransactionResult = await db
@@ -210,7 +194,7 @@ async function handleCallbackError(
       .limit(1);
     if (oauthTransactionResult.length > 0) {
       const oauthTransaction = oauthTransactionResult[0]!;
-      publishEvents([
+      await publishEvents([
         {
           event: {
             type: EventType.ProviderConnectionCompleted,
@@ -224,7 +208,13 @@ async function handleCallbackError(
       ]);
     }
   } catch (wsError) {
-    console.error(`Failed to send provider failure message: ${wsError}`);
+    return {
+      status: OauthStatus.Failed as const,
+      error: "oauth_callback_failed",
+      errorDescription:
+        error instanceof Error ? error.message : "Unknown OAuth error",
+      provider: providerId,
+    };
   }
 
   return {
@@ -241,6 +231,7 @@ export async function oauthRoutes(app: FastifyTypeBox) {
   app.addSchema(OAuthSuccessResponseSchema);
   app.addSchema(OAuthErrorResponseSchema);
   app.addSchema(OAuthAuditEndpointSchema.response["200"]);
+  app.addSchema(OauthConnectionStatusSchema);
 
   // OAuth Launch - Generate authorization URL and redirect
   app.get(
@@ -261,7 +252,7 @@ export async function oauthRoutes(app: FastifyTypeBox) {
         secretKey: process.env.CLERK_SECRET_KEY!,
       });
       const userId = payload.sub;
-      const orgId = payload.org_id || "";
+      const orgId = (payload.o as { id: string }).id as string;
 
       try {
         // Get provider
@@ -282,15 +273,11 @@ export async function oauthRoutes(app: FastifyTypeBox) {
             status: OauthStatus.Failed,
           });
         }
-        console.log("capabilities", capabilities);
-        console.log("provider", provider.scopeMapping);
-
         // Map internal Clancy scopes to provider-native scopes using scopeMapping
         const providerScopes = capabilities.flatMap((capability) => {
           const mappedScopes = provider.scopeMapping[capability];
           return mappedScopes || []; // fallback to original scope if no mapping exists
         });
-        console.log("providerScopes", providerScopes);
 
         // Remove duplicates
         const uniqueProviderScopes = [...new Set(providerScopes)];
@@ -330,7 +317,6 @@ export async function oauthRoutes(app: FastifyTypeBox) {
           { scopes: uniqueProviderScopes, state: state },
           oauthContext,
         );
-        console.log("authUrl", authUrl);
         // Redirect to provider's authorization URL
         return reply.redirect(authUrl);
       } catch (error) {
@@ -394,10 +380,9 @@ export async function oauthRoutes(app: FastifyTypeBox) {
           tokenPayload,
           scopes,
           externalAccountMetadata,
-          oauthContext.orgId,
           providerId,
         );
-        publishEvents([
+        await publishEvents([
           {
             event: {
               type: EventType.ProviderConnectionCompleted,
@@ -412,9 +397,10 @@ export async function oauthRoutes(app: FastifyTypeBox) {
           },
         ]);
 
-        return reply.redirect(`/oauth/success.html`);
+        return reply.redirect(`/public/oauth/success.html`);
       } catch (error) {
         await handleCallbackError(app.db, providerId, callbackParams, error);
+        request.log.error(error, "OAuth callback error");
 
         // Redirect to error page with error details in query params
         const errorType = encodeURIComponent("oauth_callback_failed");
@@ -422,7 +408,7 @@ export async function oauthRoutes(app: FastifyTypeBox) {
           error instanceof Error ? error.message : "Unknown OAuth error",
         );
         return reply.redirect(
-          `/oauth/error.html?error=${errorType}&error_description=${errorDescription}`,
+          `/public/oauth/error.html?error=${errorType}&error_description=${errorDescription}`,
         );
       }
     },
@@ -439,6 +425,7 @@ export async function oauthRoutes(app: FastifyTypeBox) {
       reply: FastifyReplyTypeBox<typeof OAuthAuditEndpointSchema>,
     ) => {
       const { userId, orgId } = getAuth(request);
+      const { capabilities, triggers } = request.body;
       if (!userId || !orgId) {
         return reply.status(401).send({
           error: "unauthorized",
@@ -447,171 +434,124 @@ export async function oauthRoutes(app: FastifyTypeBox) {
       }
 
       // Group requested capabilities and triggers by provider
-      const capabilitiesByProvider = new Map<string, Set<string>>();
-      for (const item of request.body.capabilities) {
-        if (!capabilitiesByProvider.has(item.providerId)) {
-          capabilitiesByProvider.set(item.providerId, new Set());
-        }
-        capabilitiesByProvider.get(item.providerId)!.add(item.capabilityId);
-      }
-      // For now, triggers do not add additional scopes in audit (providers may extend later)
-      // const triggersByProvider = new Map<string, Set<string>>();
-      // for (const t of request.body.triggers) { ... }
-
-      // Fetch user's existing tokens per provider
-      const providerIds = Array.from(capabilitiesByProvider.keys());
-      type ProviderTokenRow = {
-        providerId: string;
-        scopes: string[] | null;
-      };
-      const tokenRows: Record<string, ProviderTokenRow | null> = {};
-      if (providerIds.length > 0) {
-        // For each provider, select the token for this user's connection (if any)
-        // Doing N queries keeps logic simple and avoids cartesian complications
-        for (const pid of providerIds) {
-          const rows = await request.server.db
-            .select({
-              providerId: connections.providerId,
-              scopes: tokens.scopes,
-            })
-            .from(connections)
-            .leftJoin(
-              tokens,
-              and(
-                eq(tokens.connectionId, connections.id),
-                eq(tokens.ownershipScope, OwnershipScope.User),
-                eq(tokens.ownerId, userId),
-              ),
-            )
-            .where(
-              and(
-                eq(connections.orgId, orgId),
-                eq(connections.userId, userId),
-                eq(connections.providerId, pid),
-                eq(connections.status, ConnectionStatus.Active),
-              ),
-            )
-            .limit(1);
-          tokenRows[pid] = rows[0] || null;
-        }
-      }
-
-      const results = [] as Array<{
-        providerId: string;
-        providerDisplayName: string;
-        providerIcon: string;
-        status: "connected" | "needs_auth" | "needs_scope_upgrade";
-        grantedCapabilities: string[];
-        missingCapabilities: string[];
-        oauthUrl: string;
-        message?: string;
-      }>;
-
-      for (const pid of providerIds) {
-        const provider = registry.getProvider(pid);
-        if (!provider) {
-          continue;
-        }
-
-        // Skip Internal providers - they never need OAuth
-        if (provider.metadata.kind === ProviderKind.Internal) {
-          continue;
-        }
-
-        const requestedCapabilityIds = Array.from(
-          capabilitiesByProvider.get(pid) ?? [],
-        );
-
-        // Compute required provider-native scopes for requested capabilities
-        const requiredProviderScopes = new Set<string>();
-        for (const capId of requestedCapabilityIds) {
-          const mapped = provider.scopeMapping[capId] || [];
-          for (const s of mapped) requiredProviderScopes.add(s);
-        }
-
-        // Granted scopes for current user's token (if any)
-        const token = tokenRows[pid];
-        const grantedScopes = new Set<string>(
-          (token?.scopes || []) as string[],
-        );
-
-        // Determine status
-        let status: "connected" | "needs_auth" | "needs_scope_upgrade";
-        if (!token) {
-          status = "needs_auth";
-        } else if (
-          Array.from(requiredProviderScopes).some((s) => !grantedScopes.has(s))
-        ) {
-          status = "needs_scope_upgrade";
-        } else {
-          status = "connected";
-        }
-
-        // Get capability display names from provider capabilities
-        const providerCapabilities = provider.listCapabilities();
-
-        // Determine which capabilities are already satisfied by current grant
-        const grantedCapabilities: string[] = [];
-        const missingCapabilities: string[] = [];
-
-        for (const capId of requestedCapabilityIds) {
-          const capability = providerCapabilities.find(
-            (cap) => cap.id === capId,
-          );
-          const displayName = capability?.displayName || capId;
-
-          const mapped = provider.scopeMapping[capId] || [];
-          const fullyGranted =
-            mapped.length === 0 || mapped.every((s) => grantedScopes.has(s));
-
-          if (fullyGranted) {
-            grantedCapabilities.push(displayName);
-          } else {
-            missingCapabilities.push(displayName);
+      const requestedCapabilitiesByProvider = capabilities.reduce(
+        (acc, item) => {
+          if (!acc.has(item.providerId)) {
+            acc.set(item.providerId, new Set());
           }
-        }
+          acc.get(item.providerId)!.add(item.capabilityId);
+          return acc;
+        },
+        new Map<string, Set<string>>(),
+      );
 
-        const cumulativeCapabilityIds = new Set<string>();
-        // Always include requested (so the user explicitly consents to needs)
-        for (const id of requestedCapabilityIds)
-          cumulativeCapabilityIds.add(id);
-
-        // Include already granted capability ids so providers that treat scopes as replacement don't drop prior grants
-        for (const [capId, mappedScopes] of Object.entries(
-          provider.scopeMapping,
-        )) {
-          if (mappedScopes.length === 0) continue;
-          const fullyGranted = mappedScopes.every((s) => grantedScopes.has(s));
-          if (fullyGranted) cumulativeCapabilityIds.add(capId);
-        }
-
-        // Build launch URL to request cumulative capability ids via our own /oauth/launch route
-        const baseUrl = process.env.REDIRECT_BASE_URL!;
-        const launchUrl = new URL(`${baseUrl}/oauth/launch/${pid}`);
-        
-        // Add each scope as a separate parameter so Fastify can deserialize as an array
-        for (const scopeId of Array.from(cumulativeCapabilityIds)) {
-          launchUrl.searchParams.append("scopes", scopeId);
-        }
-        
-
-        results.push({
-          providerId: pid,
-          providerDisplayName: provider.metadata.displayName,
-          providerIcon: provider.metadata.icon,
-          status,
-          grantedCapabilities,
-          missingCapabilities,
-          oauthUrl: launchUrl.toString(),
-          message:
-            status === "connected"
-              ? "All required capabilities granted"
-              : status === "needs_auth"
-                ? "No active connection found for this provider"
-                : "Additional capabilities are required",
+      const providerConnections =
+        await request.server.db.query.connections.findMany({
+          where: and(
+            eq(connections.orgId, orgId),
+            eq(connections.userId, userId),
+            eq(connections.status, ConnectionStatus.Active),
+            inArray(
+              connections.providerId,
+              Array.from(requestedCapabilitiesByProvider.keys()),
+            ),
+          ),
         });
-      }
+      const existingProviderCapabilitySummary = providerConnections.reduce(
+        (acc, connection) => {
+          const providerId = connection.providerId;
+          const requestedCapabilities =
+            requestedCapabilitiesByProvider.get(providerId);
+          if (!requestedCapabilities) {
+            return acc;
+          }
+          const grantedCapabilities = new Set(connection.capabilities);
+          const missingCapabilities =
+            requestedCapabilities.difference(grantedCapabilities);
+          return acc.set(providerId, {
+            grantedCapabilities,
+            missingCapabilities,
+          });
+        },
+        new Map<
+          string,
+          { grantedCapabilities: Set<string>; missingCapabilities: Set<string> }
+        >(),
+      );
 
+      const results = Array.from(
+        requestedCapabilitiesByProvider.entries(),
+      ).flatMap(([providerId, requestedCapabilities]) => {
+        const provider = registry.getProvider(providerId);
+        if (provider?.metadata.kind === ProviderKind.Internal) {
+          return [];
+        }
+        const summary = existingProviderCapabilitySummary.get(providerId);
+        const baseUrl = process.env.REDIRECT_BASE_URL!;
+        const launchUrl = new URL(`${baseUrl}/oauth/launch/${providerId}`);
+        if (!summary) {
+          // no existing connection for this provider
+          for (const scopeId of Array.from(requestedCapabilities)) {
+            launchUrl.searchParams.append("scopes", scopeId);
+          }
+          const missingCapabilitiesDisplay = Array.from(
+            requestedCapabilities,
+          ).map((capability) => {
+            const capabilityMeta = provider?.getCapability(capability).meta;
+            return capabilityMeta?.displayName || capability;
+          });
+          return [
+            {
+              providerId: providerId,
+              providerDisplayName: provider?.metadata.displayName || "",
+              providerIcon: provider?.metadata.icon || "",
+              status: OauthConnectionStatus.NeedsAuth,
+              grantedCapabilities: [],
+              missingCapabilities: missingCapabilitiesDisplay,
+              oauthUrl: launchUrl.toString(),
+            },
+          ];
+        }
+        const { grantedCapabilities, missingCapabilities } = summary;
+        const missingCapabilitiesDisplay = Array.from(
+          missingCapabilities?.values() || [],
+        ).map((capability) => {
+          const capabilityMeta = provider?.getCapability(capability).meta;
+          return capabilityMeta?.displayName || capability;
+        });
+
+        if (!missingCapabilities || missingCapabilities.size === 0) {
+          return [
+            {
+              providerId: providerId,
+              providerDisplayName: provider?.metadata.displayName || "",
+              providerIcon: provider?.metadata.icon || "",
+              status: OauthConnectionStatus.Connected,
+              grantedCapabilities: [],
+              missingCapabilities: missingCapabilitiesDisplay,
+              oauthUrl: "",
+            },
+          ];
+        } else {
+          const cumulativeCapabilityIds =
+            grantedCapabilities.union(missingCapabilities);
+
+          for (const scopeId of Array.from(cumulativeCapabilityIds)) {
+            launchUrl.searchParams.append("scopes", scopeId);
+          }
+          return [
+            {
+              providerId: providerId,
+              providerDisplayName: provider?.metadata.displayName || "",
+              providerIcon: provider?.metadata.icon || "",
+              status: OauthConnectionStatus.NeedsScopeUpgrade,
+              grantedCapabilities: [],
+              missingCapabilities: missingCapabilitiesDisplay,
+              oauthUrl: "",
+            },
+          ];
+        }
+      });
       return reply.status(200).send(results);
     },
   );

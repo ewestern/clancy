@@ -70,7 +70,8 @@ export function AIEmployeeCard({
             {employee.name}
           </h3>
           <p className="text-xs text-gray-500 mb-3">
-            {employee.agents?.length || 0} agent{employee.agents?.length !== 1 ? 's' : ''}
+            {employee.agents?.length || 0} agent
+            {employee.agents?.length !== 1 ? "s" : ""}
           </p>
 
           {/* Status pill */}

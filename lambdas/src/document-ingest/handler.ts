@@ -2,16 +2,17 @@ import { S3Event, S3Handler } from "aws-lambda";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { CharacterTextSplitter } from "@langchain/textsplitters";
+import { Configuration, DocumentsApi } from "@ewestern/connect_hub_sdk";
 import * as crypto from "crypto";
 
 // Import PDF and DOCX extraction libraries
-import * as pdfParse from "pdf-parse";
 import * as mammoth from "mammoth";
+import { requestCognitoM2MToken } from "../shared/utils";
 
-interface ConnectHubConfig {
-  baseUrl: string;
-  authToken: string;
-}
+// This is required because of a bug in the pdf-parse package
+// https://gitlab.com/autokent/pdf-parse/-/issues/24
+// @ts-ignore
+import pdfParse from "pdf-parse/lib/pdf-parse";
 
 interface DocumentChunk {
   chunkIndex: number;
@@ -22,26 +23,11 @@ interface DocumentChunk {
   metadata: Record<string, unknown>;
 }
 
-interface BulkSnippetsRequest {
-  orgId: string;
-  documentId: string;
-  ownershipScope: "user" | "organization";
-  ownerId?: string;
-  snippets: DocumentChunk[];
+async function getToken(): Promise<string> {
+  return requestCognitoM2MToken().then((token) => {
+    return token.access_token;
+  });
 }
-
-interface IngestionCompleteRequest {
-  documentId: string;
-  status: "completed" | "failed";
-  error?: string;
-  metadata?: {
-    pageCount?: number;
-    textBytes?: number;
-    extractionLib?: string;
-    checksum?: string;
-  };
-}
-
 const s3Client = new S3Client({
   region: process.env.AWS_REGION ?? "us-east-1",
 });
@@ -50,10 +36,11 @@ const embeddings = new OpenAIEmbeddings({
   openAIApiKey: process.env.OPENAI_API_KEY,
 });
 
-const connectHubConfig: ConnectHubConfig = {
-  baseUrl: process.env.CONNECT_HUB_BASE_URL || "http://localhost:3001",
-  authToken: process.env.CONNECT_HUB_AUTH_TOKEN || "lambda-secret",
-};
+const connectHubConfiguration = new Configuration({
+  basePath: process.env.CONNECT_HUB_API_URL!,
+  accessToken: getToken,
+});
+const documentsApi = new DocumentsApi(connectHubConfiguration);
 
 /**
  * Extract text from various file formats
@@ -69,7 +56,7 @@ async function extractText(
   try {
     switch (mimeType) {
       case "application/pdf":
-        const pdfData = await pdfParse.default(buffer);
+        const pdfData = await pdfParse(buffer);
         text = pdfData.text;
         metadata.pageCount = pdfData.numpages;
         metadata.extractionLib = "pdf-parse";
@@ -150,59 +137,6 @@ function parseS3Key(key: string): {
 }
 
 /**
- * Send bulk snippets to ConnectHub
- */
-async function sendBulkSnippets(request: BulkSnippetsRequest): Promise<void> {
-  const response = await fetch(
-    `${connectHubConfig.baseUrl}/knowledge_snippets/bulk`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${connectHubConfig.authToken}`,
-      },
-      body: JSON.stringify(request),
-    }
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `ConnectHub bulk insert failed: ${response.status} ${errorText}`
-    );
-  }
-
-  const result = await response.json();
-  console.log("Bulk insert result:", result);
-}
-
-/**
- * Mark ingestion as complete in ConnectHub
- */
-async function markIngestionComplete(
-  request: IngestionCompleteRequest
-): Promise<void> {
-  const response = await fetch(
-    `${connectHubConfig.baseUrl}/documents/ingestion-complete`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${connectHubConfig.authToken}`,
-      },
-      body: JSON.stringify(request),
-    }
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `ConnectHub ingestion-complete failed: ${response.status} ${errorText}`
-    );
-  }
-}
-
-/**
  * Process a single S3 object
  */
 async function processDocument(bucket: string, key: string): Promise<void> {
@@ -262,24 +196,28 @@ async function processDocument(bucket: string, key: string): Promise<void> {
     }));
 
     // Send to ConnectHub
-    await sendBulkSnippets({
-      orgId,
-      documentId,
-      ownershipScope: "organization", // Default for MVP
-      snippets,
-    });
+    const { inserted, duplicates } =
+      await documentsApi.knowledgeSnippetsBulkPost({
+        knowledgeSnippetsBulkPostRequest: {
+          orgId,
+          documentId,
+          ownershipScope: "organization",
+          snippets,
+        },
+      });
 
-    // Mark as complete
-    await markIngestionComplete({
-      documentId,
-      status: "completed",
-      metadata: {
-        ...extractionMetadata,
-        checksum: calculateChecksum(text),
+    //await sendBulkSnippets({
+    //  orgId,
+    //  documentId,
+    //  ownershipScope: "organization", // Default for MVP
+    //  snippets,
+    //});
+    await documentsApi.documentsIngestionCompletePost({
+      documentsIngestionCompletePostRequest: {
+        documentId,
+        status: "completed",
       },
     });
-
-    console.log(`Successfully processed document ${documentId}`);
   } catch (error) {
     console.error("Document processing failed:", error);
 
@@ -298,10 +236,12 @@ async function processDocument(bucket: string, key: string): Promise<void> {
     // Report failure to ConnectHub
     if (documentId) {
       try {
-        await markIngestionComplete({
-          documentId,
-          status: "failed",
-          error: error instanceof Error ? error.message : String(error),
+        await documentsApi.documentsIngestionCompletePost({
+          documentsIngestionCompletePostRequest: {
+            documentId,
+            status: "failed",
+            error: error instanceof Error ? error.message : String(error),
+          },
         });
       } catch (reportError) {
         console.error("Failed to report error to ConnectHub:", reportError);

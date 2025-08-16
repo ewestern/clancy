@@ -6,18 +6,22 @@ This guide provides comprehensive instructions for adding new providers and capa
 
 ConnectHub uses a provider-based architecture where each external service (Slack, QuickBooks, Google) is implemented as a `ProviderRuntime` with multiple capabilities. Each capability represents a specific action that can be performed via the provider's API.
 
+All providers extend the `BaseProvider` abstract class, which automatically handles dispatch table management, scope mapping generation, and common `ProviderRuntime` methods.
+
 ## Provider Architecture
 
 ### Core Components
 
-1. **ProviderRuntime**: Main provider class implementing the provider interface
-2. **Capabilities**: Individual actions/operations the provider can perform
-3. **Schemas**: TypeBox schemas for parameter validation and type safety
-4. **Documentation URLs**: Specific API endpoint documentation links
-5. **Risk Assessment**: Risk level classification for each capability
-6. **Ownership Scope**: Token ownership classification (user vs organization)
-7. **OAuth Methods**: Token management and scope validation (for external providers)
-8. **Service Modules**: Separate files for different services within a provider
+1. **BaseProvider**: Abstract base class that handles common ProviderRuntime functionality
+2. **Provider Classes**: Concrete provider implementations extending BaseProvider
+3. **Capabilities**: Individual actions/operations the provider can perform
+4. **Capability Factories**: Functions that create capability instances with metadata
+5. **Schemas**: TypeBox schemas for parameter validation and type safety
+6. **Documentation URLs**: Specific API endpoint documentation links
+7. **Risk Assessment**: Risk level classification for each capability
+8. **Ownership Scope**: Token ownership classification (user vs organization)
+9. **OAuth Methods**: Token management and scope validation (for external providers)
+10. **Service Modules**: Separate files for different services within a provider
 
 ### Webhook and Trigger System (optional)
 
@@ -68,15 +72,28 @@ If your provider exposes inbound webhooks (e.g. Slack Events API), implement the
 - Include partition keys for proper event ordering and processing
 - Maintain correlation between webhook events and agent executions
 
+### BaseProvider
+
+All providers extend `BaseProvider` which automatically handles:
+
+- Dispatch table management from capability factories
+- Scope mapping generation
+- Standard `ProviderRuntime` method implementations
+- Trigger and webhook registration
+- Type-safe implementation without `any` types
+
 ### File Structure
 
 ```
-connect_hub/src/integrations/
-├── {provider-name}.ts              # Main provider implementation
-└── {provider-name}/
-    ├── {service-name}.ts           # Service-specific implementations
-    ├── {service-name}.ts           # Additional services (e.g., gmail.ts, calendar.ts)
-
+connect_hub/src/
+├── providers/
+│   ├── base.ts                     # BaseProvider abstract class
+│   └── types.ts                    # Provider type definitions
+└── integrations/
+    ├── {provider-name}.ts          # Main provider implementation
+    └── {provider-name}/
+        ├── {service-name}.ts       # Service-specific implementations
+        ├── {service-name}.ts       # Additional services (e.g., gmail.ts, calendar.ts)
 ```
 
 ## Step-by-Step Provider Creation
@@ -154,13 +171,11 @@ export async function {service}{Capability}(
 
 ### 2. Create the Main Provider File
 
-Create `connect_hub/src/integrations/{provider-name}.ts` using the dispatch table pattern:
+Create `connect_hub/src/integrations/{provider-name}.ts` using the new `BaseProvider` pattern:
 
 ```typescript
 import {
-  ProviderRuntime,
   Capability,
-  ExecutionContext,
   CapabilityMeta,
   CapabilityFactory,
   CapabilityRisk,
@@ -169,7 +184,8 @@ import {
   OAuthContext,
   CallbackResult,
 } from "../providers/types.js";
-import { ProviderKind, ProviderAuth } from "../models/capabilities.js";
+import { BaseProvider } from "../providers/base.js";
+import { ProviderKind, ProviderAuth } from "../models/providers.js";
 import { OwnershipScope } from "../models/shared.js";
 
 // Import service modules
@@ -178,8 +194,6 @@ import {
   {service}{capability}ParamsSchema,
   {service}{capability}ResultSchema,
 } from "./{provider-name}/{service-name}.js";
-
-const __dirname = import.meta.dirname;
 
 // ---------------------------------------------------------------------------
 // Capability Factory Functions
@@ -210,66 +224,57 @@ function create{Service}{Capability}Capability(): Capability<{Service}{Capabilit
 // Provider Class
 // ---------------------------------------------------------------------------
 
-// For providers with webhooks, use: implements ProviderRuntime<WebhookSchema, EventType>
-export class {Provider}Provider implements ProviderRuntime {
-  private readonly dispatchTable = new Map<string, Capability<any, any>>();
-  public readonly scopeMapping: Record<string, string[]>;
-
-  // Optional: External management links (e.g. provider app configuration)
-  links = [
-    "https://developer.{provider}.com/apps/your-app-id/settings"
-  ];
-
-  public readonly metadata = {
-    id: "{provider-id}",
-    displayName: "{Provider Display Name}",
-    description: "Description of what this provider does",
-    icon: "https://example.com/icon.png",
-    docsUrl: "https://developer.{provider}.com/docs",
-    kind: ProviderKind.External,
-    auth: ProviderAuth.OAuth2, // or OAuth1, ApiKey, etc.
-  } as const;
-
+// For providers with webhooks, use: extends BaseProvider<WebhookSchema, EventType>
+export class {Provider}Provider extends BaseProvider {
   constructor() {
-    // Define capability factories
-    const capabilityFactories: Record<string, CapabilityFactory> = {
-      "{service}.{capability}": create{Service}{Capability}Capability,
-      // Add more capabilities...
-    };
-
-    // Populate dispatch table
-    for (const [capabilityId, factory] of Object.entries(capabilityFactories)) {
-      this.dispatchTable.set(capabilityId, factory());
-    }
-
-    // Generate scopeMapping from dispatch table (capability ID -> provider scopes)
-    this.scopeMapping = {};
-    for (const [capabilityId, capability] of this.dispatchTable) {
-      for (const scope of capability.meta.requiredScopes) {
-        if (!this.scopeMapping[capabilityId]) {
-          this.scopeMapping[capabilityId] = [];
-        }
-        this.scopeMapping[capabilityId].push(scope);
-      }
-    }
+    super({
+      metadata: {
+        id: "{provider-id}",
+        displayName: "{Provider Display Name}",
+        description: "Description of what this provider does",
+        icon: "https://example.com/icon.png",
+        docsUrl: "https://developer.{provider}.com/docs",
+        kind: ProviderKind.External,
+        auth: ProviderAuth.OAuth2, // or OAuth1, ApiKey, etc.
+      },
+      capabilityFactories: {
+        "{service}.{capability}": create{Service}{Capability}Capability,
+        // Add more capabilities...
+      },
+      // Optional: External management links (e.g. provider app configuration)
+      links: [
+        "https://developer.{provider}.com/apps/your-app-id/settings"
+      ],
+      // Optional: Webhook support (add if provider supports webhooks)
+      webhooks,
+      // Optional: Trigger support (add if provider supports triggers)
+      triggers,
+    });
   }
 
-  getCapability<P, R>(capabilityId: string): Capability<P, R> {
-    const capability = this.dispatchTable.get(capabilityId);
-    if (!capability) {
-      throw new Error(`{Provider} capability ${capabilityId} not implemented`);
-    }
-    return capability as Capability<P, R>;
+  // OAuth methods implementation (only provider-specific methods needed)
+  generateAuthUrl(params: OAuthAuthUrlParams, ctx: OAuthContext): string {
+    // Implement OAuth authorization URL generation
   }
 
-  // Optional: Webhook support (add if provider supports webhooks)
-  webhooks = webhooks;
-
-  listCapabilities(): CapabilityMeta[] {
-    return Array.from(this.dispatchTable.values()).map((c) => c.meta);
+  async handleCallback(
+    params: OAuthCallbackParams,
+    ctx: OAuthContext,
+  ): Promise<CallbackResult> {
+    // Implement OAuth callback handling
   }
 
-  // ... OAuth methods implementation
+  async isTokenValid(accessToken: string): Promise<boolean> {
+    // Implement token validation
+  }
+
+  // Optional: Refresh token implementation
+  async refreshToken(
+    tokenPayload: Record<string, unknown>,
+    ctx: OAuthContext,
+  ): Promise<Record<string, unknown>> {
+    // Implement token refresh logic
+  }
 }
 ```
 
@@ -968,13 +973,13 @@ headers: {
 7. **❌ Don't forget OAuth error handling**: Check for `error` parameter in callbacks
 8. **❌ Don't ignore token expiration**: Implement `isTokenValid()` properly
 9. **❌ Don't forget risk assessment**: Every capability must have appropriate risk level
-10. **❌ Don't use dispatch table anti-patterns**: Don't add capabilities that aren't implemented
+10. **❌ Don't add unimplemented capabilities**: Only include capability factories that are fully implemented
 
 ## Integration Checklist
 
 ### Core Implementation
 
-- [ ] Provider file created with dispatch table pattern
+- [ ] Provider class created extending BaseProvider
 - [ ] Service modules created for multi-service providers
 - [ ] All capabilities implemented with TypeBox schemas
 - [ ] Capability factory functions created
@@ -982,13 +987,12 @@ headers: {
 - [ ] Ownership scopes assigned for all capabilities (User vs Organization)
 - [ ] API helper function with rate limiting and error handling
 - [ ] Capability metadata with documentation URLs
-- [ ] Provider metadata configured correctly
+- [ ] Provider metadata configured in BaseProvider constructor
 - [ ] External management links added (optional)
 - [ ] Required scopes defined for each capability
 - [ ] TypeBox Static pattern used throughout
 - [ ] Error handling implemented
 - [ ] Business logic validated
-- [ ] Scope mapping generated from dispatch table
 
 ### Webhook & Trigger Implementation (optional)
 
@@ -1023,14 +1027,11 @@ headers: {
 
 Refer to existing providers for implementation examples:
 
-- **Slack**: OAuth2 provider with dispatch table pattern, webhook support, and trigger system for event-driven workflows
-- **QuickBooks**: Complex business logic with parameter transformation using dispatch table pattern
-- **Google**: Multi-service provider with unified authentication and service modules using dispatch table pattern
-  - Service modules: `gmail.ts`, `calendar.ts`
-  - OAuth implementation using Google's SDK
-  - Comprehensive scope mapping generated from capabilities
+- **Slack**: OAuth2 provider extending BaseProvider with webhook support and triggers for event-driven workflows
+- **QuickBooks**: Business logic provider with parameter transformation
+- **Google**: Multi-service provider with service modules (`gmail.ts`, `calendar.ts`) and Google SDK OAuth implementation
 
-Each provider demonstrates the dispatch table pattern and can serve as a template for similar integrations. The Google provider is the most complete example showcasing the service module pattern and full OAuth implementation with proper risk assessments.
+Each provider extends BaseProvider and demonstrates different patterns: webhooks, multi-service architecture, and OAuth implementations.
 
 ## Quick-Win Provider Backlog
 

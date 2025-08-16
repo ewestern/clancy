@@ -1,33 +1,4 @@
-resource "aws_cognito_user_pool" "clancy_user_pool" {
-  name = "clancy-user-pool-${var.environment}"
-}
-/*
-Client metadata for machine-to-machine (M2M) client credentials
 
-You can pass client metadata in M2M requests. Client metadata is additional information from a user or application environment that can contribute to the outcomes of a Pre token generation Lambda trigger. In authentication operations with a user principal, you can pass client metadata to the pre token generation trigger in the body of AdminRespondToAuthChallenge and RespondToAuthChallenge API requests. Because applications conduct the flow for generation of access tokens for M2M with direct requests to the Token endpoint, they have a different model. In the POST body of token requests for client credentials, pass an aws_client_metadata parameter with the client metadata object URL-encoded (x-www-form-urlencoded) to string. For an example request, see Client credentials with basic authorization. The following is an example parameter that passes the key-value pairs {"environment": "dev", "language": "en-US"}.
-*/
-
-resource "aws_cognito_user_pool_client" "clancy_user_pool_client" {
-  name = "clancy-user-pool-client-${var.environment}"
-  user_pool_id = aws_cognito_user_pool.clancy_user_pool.id
-  allowed_oauth_flows = ["client_credentials"]
-  allowed_oauth_flows_user_pool_client = true
-  allowed_oauth_scopes = ["https://clancyai.com/all"]
-  depends_on = [aws_cognito_resource_server.clancy_resource_server]
-}
-
-
-resource "aws_cognito_resource_server" "clancy_resource_server" {
-  identifier = "https://clancyai.com"
-  name       = "clancy-resource-server-${var.environment}"
-
-  scope {
-    scope_name        = "all"
-    scope_description = "All permissions"
-  }
-
-  user_pool_id = aws_cognito_user_pool.clancy_user_pool.id
-}
 
 
 resource "aws_kinesis_stream" "clancy_stream" {
@@ -218,7 +189,7 @@ resource "aws_cloudwatch_event_api_destination" "agents_core" {
   connection_arn                   = aws_cloudwatch_event_connection.clancy_connection.arn
 }
 locals {
-  authorization_endpoint = "https://${aws_cognito_user_pool_domain.main.domain}.auth.us-east-1.amazoncognito.com/oauth2/token"
+  authorization_endpoint = var.cognito_authorization_endpoint
 }
 
 resource "aws_cloudwatch_event_connection" "clancy_connection" {
@@ -229,11 +200,11 @@ resource "aws_cloudwatch_event_connection" "clancy_connection" {
   auth_parameters {
     ##invocation_http_parameters {
     ##}
-    oauth {
-      client_parameters {
-        client_id = aws_cognito_user_pool_client.clancy_user_pool_client.id
-        client_secret = aws_cognito_user_pool_client.clancy_user_pool_client.client_secret
-      }
+          oauth {
+        client_parameters {
+          client_id = var.cognito_user_pool_client_id
+          client_secret = var.cognito_user_pool_client_secret
+        }
       http_method = "POST"
       authorization_endpoint = local.authorization_endpoint
       oauth_http_parameters {
@@ -341,10 +312,7 @@ resource "aws_iam_role_policy_attachment" "eventbridge_connect_hub_attachment" {
 }
 
 
-resource "aws_cognito_user_pool_domain" "main" {
-  domain       = "clancy"
-  user_pool_id = aws_cognito_user_pool.clancy_user_pool.id
-}
+
 
 
 

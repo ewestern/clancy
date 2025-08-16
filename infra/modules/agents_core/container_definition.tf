@@ -1,45 +1,6 @@
 data "aws_region" "current" {}
 
 locals {
-  init_container_definition = {
-    name      = "init",
-    image     = "public.ecr.aws/aws-observability/adot-autoinstrumentation-node:v0.6.0",
-    essential = false,
-    command = [
-      "cp",
-      "-a",
-      "/autoinstrumentation/.",
-      "/otel-auto-instrumentation"
-    ],
-    mountPoints = [
-      {
-        sourceVolume  = "opentelemetry-auto-instrumentation",
-        containerPath = "/otel-auto-instrumentation",
-        readOnly      = false
-      }
-    ],
-  }
-
-  sidecar_container_definition = {
-    name      = "ecs-cwagent",
-    image     = "public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest",
-    essential = true,
-    secrets = [
-      {
-        name      = "CW_CONFIG_CONTENT",
-        valueFrom = "ecs-cwagent"
-      }
-    ],
-    logConfiguration = {
-      logDriver = "awslogs",
-        options = {
-          "awslogs-create-group"  = "true",
-          "awslogs-group"         = aws_cloudwatch_log_group.agents_core_service_log_group.name,
-          "awslogs-region"        = data.aws_region.current.name,
-          "awslogs-stream-prefix" = "ecs"
-        }
-    }
-  }
 
   container_definitions = jsonencode([
     //local.init_container_definition,
@@ -56,7 +17,11 @@ locals {
       //],
       environment = [
         {
-          name = "CONNECT_HUB_API_URL"
+          name  = "KINESIS_STREAM_NAME"
+          value = var.kinesis_stream_name
+        },
+        {
+          name  = "CONNECT_HUB_API_URL"
           value = var.connect_hub_api_url
         },
         {
@@ -132,7 +97,7 @@ locals {
           # (and Service Connect) to expect HTTP/2 semantics, which our Fastify
           # server does not support and results in failing Target Group health
           # checks.
-          appProtocol   = "http"
+          appProtocol = "http"
         }
       ]
       #healthCheck = {

@@ -130,8 +130,10 @@ Resources:
           NODE_ENV: !Ref Environment
           CONNECT_HUB_API_URL: !Ref ConnectHubApiUrl
           DOCUMENTS_BUCKET_NAME: !Ref DocumentsBucketName
-          CONNECT_HUB_AUTH_TOKEN: !Ref ConnectHubAuthToken
           OPENAI_API_KEY: !Ref OpenaiApiKey
+          COGNITO_CLIENT_ID: !Ref CognitoClientId
+          COGNITO_CLIENT_SECRET: !Ref CognitoClientSecret
+          COGNITO_DOMAIN: !Ref CognitoDomain
       Policies:
         - Version: "2012-10-17"
           Statement:

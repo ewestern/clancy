@@ -9,6 +9,7 @@ import {
   OAuthContext,
   CallbackResult,
 } from "../providers/types.js";
+import { BaseProvider } from "../providers/base.js";
 import { ProviderKind, ProviderAuth } from "../models/providers.js";
 import { OwnershipScope } from "../models/shared.js";
 import { ClientSecretCredential } from "@azure/identity";
@@ -192,70 +193,32 @@ function createUserProfileGetCapability(): Capability<
 // ---------------------------------------------------------------------------
 // Provider Class
 // ---------------------------------------------------------------------------
-export class MicrosoftProvider implements ProviderRuntime {
-  private readonly dispatchTable = new Map<string, Capability<any, any>>();
-  public readonly scopeMapping: Record<string, string[]>;
-
-  // Links to external management resources
-  links = [
-    "https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade",
-    "https://docs.microsoft.com/en-us/graph/permissions-reference",
-  ];
-
-  public readonly metadata = {
-    id: "microsoft",
-    displayName: "Microsoft 365",
-    description:
-      "Microsoft 365 productivity and collaboration platform via Microsoft Graph",
-    icon: "https://developer.microsoft.com/en-us/graph/graph/images/graph-logo.png",
-    docsUrl: "https://docs.microsoft.com/en-us/graph/",
-    kind: ProviderKind.External,
-    auth: ProviderAuth.OAuth2,
-  } as const;
-
+export class MicrosoftProvider extends BaseProvider {
   constructor() {
-    // Define capability factories
-    const capabilityFactories: Record<string, CapabilityFactory> = {
-      "mail.send": createMailSendCapability,
-      "mail.messages.list": createMailMessagesListCapability,
-      "calendar.event.create": createCalendarEventCreateCapability,
-      "calendar.events.list": createCalendarEventsListCapability,
-      "users.list": createUsersListCapability,
-      "user.profile.get": createUserProfileGetCapability,
-    };
-
-    // Populate dispatch table
-    for (const [capabilityId, factory] of Object.entries(capabilityFactories)) {
-      this.dispatchTable.set(capabilityId, factory());
-    }
-
-    // Generate scopeMapping from dispatch table (capability ID -> scopes)
-    this.scopeMapping = {};
-    for (const [capabilityId, capability] of this.dispatchTable) {
-      for (const scope of capability.meta.requiredScopes) {
-        if (!this.scopeMapping[capabilityId]) {
-          this.scopeMapping[capabilityId] = [];
-        }
-        this.scopeMapping[capabilityId].push(scope);
-      }
-    }
-  }
-
-  getCapability<P, R>(capabilityId: string): Capability<P, R> {
-    const capability = this.dispatchTable.get(capabilityId);
-    if (!capability) {
-      throw new Error(`Microsoft capability ${capabilityId} not implemented`);
-    }
-    return capability as Capability<P, R>;
-  }
-
-  listCapabilities(): CapabilityMeta[] {
-    return Array.from(this.dispatchTable.values()).map((c) => c.meta);
-  }
-
-  listTriggers(): [] {
-    // Microsoft provider doesn't implement triggers yet
-    return [];
+    super({
+      metadata: {
+        id: "microsoft",
+        displayName: "Microsoft 365",
+        description:
+          "Microsoft 365 productivity and collaboration platform via Microsoft Graph",
+        icon: "https://developer.microsoft.com/en-us/graph/graph/images/graph-logo.png",
+        docsUrl: "https://docs.microsoft.com/en-us/graph/",
+        kind: ProviderKind.External,
+        auth: ProviderAuth.OAuth2,
+      },
+      capabilityFactories: {
+        "mail.send": createMailSendCapability,
+        "mail.messages.list": createMailMessagesListCapability,
+        "calendar.event.create": createCalendarEventCreateCapability,
+        "calendar.events.list": createCalendarEventsListCapability,
+        "users.list": createUsersListCapability,
+        "user.profile.get": createUserProfileGetCapability,
+      },
+      links: [
+        "https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade",
+        "https://docs.microsoft.com/en-us/graph/permissions-reference",
+      ],
+    });
   }
 
   // ---------------------------------------------------------------------------

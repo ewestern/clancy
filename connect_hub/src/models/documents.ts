@@ -83,6 +83,12 @@ export const DocumentDownloadResponseSchema = Type.Object({
   expiresIn: Type.Number({ description: "URL expiration time in seconds" }),
 });
 
+// Document delete response
+export const DocumentDeleteResponseSchema = Type.Object({
+  message: Type.String({ description: "Deletion status message" }),
+  documentId: Type.String({ description: "ID of deleted document" }),
+});
+
 // Bulk snippets insert (for Lambda)
 export const BulkSnippetsRequestSchema = Type.Object({
   orgId: Type.String(),
@@ -314,6 +320,24 @@ export const DocumentDownloadEndpoint = {
   },
   security: [{ bearerAuth: [] }],
 };
+
+export const DocumentDeleteEndpoint = {
+  tags: ["Documents"],
+  description: "Delete document and all related snippets",
+  params: {
+    type: "object",
+    properties: {
+      documentId: { type: "string" },
+    },
+    required: ["documentId"],
+  },
+  response: {
+    200: DocumentDeleteResponseSchema,
+    404: Ref(ErrorSchema),
+    500: Ref(ErrorSchema),
+  },
+  security: [{ bearerAuth: [] }],
+};
 export const DocumentIngestionCompleteEndpoint = {
   tags: ["Documents"],
   description: "Mark document ingestion as complete (internal)",
@@ -377,6 +401,9 @@ export type DocumentStatusResponse = Static<
 >;
 export type DocumentDownloadResponse = Static<
   typeof DocumentDownloadResponseSchema
+>;
+export type DocumentDeleteResponse = Static<
+  typeof DocumentDeleteResponseSchema
 >;
 export type BulkSnippetsRequest = Static<typeof BulkSnippetsRequestSchema>;
 export type BulkSnippetsResponse = Static<typeof BulkSnippetsResponseSchema>;

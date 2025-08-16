@@ -3,6 +3,7 @@ import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "crypto";
@@ -35,6 +36,7 @@ import {
   DocumentFinalizeEndpoint,
   DocumentStatusEndpoint,
   DocumentDownloadEndpoint,
+  DocumentDeleteEndpoint,
   DocumentIngestionCompleteEndpoint,
   BulkSnippetsEndpoint,
   DocumentsListEndpoint,
@@ -333,6 +335,135 @@ export async function documentsRoutes(app: FastifyTypeBox) {
         return reply.status(500).send({
           error: "Internal server error",
           message: "Failed to generate download URL",
+          statusCode: 500,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    },
+  );
+
+  // DELETE /documents/:documentId - Delete document and all related data
+  app.delete(
+    "/documents/:documentId",
+    {
+      schema: DocumentDeleteEndpoint,
+    },
+    async (request, reply) => {
+      const { documentId } = request.params as { documentId: string };
+
+      const { orgId } = getAuth(request);
+      if (!orgId) {
+        return reply.status(401).send({
+          error: "Unauthorized",
+          message: "No organization ID found",
+          statusCode: 401,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      try {
+        // First, fetch the document to get the S3 URI and verify ownership
+        const doc = await app.db.query.documentStore.findFirst({
+          where: and(
+            eq(documentStore.documentId, documentId),
+            eq(documentStore.orgId, orgId),
+          ),
+        });
+
+        if (!doc) {
+          return reply.status(404).send({
+            message: `Document with ID ${documentId} not found or access denied`,
+            error: "Document not found",
+            statusCode: 404,
+            timestamp: new Date().toISOString(),
+          });
+        }
+
+        // Extract S3 key from document URI for deletion
+        let s3Key: string | null = null;
+        let s3Bucket: string | null = null;
+
+        if (doc.documentUri && doc.documentUri.startsWith("s3://")) {
+          const s3Uri = doc.documentUri.replace("s3://", "");
+          const [bucket, ...keyParts] = s3Uri.split("/");
+          s3Bucket = bucket || null;
+          s3Key = keyParts.join("/");
+        }
+
+        // Delete from database first (in a transaction)
+        await app.db.transaction(async (tx) => {
+          // Delete associated knowledge snippets first
+          await tx
+            .delete(knowledgeSnippets)
+            .where(
+              and(
+                eq(knowledgeSnippets.documentId, documentId),
+                eq(knowledgeSnippets.orgId, orgId),
+              ),
+            );
+
+          // Delete document tags
+          await tx
+            .delete(documentTags)
+            .where(
+              and(
+                eq(documentTags.documentId, doc.id),
+                eq(documentTags.orgId, orgId),
+              ),
+            );
+
+          // Delete the document itself
+          await tx
+            .delete(documentStore)
+            .where(
+              and(
+                eq(documentStore.documentId, documentId),
+                eq(documentStore.orgId, orgId),
+              ),
+            );
+        });
+
+        // Delete from S3 if we have valid S3 info
+        if (s3Key && s3Bucket) {
+          try {
+            const deleteCommand = new DeleteObjectCommand({
+              Bucket: s3Bucket,
+              Key: s3Key,
+            });
+            await s3Client.send(deleteCommand);
+            app.log.info("Successfully deleted document from S3", {
+              bucket: s3Bucket,
+              key: s3Key,
+              documentId,
+            });
+          } catch (s3Error) {
+            app.log.warn(
+              "Failed to delete document from S3, but database deletion succeeded",
+              {
+                bucket: s3Bucket,
+                key: s3Key,
+                documentId,
+                error: s3Error,
+              },
+            );
+            // Continue - database deletion succeeded, which is more important
+          }
+        } else {
+          app.log.warn("No valid S3 URI found for document", {
+            documentId,
+            documentUri: doc.documentUri,
+          });
+        }
+
+        return reply.status(200).send({
+          message: "Document and all related data deleted successfully",
+          documentId,
+        });
+      } catch (error) {
+        app.log.error("Error deleting document:", error);
+        return reply.status(500).send({
+          error: "Internal server error",
+          message: "Failed to delete document",
           statusCode: 500,
           timestamp: new Date().toISOString(),
         });

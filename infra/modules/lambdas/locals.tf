@@ -42,18 +42,22 @@ locals {
     CHECKPOINTER_DB_URL = var.checkpointer_db_url
   }
 
-  # Environment variables specific to agent enrichment
-  enrichment_env_vars = merge(local.common_env_vars, {
-  })
-
   # Environment variables specific to executor functions
   executor_env_vars = merge(local.common_env_vars, {
+    COGNITO_CLIENT_ID = var.cognito_client_id
+    COGNITO_CLIENT_SECRET = var.cognito_client_secret
+    COGNITO_DOMAIN = var.cognito_domain
+    
   })
 
   # Environment variables specific to document ingestion
   document_ingest_env_vars = merge(local.common_env_vars, {
     DOCUMENTS_BUCKET_NAME = local.documents_bucket_name
-    CONNECT_HUB_AUTH_TOKEN = "lambda-secret" # TODO: Use proper M2M token
+    CONNECT_HUB_API_URL = var.connect_hub_api_url
+    OPENAI_API_KEY = local.openai_api_key
+    COGNITO_CLIENT_ID = var.cognito_client_id
+    COGNITO_CLIENT_SECRET = var.cognito_client_secret
+    COGNITO_DOMAIN = var.cognito_domain
   })
 
   # S3 bucket name for documents

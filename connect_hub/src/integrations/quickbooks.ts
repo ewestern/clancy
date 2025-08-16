@@ -11,6 +11,7 @@ import {
   CallbackResult,
   Trigger,
 } from "../providers/types.js";
+import { BaseProvider } from "../providers/base.js";
 import { ProviderKind, ProviderAuth } from "../models/providers.js";
 import { OwnershipScope } from "../models/shared.js";
 import { Type, Static } from "@sinclair/typebox";
@@ -496,65 +497,30 @@ function createReportPLCapability(): Capability<
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
-export class QuickBooksProvider implements ProviderRuntime {
-  links = [
-    "https://developer.intuit.com/appdetail/overview?appId=djQuMTo6OGQzYmJlYTI3Yg:f0608889-15b2-441b-93c8-8e9c3c644242&id=9341454993684865",
-  ];
-  private readonly dispatchTable = new Map<string, Capability>();
-  public readonly scopeMapping: Record<string, string[]>;
-
-  public readonly metadata = {
-    id: "quickbooks",
-    displayName: "QuickBooks Online",
-    description: "Accounting platform for small businesses",
-    icon: "https://developer.intuit.com/app/developer/qbo/docs/develop/icon.png",
-    docsUrl:
-      "https://developer.intuit.com/app/developer/qbo/docs/api/accounting",
-    kind: ProviderKind.External,
-    auth: ProviderAuth.OAuth2,
-  } as const;
-
+export class QuickBooksProvider extends BaseProvider {
   constructor() {
-    // Define capability factories
-    const capabilityFactories: Record<string, CapabilityFactory> = {
-      "invoice.create": createInvoiceCreateCapability,
-      "customer.upsert": createCustomerUpsertCapability,
-      "expense.list": createExpenseListCapability,
-      "payment.record": createPaymentRecordCapability,
-      "reports.profitloss": createReportPLCapability,
-    };
-
-    // Populate dispatch table
-    for (const [capabilityId, factory] of Object.entries(capabilityFactories)) {
-      this.dispatchTable.set(capabilityId, factory());
-    }
-
-    // Generate scopeMapping from dispatch table
-    this.scopeMapping = {};
-    for (const [capabilityId, capability] of this.dispatchTable) {
-      for (const scope of capability.meta.requiredScopes) {
-        if (!this.scopeMapping[capabilityId]) {
-          this.scopeMapping[capabilityId] = [];
-        }
-        this.scopeMapping[capabilityId].push(scope);
-      }
-    }
-  }
-
-  getCapability<P, R>(capId: string): Capability<P, R> {
-    const capability = this.dispatchTable.get(capId);
-    if (!capability) {
-      throw new Error(`QuickBooks capability ${capId} not implemented`);
-    }
-    return capability as Capability<P, R>;
-  }
-
-  listCapabilities() {
-    return Array.from(this.dispatchTable.values()).map((c) => c.meta);
-  }
-
-  listTriggers(): Trigger<any>[] {
-    return [];
+    super({
+      metadata: {
+        id: "quickbooks",
+        displayName: "QuickBooks Online",
+        description: "Accounting platform for small businesses",
+        icon: "https://developer.intuit.com/app/developer/qbo/docs/develop/icon.png",
+        docsUrl:
+          "https://developer.intuit.com/app/developer/qbo/docs/api/accounting",
+        kind: ProviderKind.External,
+        auth: ProviderAuth.OAuth2,
+      },
+      capabilityFactories: {
+        "invoice.create": createInvoiceCreateCapability,
+        "customer.upsert": createCustomerUpsertCapability,
+        "expense.list": createExpenseListCapability,
+        "payment.record": createPaymentRecordCapability,
+        "reports.profitloss": createReportPLCapability,
+      },
+      links: [
+        "https://developer.intuit.com/appdetail/overview?appId=djQuMTo6OGQzYmJlYTI3Yg:f0608889-15b2-441b-93c8-8e9c3c644242&id=9341454993684865",
+      ],
+    });
   }
 
   // ---------------------------------------------------------------------------

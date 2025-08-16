@@ -118,6 +118,11 @@ variable "db_subnet_ids" {
   description = "The IDs of the subnets to deploy the database to"
 }
 
+variable "kinesis_stream_name" {
+  type        = string
+  description = "The name of the Kinesis stream to use for the service"
+}
+
 locals {
   lb_endpoint = "https://${aws_route53_record.connect_hub_service.fqdn}"
 }

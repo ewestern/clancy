@@ -118,6 +118,11 @@ variable "connect_hub_api_url" {
   description = "The URL of the Connect Hub API"
 }
 
+variable "kinesis_stream_name" {
+  type        = string
+  description = "The name of the Kinesis stream to use for the service"
+}
+
 output "lb_endpoint" {
   value = "https://${aws_route53_record.agents_core_service.fqdn}"
 }

@@ -56,7 +56,7 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
       reply: FastifyReplyTypeBox<typeof CreateEmployeeEndpoint>,
     ) => {
       // steps: create employee, create agents, create trigger-registrations, publish event
-      const {getToken, userId, orgId} = getAuth(request);
+      const { getToken, userId, orgId } = getAuth(request);
       if (!userId) {
         return reply.status(401).send({
           error: "Unauthorized",
@@ -85,10 +85,7 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
           .returning();
         const triggerRegistrations = await Promise.all(
           createdAgents.map((agent) =>
-            createTriggerRegistration(
-              agent,
-              getToken() as Promise<string>,
-            ),
+            createTriggerRegistration(agent, getToken() as Promise<string>),
           ),
         );
         await publishToKinesis(

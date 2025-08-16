@@ -1,6 +1,18 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Shield, CheckCircle, XCircle, AlertTriangle, RefreshCw } from "lucide-react";
-import { ConnectionApi, CapabilitiesApi, Configuration as ConnectHubConfiguration, type Connection, ConnectionStatus } from "@ewestern/connect_hub_sdk";
+import {
+  Shield,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  RefreshCw,
+} from "lucide-react";
+import {
+  ConnectionApi,
+  CapabilitiesApi,
+  Configuration as ConnectHubConfiguration,
+  type Connection,
+  ConnectionStatus,
+} from "@ewestern/connect_hub_sdk";
 import { useAuth } from "@clerk/react-router";
 
 type ConnectionCard = Connection & {
@@ -35,8 +47,14 @@ const Connections: React.FC = () => {
       // Build lookups:
       //  - capability names by provider
       //  - provider metadata (icon, display name)
-      const capabilityNameByProvider: Record<string, Record<string, string>> = {};
-      const providerMetaById: Record<string, { icon?: string; displayName?: string }> = {};
+      const capabilityNameByProvider: Record<
+        string,
+        Record<string, string>
+      > = {};
+      const providerMetaById: Record<
+        string,
+        { icon?: string; displayName?: string }
+      > = {};
       for (const provider of providerCapabilities) {
         providerMetaById[provider.id] = {
           icon: provider.icon,
@@ -63,7 +81,9 @@ const Connections: React.FC = () => {
       });
 
       // Sort by provider display name for readability
-      const sorted = withNames.sort((a, b) => (a.displayName > b.displayName ? 1 : -1));
+      const sorted = withNames.sort((a, b) =>
+        a.displayName > b.displayName ? 1 : -1,
+      );
       setConnectionCards(sorted);
     } catch (error) {
       console.error("Failed to load connections data:", error);
@@ -146,7 +166,9 @@ const Connections: React.FC = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">My Connections</h1>
+              <h1 className="text-3xl font-bold text-gray-900">
+                My Connections
+              </h1>
               <p className="mt-2 text-gray-600">
                 Manage your OAuth connections for all AI employees to use
               </p>
@@ -156,7 +178,9 @@ const Connections: React.FC = () => {
               disabled={refreshing}
               className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`}
+              />
               Refresh
             </button>
           </div>
@@ -178,35 +202,52 @@ const Connections: React.FC = () => {
                           <>
                             <img
                               src={connectionCard.providerIcon}
-                              alt={connectionCard.providerDisplayName || connectionCard.displayName}
+                              alt={
+                                connectionCard.providerDisplayName ||
+                                connectionCard.displayName
+                              }
                               className="h-8 w-8"
                               onError={(e) => {
                                 e.currentTarget.style.display = "none";
-                                (e.currentTarget.nextSibling as HTMLElement | null)?.classList.remove("hidden");
+                                (
+                                  e.currentTarget
+                                    .nextSibling as HTMLElement | null
+                                )?.classList.remove("hidden");
                               }}
                             />
                             <span className="text-xl font-semibold text-gray-600 hidden">
-                              {(connectionCard.providerDisplayName || connectionCard.displayName).charAt(0)}
+                              {(
+                                connectionCard.providerDisplayName ||
+                                connectionCard.displayName
+                              ).charAt(0)}
                             </span>
                           </>
                         ) : (
                           <span className="text-xl font-semibold text-gray-600">
-                            {(connectionCard.providerDisplayName || connectionCard.displayName).charAt(0)}
+                            {(
+                              connectionCard.providerDisplayName ||
+                              connectionCard.displayName
+                            ).charAt(0)}
                           </span>
                         )}
                       </div>
                     </div>
                     <div>
                       <h3 className="text-lg font-medium text-gray-900">
-                        {connectionCard.providerDisplayName || connectionCard.displayName}
+                        {connectionCard.providerDisplayName ||
+                          connectionCard.displayName}
                       </h3>
                       {/* Optionally show external account metadata summary */}
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(connectionCard.status)}`}>
+                    <div
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(connectionCard.status)}`}
+                    >
                       {getStatusIcon(connectionCard.status)}
-                      <span className="ml-2">{getStatusText(connectionCard.status)}</span>
+                      <span className="ml-2">
+                        {getStatusText(connectionCard.status)}
+                      </span>
                     </div>
                     {connectionCard.status === ConnectionStatus.Active && (
                       <button
@@ -222,7 +263,9 @@ const Connections: React.FC = () => {
                 {/* Capabilities list */}
                 {connectionCard.capabilityDisplayNames.length > 0 && (
                   <div className="mt-4">
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Capabilities</h4>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">
+                      Capabilities
+                    </h4>
                     <div className="flex flex-wrap gap-2">
                       {connectionCard.capabilityDisplayNames.map((name) => (
                         <span
@@ -243,7 +286,9 @@ const Connections: React.FC = () => {
         {connectionCards.length === 0 && (
           <div className="text-center py-12">
             <Shield className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No connections</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              No connections
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
               Your AI employees don't require any external connections yet.
             </p>

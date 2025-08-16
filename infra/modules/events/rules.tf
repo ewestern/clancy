@@ -51,7 +51,12 @@ resource "aws_cloudwatch_event_rule" "agent_core_subscriptions" {
         type = [
           "employeestateupdate",
           "providerconnectioncompleted",
-          "requesthumanfeedback"
+          "requesthumanfeedback",
+          "requestapproval",
+          "actioninitiated",
+          "actioncompleted",
+          "runcompleted",
+          "runintent",
         ]
       }
     }

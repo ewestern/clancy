@@ -236,7 +236,7 @@ export function createChatPostCapability(): Capability<
   const meta: CapabilityMeta = {
     id: "chat.post",
     displayName: "Post Message",
-    description: "Send a message to a Slack channel using chat.postMessage",
+    description: "Send a message to a Slack channel",
     docsUrl: "https://api.slack.com/methods/chat.postMessage",
     paramsSchema: chatPostParamsSchema,
     resultSchema: chatPostResultSchema,

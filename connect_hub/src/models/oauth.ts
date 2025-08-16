@@ -1,5 +1,5 @@
 import { Static, Type } from "@sinclair/typebox";
-import { StringEnum } from "./shared.js";
+import { Ref, StringEnum } from "./shared.js";
 
 // OAuth Needs Request/Response Schemas
 export const OAuthNeedsQuerySchema = Type.Object({
@@ -186,16 +186,27 @@ export const OAuthAuditRequestSchema = Type.Object({
     }),
   ),
 });
+export enum OauthConnectionStatus {
+  Connected = "connected",
+  NeedsAuth = "needs_auth",
+  NeedsScopeUpgrade = "needs_scope_upgrade",
+}
+export const OauthConnectionStatusSchema = StringEnum(
+  [
+    OauthConnectionStatus.Connected,
+    OauthConnectionStatus.NeedsAuth,
+    OauthConnectionStatus.NeedsScopeUpgrade,
+  ],
+  {
+    $id: "OauthConnectionStatus",
+  },
+);
 
 export const OAuthAuditProviderResultSchema = Type.Object({
   providerId: Type.String(),
   providerDisplayName: Type.String(),
   providerIcon: Type.String(),
-  status: Type.Union([
-    Type.Literal("connected"),
-    Type.Literal("needs_auth"),
-    Type.Literal("needs_scope_upgrade"),
-  ]),
+  status: Ref(OauthConnectionStatusSchema),
   grantedCapabilities: Type.Array(Type.String()),
   missingCapabilities: Type.Array(Type.String()),
   oauthUrl: Type.String(),

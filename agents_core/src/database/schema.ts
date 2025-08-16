@@ -14,6 +14,7 @@ import {
 import { ApprovalRequestStatus } from "../models/approvals.js";
 import { Agent, AgentStatus } from "../models/agents.js";
 import { EmployeeStatus } from "../models/employees.js";
+import { AgentActionStatus, AgentRunStatus } from "../models/runs.js";
 
 export const agentStatus = pgEnum("agent_status", [
   AgentStatus.Active,
@@ -137,4 +138,46 @@ export const conversationMessages = pgTable("conversation_messages", {
     .defaultNow()
     .notNull()
     .$onUpdate(() => new Date()),
+});
+
+export const agentRunStatus = pgEnum("agent_run_status", [
+  AgentRunStatus.Running,
+  AgentRunStatus.Completed,
+  AgentRunStatus.Failed,
+]);
+
+export const agentRuns = pgTable("agent_runs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  agentId: uuid("agent_id")
+    .references(() => agents.id)
+    .notNull(),
+  executionId: text("execution_id").notNull(),
+  status: agentRunStatus("status").notNull().default(AgentRunStatus.Running),
+  result: jsonb("result").$type<Record<string, any>>().notNull().default({}),
+  runStartedAt: timestamp("run_started_at").notNull(),
+  runCompletedAt: timestamp("run_completed_at"),
+});
+
+export const agentRunActionStatus = pgEnum("agent_run_action_status", [
+  AgentActionStatus.Success,
+  AgentActionStatus.Running,
+  AgentActionStatus.Error,
+]);
+
+export const agentRunActions = pgTable("agent_run_actions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  agentRunId: uuid("agent_run_id")
+    .references(() => agentRuns.id)
+    .notNull(),
+  providerId: text("provider_id").notNull(),
+  capabilityId: text("capability_id").notNull(),
+  formattedRequest: jsonb("formatted_request")
+    .$type<Record<string, any>>()
+    .notNull()
+    .default({}),
+  result: jsonb("result").$type<Record<string, any>>().notNull().default({}),
+  status: agentRunActionStatus("status")
+    .notNull()
+    .default(AgentActionStatus.Running),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });

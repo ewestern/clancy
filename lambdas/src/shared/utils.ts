@@ -1,5 +1,4 @@
 import { KinesisClient, PutRecordCommand } from "@aws-sdk/client-kinesis";
-import { LambdaEvent } from "./types.js";
 import { Event } from "@ewestern/events";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
@@ -7,17 +6,6 @@ dayjs.extend(utc);
 
 // Initialize Kinesis client
 const kinesisClient = new KinesisClient({ region: process.env.AWS_REGION });
-
-/**
- * Parse EventBridge event to extract the detail payload
- */
-export function parseEventBridgeEvent(event: any): LambdaEvent {
-  if (!event.detail) {
-    throw new Error("Invalid EventBridge event: missing detail");
-  }
-
-  return event as LambdaEvent;
-}
 
 export function getCurrentTimestamp() {
   return dayjs().utc().format();

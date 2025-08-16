@@ -33,6 +33,7 @@ export const knowledgeSearchDocumentSchema = Type.Object({
   content: Nullable(Type.String({ description: "Snippet text" })),
   metadata: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
   similarity: Type.Number({ description: "Cosine similarity score (0-1)" }),
+  documentId: Nullable(Type.String({ description: "Document ID" })),
 });
 export type KnowledgeSearchDocument = Static<
   typeof knowledgeSearchDocumentSchema
@@ -69,6 +70,7 @@ async function executeKnowledgeSearch(
       content: knowledgeSnippets.blob,
       similarity: similarity,
       metadata: knowledgeSnippets.metadata,
+      documentId: knowledgeSnippets.documentId,
       //summary: sql<string | null>`(knowledge_snippets.metadata ->> 'summary')`,
       //s3ObjectUri: sql<string | null>`(knowledge_snippets.metadata ->> 's3ObjectUri')`,
     })
@@ -78,6 +80,8 @@ async function executeKnowledgeSearch(
     )
     .orderBy(desc(similarity))
     .limit(limit);
+
+  console.log("Results:", results);
 
   return results;
 }

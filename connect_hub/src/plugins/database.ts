@@ -12,7 +12,6 @@ const registerDatabase: FastifyPluginAsync = async (fastify) => {
   // Get database URL from environment
   dotenv.config();
   const databaseUrl = process.env.DATABASE_URL!;
-  console.log("databaseUrl", databaseUrl);
 
   // Create PostgreSQL connection
   const queryClient = postgres(databaseUrl);

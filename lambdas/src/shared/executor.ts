@@ -4,7 +4,11 @@ import { ChatAnthropic } from "@langchain/anthropic";
 import { tool } from "@langchain/core/tools";
 import { RunnableConfig } from "@langchain/core/runnables";
 import { Type } from "@sinclair/typebox";
-import { FormattedApprovalRequest } from "@ewestern/events";
+import {
+  ApprovalRequest,
+  ApprovalRequestSchema,
+  EventType,
+} from "@ewestern/events";
 import {
   Agent,
   V1AgentsIdPutRequestCapabilitiesInner,
@@ -16,12 +20,30 @@ import {
   Configuration,
 } from "@ewestern/connect_hub_sdk";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { getCurrentTimestamp, publishToKinesis } from "./utils";
 
 interface MessageInput {
   messages: {
     role: "user";
     content: string;
   }[];
+}
+//export const FormattedApprovalRequestSchema = Type.Object({
+//  request: Type.Any(),
+//  capabilityName: Type.String(),
+//  capabilityDescription: Type.String(),
+//  providerName: Type.String(),
+//  providerDescription: Type.String(),
+//  schema: Type.Any(),
+//})
+
+interface FormattedApprovalRequest {
+  request: any;
+  capabilityName: string;
+  capabilityDescription: string;
+  providerName: string;
+  providerDescription: string;
+  schema: any;
 }
 
 export class Executor {
@@ -55,6 +77,51 @@ export class Executor {
     return llm;
   }
 
+  async publishActionInitiatedEvent(
+    capabilityId: V1AgentsIdPutRequestCapabilitiesInner,
+    config: RunnableConfig
+  ) {
+    await publishToKinesis(
+      {
+        type: EventType.ActionInitiated,
+        orgId: this.agent.orgId,
+        userId: this.agent.userId,
+        timestamp: getCurrentTimestamp(),
+        executionId: config.configurable?.thread_id,
+        agentId: this.agent.id!,
+        capability: {
+          id: capabilityId.id,
+          providerId: capabilityId.providerId,
+        },
+      },
+      config.configurable?.thread_id
+    );
+  }
+
+  async publishActionCompletedEvent(
+    capabilityId: V1AgentsIdPutRequestCapabilitiesInner,
+    config: RunnableConfig,
+    result: any
+  ) {
+    await publishToKinesis(
+      {
+        type: EventType.ActionCompleted,
+        orgId: this.agent.orgId,
+        userId: this.agent.userId,
+        timestamp: getCurrentTimestamp(),
+        executionId: config.configurable?.thread_id,
+        agentId: this.agent.id!,
+        capability: {
+          id: capabilityId.id,
+          providerId: capabilityId.providerId,
+        },
+        result: result,
+        status: "success",
+      },
+      config.configurable?.thread_id
+    );
+  }
+
   async getCapabilityTools(
     capabilities: V1AgentsIdPutRequestCapabilitiesInner[]
   ) {
@@ -79,10 +146,17 @@ export class Executor {
                 providerDescription: description,
                 schema: capability.paramsSchema,
               });
-              const response = await interrupt(formattedRequest);
+              const response = await interrupt({
+                formattedRequest,
+                capability: {
+                  id: capabilityId.id,
+                  providerId: capabilityId.providerId,
+                },
+              });
               canRun = response.approved;
             }
             if (canRun) {
+              await this.publishActionInitiatedEvent(capabilityId, config);
               const result =
                 await this.proxyApi.proxyProviderIdCapabilityIdPost({
                   providerId: capabilityId.providerId,
@@ -93,6 +167,11 @@ export class Executor {
                     orgId: this.agent.orgId,
                   },
                 });
+              await this.publishActionCompletedEvent(
+                capabilityId,
+                config,
+                result
+              );
               return result;
             }
             return {
@@ -133,7 +212,9 @@ export class Executor {
     );
   }
 
-  async formatApprovalRequest(request: FormattedApprovalRequest) {
+  async formatApprovalRequest(
+    request: FormattedApprovalRequest
+  ): Promise<ApprovalRequest> {
     const model = await this.getLLm();
     const agent = createReactAgent({
       llm: model,
@@ -142,23 +223,7 @@ export class Executor {
       prompt: `
       You are an agent that helps translate an API request into a human readable format appropriate for approval.
       `,
-      responseFormat: Type.Object({
-        title: Type.String({
-          minLength: 5,
-          maxLength: 50,
-          description: "A short title for the request.",
-        }),
-        summary: Type.String({
-          minLength: 30,
-          maxLength: 500,
-          description:
-            "A summary giving the user an explanation of what action will be taken if they approve.",
-        }),
-        details: Type.Array(Type.String(), {
-          description:
-            "A list of details about the request that are relevant to approval.",
-        }),
-      }),
+      responseFormat: ApprovalRequestSchema,
     });
     const response = await agent.invoke({
       messages: [
@@ -168,7 +233,7 @@ export class Executor {
         },
       ],
     });
-    return response.structuredResponse;
+    return response.structuredResponse as ApprovalRequest;
   }
 
   async assembleGraph(agent: Agent) {

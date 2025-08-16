@@ -33,7 +33,7 @@ import {
   Configuration,
   CapabilitiesApi,
   TriggersApi,
-  OAuthApi
+  OAuthApi,
 } from "@ewestern/connect_hub_sdk";
 import type {
   Trigger,
@@ -114,7 +114,9 @@ export function HiringWizard({
   });
 
   // Store audit results separately to use as single source of truth
-  const [auditResults, setAuditResults] = useState<OauthAuditPost200ResponseInner[]>([]);
+  const [auditResults, setAuditResults] = useState<
+    OauthAuditPost200ResponseInner[]
+  >([]);
 
   // Store simple workflows separately for the workflows phase
   const [simpleWorkflows, setSimpleWorkflows] = useState<SimpleWorkflow[]>([]);
@@ -167,8 +169,6 @@ export function HiringWizard({
       }),
     );
   }, [getToken]);
-
-
 
   const getEmployeeApi = useCallback(() => {
     return new EmployeesApi(
@@ -230,17 +230,6 @@ export function HiringWizard({
         canComplete: false,
         executionId: undefined,
       }));
-      //setWizardData((prev) => ({
-      //  ...prev,
-      //  jobDescription: "",
-      //  chatHistory: [],
-      //  enhancedWorkflows: [],
-      //  availableProviders: [],
-      //  connectedProviders: [],
-      //  phase: "connect",
-      //  canComplete: false,
-      //  executionId: undefined,
-      //}));
       setSimpleWorkflows([]);
       setAgents([]);
       setUnsatisfiedWorkflows([]);
@@ -263,11 +252,11 @@ export function HiringWizard({
           triggerId: agent.trigger.id,
         }));
 
-        const capabilities = agents.flatMap((agent) => 
+        const capabilities = agents.flatMap((agent) =>
           agent.capabilities.map((cap) => ({
             providerId: cap.providerId,
             capabilityId: cap.id,
-          }))
+          })),
         );
 
         const auditRequest = {
@@ -288,19 +277,23 @@ export function HiringWizard({
           id: result.providerId,
           name: result.providerDisplayName,
           logo: result.providerIcon,
-          connectionStatus: result.status === "connected" ? "connected" : "disconnected",
+          connectionStatus:
+            result.status === "connected" ? "connected" : "disconnected",
           requiredScopes: result.missingCapabilities || [], // Use missing capability display names
           oauthUrl: result.oauthUrl,
         }));
 
         // Check if all providers are connected
-        const allConnected = auditResults.length === 0 || auditResults.every(result => result.status === "connected");
-        
+        const allConnected =
+          auditResults.length === 0 ||
+          auditResults.every((result) => result.status === "connected");
+
         setWizardData((prev) => ({
           ...prev,
           availableProviders: providers,
           // Transition to naming phase if no OAuth is needed OR all providers are connected
-          phase: auditResults.length === 0 || allConnected ? "naming" : prev.phase,
+          phase:
+            auditResults.length === 0 || allConnected ? "naming" : prev.phase,
         }));
       } catch (error) {
         console.error("OAuth audit failed:", error);
@@ -323,98 +316,109 @@ export function HiringWizard({
     }
   }, [agents, wizardData.phase, performOAuthAudit]);
 
-  const handleEmployeeStateUpdate = useCallback(async (event: EmployeeStateUpdateEvent) => {
-    console.log("Received ai employee update:", event);
+  const handleEmployeeStateUpdate = useCallback(
+    async (event: EmployeeStateUpdateEvent) => {
+      console.log("Received ai employee update:", event);
 
-    if (event.phase === "workflows") {
-      // For workflows phase, store simple workflow data
-      const workflows: SimpleWorkflow[] = event.workflows.map(
-        (workflow, index) => ({
-          id: `workflow-${index}`,
-          description: workflow.description,
-          steps: workflow.steps.map((step) => step.description),
-          activation: workflow.activation,
-        }),
-      );
+      if (event.phase === "workflows") {
+        // For workflows phase, store simple workflow data
+        const workflows: SimpleWorkflow[] = event.workflows.map(
+          (workflow, index) => ({
+            id: `workflow-${index}`,
+            description: workflow.description,
+            steps: workflow.steps.map((step) => step.description),
+            activation: workflow.activation,
+          }),
+        );
 
-      setSimpleWorkflows(workflows);
+        setSimpleWorkflows(workflows);
+        setWizardData((prev) => ({
+          ...prev,
+          phase: "workflows",
+        }));
+      } else if (event.phase === "connect") {
+        // For connect phase (backend may still send "mapping"), handle workflow configs and unsatisfied workflows
+        setAgents(event.agents);
+        setUnsatisfiedWorkflows(event.unsatisfiedWorkflows);
+        setWizardData((prev) => ({
+          ...prev,
+          phase: "connect",
+        }));
+      } else {
+        console.error("Event should never be in phase:", event.phase);
+      }
+
+      setIsAnalyzing(false);
+      setIsProcessing(false);
+    },
+    [],
+  );
+
+  const handleProviderConnectionCompleted = useCallback(
+    async (event: ProviderConnectionCompletedEvent) => {
+      console.log("Received provider connection completed:", event);
+      setIsProcessing(false);
+
+      if (event.connectionStatus === "connected") {
+        // Update provider status optimistically
+        setWizardData((prev) => ({
+          ...prev,
+          availableProviders: prev.availableProviders.map((p) =>
+            p.id === event.providerId
+              ? {
+                  ...p,
+                  connectionStatus: "connected" as const,
+                  connectionId: event.connectionId,
+                }
+              : p,
+          ),
+        }));
+
+        // Re-run OAuth audit to get the latest status
+        // This will update all provider statuses and potentially advance to naming phase
+        await performOAuthAudit(agents);
+      } else {
+        // Connection failed - reset provider status
+        setWizardData((prev) => ({
+          ...prev,
+          availableProviders: prev.availableProviders.map((p) =>
+            p.id === event.providerId
+              ? { ...p, connectionStatus: "disconnected" as const }
+              : p,
+          ),
+        }));
+      }
+    },
+    [agents, performOAuthAudit],
+  );
+
+  const handleRequestHumanFeedback = useCallback(
+    (event: RequestHumanFeedbackEvent) => {
+      console.log("Received request human feedback:", event);
+
+      const messageContent =
+        event.request.type === "text"
+          ? event.request.text
+          : `Please choose from: ${event.request.options.join(", ")}`;
+
       setWizardData((prev) => ({
         ...prev,
-        phase: "workflows",
-      }));
-    } else if (event.phase === "connect") {
-              // For connect phase (backend may still send "mapping"), handle workflow configs and unsatisfied workflows
-      setAgents(event.agents);
-      setUnsatisfiedWorkflows(event.unsatisfiedWorkflows);
-      setWizardData((prev) => ({
-        ...prev,
-        phase: "connect",
-      }));
-    } else {
-      console.error("Event should never be in phase:", event.phase);
-    }
-
-    setIsAnalyzing(false);
-    setIsProcessing(false);
-  }, []);
-
-  const handleProviderConnectionCompleted = useCallback(async (
-    event: ProviderConnectionCompletedEvent,
-  ) => {
-    console.log("Received provider connection completed:", event);
-    setIsProcessing(false);
-
-    if (event.connectionStatus === "connected") {
-      // Update provider status optimistically
-      setWizardData((prev) => ({
-        ...prev,
-        availableProviders: prev.availableProviders.map((p) =>
-          p.id === event.providerId
-            ? { ...p, connectionStatus: "connected" as const, connectionId: event.connectionId }
-            : p,
-        ),
+        chatHistory: [
+          ...prev.chatHistory,
+          {
+            id: Date.now().toString(),
+            sender: "agent",
+            content: messageContent,
+            timestamp: new Date(),
+          },
+        ],
       }));
 
-      // Re-run OAuth audit to get the latest status
-      // This will update all provider statuses and potentially advance to naming phase
-      await performOAuthAudit(agents);
-    } else {
-      // Connection failed - reset provider status
-      setWizardData((prev) => ({
-        ...prev,
-        availableProviders: prev.availableProviders.map((p) =>
-          p.id === event.providerId
-            ? { ...p, connectionStatus: "disconnected" as const }
-            : p,
-        ),
-      }));
-    }
-  }, [agents, performOAuthAudit]);
-
-  const handleRequestHumanFeedback = useCallback((event: RequestHumanFeedbackEvent) => {
-    console.log("Received request human feedback:", event);
-
-    const messageContent =
-      event.request.type === "text"
-        ? event.request.text
-        : `Please choose from: ${event.request.options.join(", ")}`;
-
-    setWizardData((prev) => ({
-      ...prev,
-      chatHistory: [
-        ...prev.chatHistory,
-        {
-          id: Date.now().toString(),
-          sender: "agent",
-          content: messageContent,
-          timestamp: new Date(),
-        },
-      ],
-    }));
-
-    setFeedbackRequested(true);
-    setIsProcessing(false);
-  }, []);
+      setFeedbackRequested(true);
+      setIsProcessing(false);
+    },
+    [],
+  );
 
   // Handle incoming WebSocket messages
   useEffect(() => {
@@ -445,7 +449,13 @@ export function HiringWizard({
     return () => {
       unsubscribeEvent();
     };
-  }, [isOpen, subscribe, handleEmployeeStateUpdate, handleProviderConnectionCompleted, handleRequestHumanFeedback]);
+  }, [
+    isOpen,
+    subscribe,
+    handleEmployeeStateUpdate,
+    handleProviderConnectionCompleted,
+    handleRequestHumanFeedback,
+  ]);
 
   if (!isOpen) return null;
 
@@ -484,7 +494,7 @@ export function HiringWizard({
   };
 
   const handleSendMessage = (messageContent: string) => {
-            // Only add user message to chat history - assistant response will come via WebSocket
+    // Only add user message to chat history - assistant response will come via WebSocket
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       sender: "user",
@@ -558,7 +568,7 @@ export function HiringWizard({
       console.log(
         "Opening OAuth flow for provider:",
         providerId,
-        "with authenticated URL"
+        "with authenticated URL",
       );
     } catch (error) {
       console.error("Failed to launch OAuth flow:", error);
@@ -625,6 +635,74 @@ export function HiringWizard({
     });
   };
 
+  // Progress tracker component
+  const ProgressTracker = () => {
+    const phases = [
+      { id: "job_description", label: "Job Description", completed: true },
+      {
+        id: "workflows",
+        label: "Workflows",
+        completed: wizardData.phase !== "job_description",
+      },
+      {
+        id: "connect",
+        label: "Integrations",
+        completed: ["naming", "ready"].includes(wizardData.phase),
+      },
+      {
+        id: "naming",
+        label: "Naming",
+        completed: wizardData.phase === "ready",
+      },
+      { id: "ready", label: "Ready", completed: false },
+    ];
+
+    const currentPhaseIndex = phases.findIndex(
+      (phase) => phase.id === wizardData.phase,
+    );
+
+    return (
+      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          {phases.map((phase, index) => (
+            <div key={phase.id} className="flex items-center">
+              <div
+                className={clsx(
+                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                  index < currentPhaseIndex
+                    ? "bg-green-500 text-white"
+                    : index === currentPhaseIndex
+                      ? "bg-primary-600 text-white"
+                      : "bg-gray-300 text-gray-600",
+                )}
+              >
+                {index < currentPhaseIndex ? "✓" : index + 1}
+              </div>
+              <span
+                className={clsx(
+                  "ml-2 text-sm font-medium",
+                  index <= currentPhaseIndex
+                    ? "text-gray-900"
+                    : "text-gray-500",
+                )}
+              >
+                {phase.label}
+              </span>
+              {index < phases.length - 1 && (
+                <div
+                  className={clsx(
+                    "w-12 h-px mx-4",
+                    index < currentPhaseIndex ? "bg-green-500" : "bg-gray-300",
+                  )}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   if (!user) {
     return <div>Please sign in to continue</div>;
   }
@@ -648,12 +726,12 @@ export function HiringWizard({
             </button>
           </div>
 
+          {/* Progress Tracker */}
+          <ProgressTracker />
+
           {/* Job Description Input */}
           <div className="p-6">
             <div className="text-center mb-6">
-              <h3 className="text-2xl font-semibold text-gray-900 mb-2">
-                What should your AI employee do?
-              </h3>
               <p className="text-gray-600">
                 Describe the role and responsibilities. The more detailed, the
                 better we can automate it.
@@ -703,7 +781,7 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
                   ) : (
                     <>
                       <Sparkles size={16} className="mr-2" />
-                      Generate Workflows
+                      Next
                     </>
                   )}
                 </button>
@@ -736,6 +814,9 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
           </button>
         </div>
 
+        {/* Progress Tracker */}
+        <ProgressTracker />
+
         {/* Main Content - Two Pane Layout */}
         <div className="flex flex-1 overflow-hidden">
           {/* Left Pane – Chat */}
@@ -756,6 +837,16 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
               <>
                 {simpleWorkflows.length > 0 ? (
                   <>
+                    {/* Loading indicator for next phase - moved to top */}
+                    <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600 mr-3"></div>
+                        <span className="text-blue-700 font-medium">
+                          Analyzing integrations and creating AI employees...
+                        </span>
+                      </div>
+                    </div>
+
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
                       Proposed Workflows
                     </h3>
@@ -765,16 +856,6 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
                       requirements.
                     </p>
                     <SimpleWorkflowDisplay workflows={simpleWorkflows} />
-
-                    {/* Loading indicator for next phase */}
-                    <div className="mt-8 border-t border-gray-200 pt-6">
-                      <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mr-3"></div>
-                        <span className="text-gray-600">
-                          Analyzing integrations and creating AI employees...
-                        </span>
-                      </div>
-                    </div>
                   </>
                 ) : (
                   <PhaseProgressIndicator phase="workflows" />
@@ -805,8 +886,9 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
                         All Integrations Ready!
                       </h3>
                       <p className="text-green-700">
-                        No additional OAuth connections are required for your AI employee. 
-                        All necessary integrations are already in place.
+                        No additional OAuth connections are required for your AI
+                        employee. All necessary integrations are already in
+                        place.
                       </p>
                     </div>
                   </div>
@@ -858,7 +940,8 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
                 {auditResults.length === 0 && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
                     <p className="text-sm text-blue-700">
-                      ✓ All required integrations are already connected. Your AI employee is ready to use existing connections.
+                      ✓ All required integrations are already connected. Your AI
+                      employee is ready to use existing connections.
                     </p>
                   </div>
                 )}
@@ -964,7 +1047,7 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
                 : "bg-gray-200 text-gray-400 cursor-not-allowed",
             )}
           >
-            🎉 Hire AI Employee
+            Hire Your AI Employee
           </button>
         </div>
       </div>
