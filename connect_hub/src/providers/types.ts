@@ -6,6 +6,8 @@ import {
 } from "../models/providers.js";
 import { Static, Type, TSchema } from "@sinclair/typebox";
 import { Database } from "../plugins/database.js";
+import { triggerRegistrations } from "../database/schema.js";
+import { Connection } from "../models/connection.js";
 import {
   FastifyRequestTypeBox,
   FastifyReplyTypeBox,
@@ -133,6 +135,7 @@ export interface ScopeValidationResult {
 
 export interface Trigger<E = unknown> {
   id: string;
+  requiredScopes?: string[];
   /**
    * JSON schema defining the parameters required when registering this trigger.
    */
@@ -145,6 +148,15 @@ export interface Trigger<E = unknown> {
     triggerId: string,
     event: E,
   ) => Promise<TriggerRegistration[]>;
+
+  registerSubscription?: (
+    db: Database,
+    connectionMetadata: Record<string, unknown>,
+    triggerRegistration: typeof triggerRegistrations.$inferSelect,
+  ) => Promise<{
+    expiresAt: Date;
+    subscriptionMetadata: Record<string, unknown>;
+  }>;
 
   /**
    * Create the event payload that will be dispatched to the run-intent bus.
@@ -211,7 +223,6 @@ export interface ProviderRuntime<
   listTriggers(): Trigger<E>[];
 
   getTrigger?(triggerId: string): Trigger<E> | undefined;
-  registerTrigger?(triggerId: string, trigger: Trigger<E>): void;
 
   /** Static metadata about the provider (excluding capabilities array) */
   metadata: ProviderMetadata;

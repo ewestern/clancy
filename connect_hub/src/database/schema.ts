@@ -181,6 +181,10 @@ export const triggerRegistrations = pgTable("trigger_registrations", {
   }),
   triggerId: text("trigger_id").notNull(),
   params: jsonb("params").$type<Record<string, any>>().notNull().default({}),
+  subscriptionMetadata: jsonb("subscription_metadata")
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")

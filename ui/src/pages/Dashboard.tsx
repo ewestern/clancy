@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { KPICard } from "../components/KPICard";
 import { AIEmployeeCard } from "../components/AIEmployeeCard";
+import { EmptyState } from "../components/EmptyState";
 import { useDashboard } from "../context/DashboardContext";
 import type { KPIData } from "../types";
 import { useUser, useAuth } from "@clerk/react-router";
@@ -37,11 +38,13 @@ export function Dashboard() {
 
         const [employeesResult, approvalsResult] = await Promise.all([
           employeesApi.v1EmployeesGet(),
-          approvalsApi.v1ApprovalsGet({ status: ApprovalRequestStatusEnum.Pending }),
+          approvalsApi.v1ApprovalsGet({
+            status: ApprovalRequestStatusEnum.Pending,
+          }),
         ]);
 
         setEmployees(employeesResult);
-        
+
         // Compute KPI data
         setKpiData({
           aiEmployees: employeesResult.length,
@@ -126,33 +129,39 @@ export function Dashboard() {
 
       {/* AI Employee Section */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-medium text-gray-900">
-            AI Employee Roster
-          </h2>
-          <div className="flex gap-3">
-            <button
-              onClick={handleHireEmployee}
-              className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-button hover:bg-primary-700 transition-colors"
-            >
-              <Plus size={16} className="mr-2" />
-              Hire an AI Employee
-            </button>
-          </div>
-        </div>
+        {employees.length > 0 ? (
+          <>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-medium text-gray-900">
+                AI Employee Roster
+              </h2>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleHireEmployee}
+                  className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-button hover:bg-primary-700 transition-colors"
+                >
+                  <Plus size={16} className="mr-2" />
+                  Hire an AI Employee
+                </button>
+              </div>
+            </div>
 
-        {/* Employee Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {employees.map((employee) => (
-            <AIEmployeeCard
-              key={employee.id}
-              employee={employee}
-              onChat={handleChat}
-              onPermissions={handlePermissions}
-              onDeactivate={handleDeactivate}
-            />
-          ))}
-        </div>
+            {/* Employee Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {employees.map((employee) => (
+                <AIEmployeeCard
+                  key={employee.id}
+                  employee={employee}
+                  onChat={handleChat}
+                  onPermissions={handlePermissions}
+                  onDeactivate={handleDeactivate}
+                />
+              ))}
+            </div>
+          </>
+        ) : (
+          <EmptyState onHireEmployee={handleHireEmployee} />
+        )}
       </div>
     </div>
   );

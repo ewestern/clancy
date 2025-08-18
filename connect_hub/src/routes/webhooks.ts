@@ -14,28 +14,25 @@ export async function webhookRoutes(app: FastifyInstance) {
           },
         },
         async (request, reply) => {
-          const decoded = await request.jwtVerify();
-          console.log("decoded", decoded);
           if (!(await webhook.validateRequest(request))) {
             reply.status(401).send({
               status: "unauthorized",
             });
             return;
           }
+          const event = request.body;
+
           for (const trigger of webhook.triggers) {
-            if (!trigger.eventSatisfies(request.body)) {
+            if (!trigger.eventSatisfies(event)) {
               continue;
             }
             const registrations = await trigger.getTriggerRegistrations(
               request.server.db,
               trigger.id,
-              request.body,
+              event,
             );
             for (const registration of registrations) {
-              const events = await trigger.createEvents(
-                request.body,
-                registration,
-              );
+              const events = await trigger.createEvents(event, registration);
               await publishEvents(events);
             }
           }

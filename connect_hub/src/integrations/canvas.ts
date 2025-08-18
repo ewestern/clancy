@@ -10,6 +10,7 @@ import {
   CallbackResult,
   ExecutionContext,
 } from "../providers/types.js";
+import { BaseProvider } from "../providers/base.js";
 import { ProviderKind, ProviderAuth } from "../models/providers.js";
 import { OwnershipScope } from "../models/shared.js";
 import {
@@ -278,63 +279,32 @@ function createAnnouncementCreateCapability(): Capability<
 
 // Provider Class
 
-export class CanvasProvider implements ProviderRuntime {
-  private readonly dispatchTable = new Map<string, Capability<any, any>>();
-  public readonly scopeMapping: Record<string, string[]>;
-
-  public readonly metadata = {
-    id: "canvas",
-    displayName: "Canvas LMS",
-    description: "A learning management system for educational institutions.",
-    icon: "https://www.instructure.com/themes/custom/instructure_theme/logo.svg",
-    docsUrl: "https://canvas.instructure.com/doc/api/",
-    kind: ProviderKind.External,
-    auth: ProviderAuth.OAuth2,
-  } as const;
-
+export class CanvasProvider extends BaseProvider {
   constructor() {
-    const capabilityFactories: Record<string, CapabilityFactory> = {
-      "course.list": createCourseListCapability,
-      "course.enroll_user": createCourseEnrollUserCapability,
-      "assignment.list": createAssignmentListCapability,
-      "assignment.create": createAssignmentCreateCapability,
-      "submission.list": createSubmissionListCapability,
-      "submission.grade": createSubmissionGradeCapability,
-      "quiz.create": createQuizCreateCapability,
-      "enrollment.list": createEnrollmentListCapability,
-      "file.upload": createFileUploadCapability,
-      "announcement.create": createAnnouncementCreateCapability,
-    };
-
-    for (const [capabilityId, factory] of Object.entries(capabilityFactories)) {
-      this.dispatchTable.set(capabilityId, factory());
-    }
-
-    this.scopeMapping = {};
-    for (const [capabilityId, capability] of this.dispatchTable) {
-      for (const scope of capability.meta.requiredScopes) {
-        if (!this.scopeMapping[capabilityId]) {
-          this.scopeMapping[capabilityId] = [];
-        }
-        this.scopeMapping[capabilityId].push(scope);
-      }
-    }
-  }
-
-  getCapability<P, R>(capabilityId: string): Capability<P, R> {
-    const capability = this.dispatchTable.get(capabilityId);
-    if (!capability) {
-      throw new Error(`Canvas capability ${capabilityId} not implemented`);
-    }
-    return capability as Capability<P, R>;
-  }
-
-  listCapabilities(): CapabilityMeta[] {
-    return Array.from(this.dispatchTable.values()).map((c) => c.meta);
-  }
-
-  listTriggers() {
-    return [];
+    super({
+      metadata: {
+        id: "canvas",
+        displayName: "Canvas LMS",
+        description:
+          "A learning management system for educational institutions.",
+        icon: "https://www.instructure.com/themes/custom/instructure_theme/logo.svg",
+        docsUrl: "https://canvas.instructure.com/doc/api/",
+        kind: ProviderKind.External,
+        auth: ProviderAuth.OAuth2,
+      },
+      capabilityFactories: {
+        "course.list": createCourseListCapability,
+        "course.enroll_user": createCourseEnrollUserCapability,
+        "assignment.list": createAssignmentListCapability,
+        "assignment.create": createAssignmentCreateCapability,
+        "submission.list": createSubmissionListCapability,
+        "submission.grade": createSubmissionGradeCapability,
+        "quiz.create": createQuizCreateCapability,
+        "enrollment.list": createEnrollmentListCapability,
+        "file.upload": createFileUploadCapability,
+        "announcement.create": createAnnouncementCreateCapability,
+      },
+    });
   }
 
   // OAuth Methods
@@ -396,7 +366,13 @@ export class CanvasProvider implements ProviderRuntime {
       throw new Error(`Token exchange failed: ${errorBody}`);
     }
 
-    const tokens = await tokenResponse.json();
+    const tokens = (await tokenResponse.json()) as {
+      access_token: string;
+      token_type: string;
+      scope: string;
+      expires_in: number;
+      refresh_token: string;
+    };
 
     const self = await this.getSelf(tokens.access_token, instanceDomain);
 
@@ -426,7 +402,7 @@ export class CanvasProvider implements ProviderRuntime {
     if (!response.ok) {
       throw new Error("Failed to fetch user profile");
     }
-    return response.json();
+    return response.json() as Promise<{ id: number; name: string }>;
   }
 
   async refreshToken(
@@ -455,7 +431,13 @@ export class CanvasProvider implements ProviderRuntime {
       throw new Error("Failed to refresh token");
     }
 
-    return response.json();
+    return response.json() as Promise<{
+      access_token: string;
+      token_type: string;
+      scope: string;
+      expires_in: number;
+      refresh_token: string;
+    }>;
   }
 
   async isTokenValid(accessToken: string): Promise<boolean> {

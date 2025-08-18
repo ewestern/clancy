@@ -21,9 +21,25 @@ variable "agents_core_lb_endpoint" {
   description = "The endpoint of the Agents Core load balancer"
 }
 
+variable "cognito_user_pool_client_id" {
+  type        = string
+  description = "The Cognito user pool client ID"
+}
+
+variable "cognito_user_pool_client_secret" {
+  type        = string
+  description = "The Cognito user pool client secret"
+  sensitive   = true
+}
+
+variable "cognito_authorization_endpoint" {
+  type        = string
+  description = "The Cognito authorization endpoint"
+}
+
 output "kinesis_stream_arn" {
   value = aws_kinesis_stream.clancy_stream.arn
 }
-output "authorization_endpoint" {
-  value = local.authorization_endpoint
+output "kinesis_stream_name" {  
+  value = aws_kinesis_stream.clancy_stream.name
 }

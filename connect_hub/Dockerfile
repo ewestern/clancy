@@ -14,6 +14,7 @@ COPY package-lock.json ./
 RUN npm ci
 
 COPY src ./src
+COPY public ./public
 COPY tsconfig.json ./tsconfig.json
 COPY drizzle.config.ts ./drizzle.config.ts
 COPY migrations ./migrations

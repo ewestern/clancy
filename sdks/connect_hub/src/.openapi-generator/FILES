@@ -22,6 +22,7 @@ models/ConnectionsIdPatch200Response.ts
 models/ConnectionsIdPatchRequest.ts
 models/Document.ts
 models/DocumentStatus.ts
+models/DocumentsDocumentIdDelete200Response.ts
 models/DocumentsDocumentIdDownloadGet200Response.ts
 models/DocumentsDocumentIdStatusGet200Response.ts
 models/DocumentsDocumentIdTagsPost200Response.ts
@@ -50,12 +51,12 @@ models/KnowledgeSnippetsGet200Response.ts
 models/OAuthErrorResponse.ts
 models/OAuthSuccessResponse.ts
 models/OauthAuditPost200ResponseInner.ts
-models/OauthAuditPost200ResponseInnerStatus.ts
 models/OauthAuditPost400Response.ts
 models/OauthAuditPostRequest.ts
 models/OauthAuditPostRequestCapabilitiesInner.ts
 models/OauthAuditPostRequestTriggersInner.ts
 models/OauthCallbackProviderGet200Response.ts
+models/OauthConnectionStatus.ts
 models/OauthLaunchProviderGet302Response.ts
 models/OauthLaunchProviderGet400Response.ts
 models/OwnershipScope.ts

@@ -16,7 +16,6 @@ export async function proxyRoutes(app: FastifyTypeBox) {
       schema: ProxyEndpointSchema,
     },
     async (request, reply) => {
-      console.log("Proxy request", JSON.stringify(request.body));
       const { providerId, capabilityId } = request.params;
       const { orgId, userId, params } = request.body;
 

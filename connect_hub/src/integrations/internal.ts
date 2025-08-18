@@ -4,6 +4,7 @@ import {
   CapabilityFactory,
   Trigger,
 } from "../providers/types.js";
+import { BaseProvider } from "../providers/base.js";
 import { ProviderAuth, ProviderKind } from "../models/providers.js";
 import { TriggerRegistration } from "../models/triggers.js";
 import {
@@ -127,68 +128,32 @@ const webhooks = [
 // InternalProvider runtime
 //--------------------------------------------------------------------
 
-export class InternalProvider
-  implements
-    ProviderRuntime<typeof InternalWebhookEndpoint, Record<string, any>>
-{
-  private readonly dispatchTable = new Map<string, Capability<any, any>>();
-  public readonly scopeMapping: Record<string, string[]>;
-
-  public readonly metadata = {
-    id: "internal",
-    displayName: "Clancy Internal Services",
-    description:
-      "First-party services that do not require external OAuth credentials.",
-    icon: "https://www.clancyai.com/favicon.svg",
-    kind: ProviderKind.Internal,
-    auth: ProviderAuth.None,
-  } as const;
-
+export class InternalProvider extends BaseProvider<
+  typeof InternalWebhookEndpoint,
+  Record<string, any>
+> {
   constructor() {
-    // Define capability factories
-    const capabilityFactories: Record<string, CapabilityFactory> = {
-      "email.send": getEmailSendCapability,
-      "knowledge.search": getKnowledgeSearchCapability,
-      "knowledge.write": getKnowledgeWriteCapability,
-      "memory.store": getMemoryStoreCapability,
-      "memory.retrieve": getMemoryRetrieveCapability,
-      "memory.update": getMemoryUpdateCapability,
-      "memory.delete": getMemoryDeleteCapability,
-    };
-
-    // Populate dispatch table
-    for (const [capabilityId, factory] of Object.entries(capabilityFactories)) {
-      this.dispatchTable.set(capabilityId, factory());
-    }
-
-    // Generate scopeMapping from dispatch table
-    this.scopeMapping = {};
-    for (const [capabilityId, capability] of this.dispatchTable) {
-      for (const scope of capability.meta.requiredScopes) {
-        if (!this.scopeMapping[capabilityId]) {
-          this.scopeMapping[capabilityId] = [];
-        }
-        this.scopeMapping[capabilityId].push(scope);
-      }
-    }
-  }
-  webhooks = webhooks;
-
-  getCapability<P, R>(capabilityId: string): Capability<P, R> {
-    const capability = this.dispatchTable.get(capabilityId);
-    if (!capability) {
-      throw new Error(`Internal capability '${capabilityId}' not implemented`);
-    }
-    return capability as Capability<P, R>;
-  }
-
-  listCapabilities() {
-    return Array.from(this.dispatchTable.values()).map((c) => c.meta);
-  }
-  listTriggers(): Trigger<Record<string, any>>[] {
-    return triggers;
-  }
-  getTrigger(triggerId: string): Trigger<Record<string, any>> | undefined {
-    return triggers.find((t) => t.id === triggerId);
+    super({
+      metadata: {
+        id: "internal",
+        displayName: "Clancy Internal Services",
+        description:
+          "First-party services that do not require external OAuth credentials.",
+        icon: "https://www.clancyai.com/favicon.svg",
+        kind: ProviderKind.Internal,
+        auth: ProviderAuth.None,
+      },
+      capabilityFactories: {
+        "email.send": getEmailSendCapability,
+        "knowledge.search": getKnowledgeSearchCapability,
+        "knowledge.write": getKnowledgeWriteCapability,
+        "memory.store": getMemoryStoreCapability,
+        "memory.retrieve": getMemoryRetrieveCapability,
+        "memory.update": getMemoryUpdateCapability,
+        "memory.delete": getMemoryDeleteCapability,
+      },
+      webhooks,
+      triggers,
+    });
   }
 }

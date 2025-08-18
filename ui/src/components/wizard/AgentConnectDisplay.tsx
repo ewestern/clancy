@@ -77,7 +77,7 @@ export function AgentConnectDisplay({
 
       {agents.length === 0 && unsatisfiedWorkflows.length === 0 && (
         <div className="text-center py-8">
-                                  <p className="text-gray-500">No workflow data available yet.</p>
+          <p className="text-gray-500">No workflow data available yet.</p>
         </div>
       )}
     </div>

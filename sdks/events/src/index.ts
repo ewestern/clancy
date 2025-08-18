@@ -4,12 +4,14 @@ export enum EventType {
     LLMUsage = "llmusage",
     RequestApproval = "requestapproval",
     RequestHumanFeedback = "requesthumanfeedback",
+    ActionInitiated = "actioninitiated",
+    ActionCompleted = "actioncompleted",
 
-    Cron = "cron",
     EmployeeStateUpdate = "employeestateupdate",
     ProviderConnectionCompleted = "providerconnectioncompleted",
     RunIntent = "runintent",
     ResumeIntent = "resumeintent",
+    RunCompleted = "runcompleted",
     EmployeeCreated = "employeecreated",
     AgentCreated = "agentcreated",
 }
@@ -58,14 +60,6 @@ export const RunIntentEventSchema = Type.Object({
     details: Type.Any()
 })
 
-//export const GraphCreatorRunIntentEventSchema = Type.Composite([
-//    RunIntentEventSchema,
-//    Type.Object({
-//        userId: Type.String(),
-//        jobDescription: Type.String(),
-//        agentId: Type.Literal("graph-creator"),
-//    })
-//])
 
 export const ResumeIntentEventSchema = Type.Object({
     type: Type.Literal(EventType.ResumeIntent),
@@ -76,13 +70,6 @@ export const ResumeIntentEventSchema = Type.Object({
     executionId: Type.String(),
     resume: Type.Any(),
 })
-
-//export const GraphCreatorResumeIntentEventSchema = Type.Composite([
-//    ResumeIntentEventSchema,
-//    Type.Object({
-//        userId: Type.String(),
-//    })
-//])
 
 export const TextRequestSchema = Type.Object({
     type: Type.Literal("text"),
@@ -105,13 +92,23 @@ export const RequestHumanFeedbackEventSchema = Type.Object({
     ])
 })
 
-export const FormattedApprovalRequestSchema = Type.Object({
-  request: Type.Any(),
-  capabilityName: Type.String(),
-  capabilityDescription: Type.String(),
-  providerName: Type.String(),
-  providerDescription: Type.String(),
-  schema: Type.Any(),
+
+export const ApprovalRequestSchema = Type.Object({
+    title: Type.String({
+        minLength: 5,
+        maxLength: 50,
+        description: "A short title for the request.",
+    }),
+    summary: Type.String({
+        minLength: 30,
+        maxLength: 500,
+        description:
+        "A summary giving the user an explanation of what action will be taken if they approve.",
+    }),
+    details: Type.Array(Type.String(), {
+        description:
+        "A list of details about the request that are relevant to approval.",
+    }),
 })
 
 export const RequestApprovalEventSchema = Type.Object({
@@ -120,16 +117,13 @@ export const RequestApprovalEventSchema = Type.Object({
     orgId: Type.String(),
     timestamp: Type.String(),
     executionId: Type.String(),
-    request: Type.Any()
+    agentId: Type.String(),
+    capability: Type.Object({
+        providerId: Type.String(),
+        id: Type.String(),
+    }),
+    request: ApprovalRequestSchema
 })
-
-//export const ApprovalResponseEventSchema = Type.Object({
-//    type: Type.Literal(EventType.ApprovalResponse),
-//    userId: Type.String(),
-//    orgId: Type.String(),
-//    timestamp: Type.String(),
-//    executionId: Type.String(),
-//})
 
 
 export const ProviderConnectionCompletedEventSchema = Type.Object({
@@ -193,11 +187,47 @@ export const EmployeeCreatedEventSchema = Type.Object({
     employeeId: Type.String(),
 })
 
+export const RunCompletedEventSchema = Type.Object({
+    type: Type.Literal(EventType.RunCompleted),
+    orgId: Type.String(),
+    userId: Type.String(),
+    timestamp: Type.String(),
+    executionId: Type.String(),
+    agentId: Type.String(),
+    status: Type.Union([Type.Literal("success"), Type.Literal("error")]),
+    message: Type.Optional(Type.String()),
+})
+
+export const ActionInitiatedEventSchema = Type.Object({
+    type: Type.Literal(EventType.ActionInitiated),
+    orgId: Type.String(),
+    userId: Type.String(),
+    timestamp: Type.String(),
+    agentId: Type.String(),
+    capability: Type.Object({
+        providerId: Type.String(),
+        id: Type.String(),
+    }),
+    executionId: Type.String(),
+})
+
+export const ActionCompletedEventSchema = Type.Object({
+    type: Type.Literal(EventType.ActionCompleted),
+    orgId: Type.String(),
+    userId: Type.String(),
+    timestamp: Type.String(),
+    agentId: Type.String(),
+    capability: Type.Object({
+        providerId: Type.String(),
+        id: Type.String(),
+    }),
+    executionId: Type.String(),
+    result: Type.Record(Type.String(), Type.Any()),
+    status: Type.Union([Type.Literal("success"), Type.Literal("error")]),
+})
 
 export const EventSchema = Type.Union([
 
-    //GraphCreatorRunIntentEventSchema,
-    //GraphCreatorResumeIntentEventSchema,
 
     EmployeeStateUpdateEventSchema,
     ProviderConnectionCompletedEventSchema,
@@ -207,10 +237,12 @@ export const EventSchema = Type.Union([
     RequestHumanFeedbackEventSchema,
     RequestApprovalEventSchema,
 
-    //ApprovalResponseEventSchema,
     LLMUsageEventSchema,
     RunIntentEventSchema,
     ResumeIntentEventSchema,
+    RunCompletedEventSchema,
+    ActionInitiatedEventSchema,
+    ActionCompletedEventSchema,
 ])
 
 
@@ -219,11 +251,12 @@ export type Event = Static<typeof EventSchema>
 
 export type RunIntentEvent = Static<typeof RunIntentEventSchema>
 export type ResumeIntentEvent = Static<typeof ResumeIntentEventSchema>
-//export type GraphCreatorRunIntentEvent = Static<typeof GraphCreatorRunIntentEventSchema>
-//export type GraphCreatorResumeIntentEvent = Static<typeof GraphCreatorResumeIntentEventSchema>
 export type RequestHumanFeedbackEvent = Static<typeof RequestHumanFeedbackEventSchema>
 export type ProviderConnectionCompletedEvent= Static<typeof ProviderConnectionCompletedEventSchema>
 export type EmployeeStateUpdateEvent = Static<typeof EmployeeStateUpdateEventSchema>
 export type LLMUsageEvent = Static<typeof LLMUsageEventSchema>
+export type ApprovalRequest = Static<typeof ApprovalRequestSchema>
 export type RequestApprovalEvent = Static<typeof RequestApprovalEventSchema>
-export type FormattedApprovalRequest = Static<typeof FormattedApprovalRequestSchema>
+export type RunCompletedEvent = Static<typeof RunCompletedEventSchema>
+export type ActionInitiatedEvent = Static<typeof ActionInitiatedEventSchema>
+export type ActionCompletedEvent = Static<typeof ActionCompletedEventSchema>

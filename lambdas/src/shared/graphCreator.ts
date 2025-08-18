@@ -182,7 +182,6 @@ export class GraphCreator {
   constructor(checkpointerDbUrl: string, model: string) {
     this.model = model;
     this.checkpointer = PostgresSaver.fromConnString(checkpointerDbUrl);
-
   }
   async getLLm() {
     const llm = new ChatAnthropic({
@@ -403,22 +402,20 @@ export class GraphCreator {
                 answer: response,
                 nodeContext: config.toolCall?.id!,
                 timestamp: new Date().toISOString(),
-              }
+              },
             ],
             messages: [
               new ToolMessage({
                 content: JSON.stringify(response),
                 tool_call_id: config.toolCall?.id!,
-              })
-            ]
-          }
-
-        })
+              }),
+            ],
+          },
+        });
       },
       {
         name: "human_input",
-        description:
-          `Used to ask the user for clarifications of the job description.
+        description: `Used to ask the user for clarifications of the job description.
           Use only non-technical language.`,
         schema: Type.Object(
           {

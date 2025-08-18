@@ -6,8 +6,6 @@ import type {
   Integration,
 } from "../types";
 
-
-
 const mockKPIData: KPIData = {
   aiEmployees: 7,
   aiEmployeesChange: 1,
@@ -41,7 +39,6 @@ const mockApprovalRequests: ApprovalRequest[] = [
     timestamp: "2024-01-15T09:15:00Z",
   },
 ];
-
 
 const mockIntegrations: Integration[] = [
   {
@@ -108,13 +105,10 @@ export const fetchKPIData = async (): Promise<KPIData> => {
   return currentMockKPIData;
 };
 
-
 export const fetchApprovalRequests = async (): Promise<ApprovalRequest[]> => {
   await new Promise((resolve) => setTimeout(resolve, 600));
   return mockApprovalRequests;
 };
-
-
 
 export const approveRequest = async (requestId: string): Promise<void> => {
   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -203,10 +197,9 @@ export const fetchIntegrations = async (): Promise<Integration[]> => {
   return mockIntegrations;
 };
 
-
 export const getEmployeeActivity = async (id: string, workflowId?: string) => {
   await new Promise((resolve) => setTimeout(resolve, 300));
-  
+
   const allActivity = [
     {
       id: "1",
@@ -278,13 +271,11 @@ export const getEmployeeActivity = async (id: string, workflowId?: string) => {
 
   // Filter by workflow if specified
   if (workflowId) {
-    return allActivity.filter(event => event.workflowId === workflowId);
+    return allActivity.filter((event) => event.workflowId === workflowId);
   }
 
   return allActivity;
 };
-
-
 
 export const getEmployeeKnowledge = async (_id: string) => {
   await new Promise((resolve) => setTimeout(resolve, 300));

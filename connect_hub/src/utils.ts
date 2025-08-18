@@ -15,9 +15,11 @@ export function getCurrentTimestamp() {
 export async function publishEvents(
   events: { event: Record<string, unknown>; partitionKey: string }[],
 ) {
+  if (events.length === 0) {
+    return;
+  }
   const kinesisClient = new KinesisClient({
     region: process.env.AWS_REGION!,
-    profile: process.env.AWS_PROFILE!,
   });
   let eventsWithTimestamp = events.map((e) => ({
     ...e,

@@ -9,10 +9,11 @@ import {
   CapabilityFactory,
   CapabilityRisk,
   Trigger,
+  Webhook,
 } from "../providers/types.js";
+import { BaseProvider } from "../providers/base.js";
 import { ProviderKind, ProviderAuth } from "../models/providers.js";
 import { google } from "googleapis";
-import { OAuth2Client } from "google-auth-library";
 
 // Import Gmail functions and schemas
 import {
@@ -97,11 +98,13 @@ import {
   driveCommentsCreateParamsSchema,
   driveCommentsCreateResultSchema,
 } from "./google/drive.js";
-import { FastifyInstance } from "fastify";
-import { Type } from "@sinclair/typebox";
 import { OwnershipScope } from "../models/shared.js";
-
-const __dirname = import.meta.dirname;
+import { GoogleWebhook, GoogleWebhookEvent } from "./google/webhooks.js";
+import {
+  gmailMessageReceivedTrigger,
+  driveFileChangeTrigger,
+  calendarEventsChangeTrigger,
+} from "./google/triggers.js";
 
 // Gmail capability factory functions
 function createGmailSendCapability(): Capability {
@@ -496,85 +499,62 @@ function createDriveCommentsCreateCapability(): Capability {
 // ---------------------------------------------------------------------------
 // Google Provider
 // ---------------------------------------------------------------------------
-export class GoogleProvider implements ProviderRuntime {
-  private readonly dispatchTable = new Map<string, Capability>();
-  public readonly scopeMapping: Record<string, string[]>;
-
-  public readonly metadata = {
-    id: "google",
-    displayName: "Google Workspace",
-    description: "Integrated Google productivity and collaboration tools",
-    icon: "https://developers.google.com/identity/images/g-logo.png",
-    docsUrl: "https://developers.google.com/workspace",
-    links: [
-      "https://console.cloud.google.com/auth/clients/650222929087-s1f2qid234aa7ajs6mtlccovlvl0ghmb.apps.googleusercontent.com?inv=1&invt=Ab5ZBQ&project=clancy-464816",
-    ],
-    kind: ProviderKind.External,
-    auth: ProviderAuth.OAuth2,
-  } as const;
-
+export class GoogleProvider extends BaseProvider<any, GoogleWebhookEvent> {
   constructor() {
-    // Define capability factories
-    const capabilityFactories: Record<string, CapabilityFactory> = {
-      // Gmail capabilities
-      "gmail.messages.send": createGmailSendCapability,
-      "gmail.messages.search": createGmailSearchCapability,
-      "gmail.messages.get": createGmailMessagesGetCapability,
-      "gmail.labels.create": createGmailLabelsCreateCapability,
-      "gmail.labels.list": createGmailLabelsListCapability,
-      "gmail.labels.get": createGmailLabelsGetCapability,
-      "gmail.messages.attachments.get": createGmailAttachmentsGetCapability,
-      "gmail.drafts.create": createGmailDraftsCreateCapability,
-      "gmail.drafts.list": createGmailDraftsListCapability,
-      "gmail.drafts.get": createGmailDraftsGetCapability,
-      "gmail.drafts.send": createGmailDraftsSendCapability,
-      // Calendar capabilities
-      "calendar.events.create": createCalendarEventsCreateCapability,
-      "calendar.events.list": createCalendarEventsListCapability,
-      // Drive capabilities
-      "drive.drives.list": createDriveDrivesListCapability,
-      "drive.drives.get": createDriveDrivesGetCapability,
-      "drive.files.list": createDriveFilesListCapability,
-      "drive.files.get": createDriveFilesGetCapability,
-      "drive.files.create": createDriveFilesCreateCapability,
-      "drive.files.update": createDriveFilesUpdateCapability,
-      "drive.files.export": createDriveFilesExportCapability,
-      "drive.files.download": createDriveFilesDownloadCapability,
-      "drive.comments.list": createDriveCommentsListCapability,
-      "drive.comments.get": createDriveCommentsGetCapability,
-      "drive.comments.create": createDriveCommentsCreateCapability,
-    };
+    const triggers = [
+      gmailMessageReceivedTrigger,
+      driveFileChangeTrigger,
+      calendarEventsChangeTrigger,
+    ];
 
-    // Populate dispatch table
-    for (const [capabilityId, factory] of Object.entries(capabilityFactories)) {
-      this.dispatchTable.set(capabilityId, factory());
-    }
+    const webhook = new GoogleWebhook(triggers);
 
-    // Generate scopeMapping from dispatch table
-    this.scopeMapping = {};
-    for (const [capabilityId, capability] of this.dispatchTable) {
-      for (const scope of capability.meta.requiredScopes) {
-        if (!this.scopeMapping[capabilityId]) {
-          this.scopeMapping[capabilityId] = [];
-        }
-        this.scopeMapping[capabilityId].push(scope);
-      }
-    }
-  }
-
-  getCapability<P, R>(capId: string): Capability<P, R> {
-    const capability = this.dispatchTable.get(capId);
-    if (!capability) {
-      throw new Error(`Google capability ${capId} not implemented`);
-    }
-    return capability as Capability<P, R>;
-  }
-
-  listCapabilities() {
-    return Array.from(this.dispatchTable.values()).map((c) => c.meta);
-  }
-  listTriggers(): Trigger<any>[] {
-    return [];
+    super({
+      metadata: {
+        id: "google",
+        displayName: "Google Workspace",
+        description: "Integrated Google productivity and collaboration tools",
+        icon: "https://developers.google.com/identity/images/g-logo.png",
+        docsUrl: "https://developers.google.com/workspace",
+        kind: ProviderKind.External,
+        auth: ProviderAuth.OAuth2,
+      },
+      capabilityFactories: {
+        // Gmail capabilities
+        "gmail.messages.send": createGmailSendCapability,
+        "gmail.messages.search": createGmailSearchCapability,
+        "gmail.messages.get": createGmailMessagesGetCapability,
+        "gmail.labels.create": createGmailLabelsCreateCapability,
+        "gmail.labels.list": createGmailLabelsListCapability,
+        "gmail.labels.get": createGmailLabelsGetCapability,
+        "gmail.messages.attachments.get": createGmailAttachmentsGetCapability,
+        "gmail.drafts.create": createGmailDraftsCreateCapability,
+        "gmail.drafts.list": createGmailDraftsListCapability,
+        "gmail.drafts.get": createGmailDraftsGetCapability,
+        "gmail.drafts.send": createGmailDraftsSendCapability,
+        // Calendar capabilities
+        "calendar.events.create": createCalendarEventsCreateCapability,
+        "calendar.events.list": createCalendarEventsListCapability,
+        // Drive capabilities
+        "drive.drives.list": createDriveDrivesListCapability,
+        "drive.drives.get": createDriveDrivesGetCapability,
+        "drive.files.list": createDriveFilesListCapability,
+        "drive.files.get": createDriveFilesGetCapability,
+        "drive.files.create": createDriveFilesCreateCapability,
+        "drive.files.update": createDriveFilesUpdateCapability,
+        "drive.files.export": createDriveFilesExportCapability,
+        "drive.files.download": createDriveFilesDownloadCapability,
+        "drive.comments.list": createDriveCommentsListCapability,
+        "drive.comments.get": createDriveCommentsGetCapability,
+        "drive.comments.create": createDriveCommentsCreateCapability,
+      },
+      triggers,
+      webhooks: [webhook],
+      links: [
+        "https://console.cloud.google.com/auth/clients/650222929087-s1f2qid234aa7ajs6mtlccovlvl0ghmb.apps.googleusercontent.com?inv=1&invt=Ab5ZBQ&project=clancy-464816",
+        "https://developers.google.com/workspace/gmail/api/reference/rest/v1/users/watch",
+      ],
+    });
   }
 
   // OAuth methods implementation

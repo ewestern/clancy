@@ -14,8 +14,10 @@ import {
 } from "lucide-react";
 import {
   EmployeesApi,
+  RunsApi,
   Configuration as AgentsCoreConfiguration,
   type Employee,
+  type ActivityEvent,
 } from "@ewestern/agents_core_sdk";
 import {
   ConnectionApi,
@@ -24,23 +26,7 @@ import {
   type ProviderCapabilities,
 } from "@ewestern/connect_hub_sdk";
 import { useAuth } from "@clerk/react-router";
-import {
-  getEmployeeActivity,
-  getEmployeeKnowledge,
-  getEmployeeHealth,
-} from "../api/stubs";
-
-interface ActivityEvent {
-  id: string;
-  timestamp: string;
-  type: "success" | "info" | "warning" | "error";
-  node: string;
-  message: string;
-  duration?: string;
-  runId?: string;
-  workflowId?: string;
-  workflowName?: string;
-}
+import { getEmployeeKnowledge, getEmployeeHealth } from "../api/stubs";
 
 interface KnowledgeItem {
   id: string;
@@ -107,7 +93,9 @@ const AIEmployeeProfile: React.FC = () => {
   const [knowledge, setKnowledge] = useState<KnowledgeItem[]>([]);
   const [health, setHealth] = useState<HealthMetrics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedWorkflow, setSelectedWorkflow] = useState<string | null>(filterWorkflowId);
+  const [selectedWorkflow, setSelectedWorkflow] = useState<string | null>(
+    filterWorkflowId,
+  );
   const [workflows, setWorkflows] = useState<WorkflowSummary[]>([]);
 
   const getAgentsCoreClient = useCallback(() => {
@@ -131,14 +119,16 @@ const AIEmployeeProfile: React.FC = () => {
       try {
         const agentsCoreConfig = getAgentsCoreClient();
         const connectHubConfig = getConnectHubClient();
-        
+
         const employeesApi = new EmployeesApi(agentsCoreConfig);
         const connectionApi = new ConnectionApi(connectHubConfig);
         const capabilitiesApi = new CapabilitiesApi(connectHubConfig);
 
+        const runsApi = new RunsApi(agentsCoreConfig);
+
         const [
           employeeData,
-          {data: connectionsData},
+          { data: connectionsData },
           capabilitiesData,
           activityData,
           knowledgeData,
@@ -147,7 +137,11 @@ const AIEmployeeProfile: React.FC = () => {
           employeesApi.v1EmployeesIdGet({ id }),
           connectionApi.connectionsGet(),
           capabilitiesApi.capabilitiesGet(),
-          getEmployeeActivity(id, selectedWorkflow || undefined),
+          runsApi.v1RunsEventsGet({
+            employeeId: id,
+            agentId: selectedWorkflow || undefined,
+            limit: 50,
+          }),
           getEmployeeKnowledge(id),
           getEmployeeHealth(id),
         ]);
@@ -158,72 +152,91 @@ const AIEmployeeProfile: React.FC = () => {
         setHealth(healthData);
 
         // Transform agents into workflows
-        const workflowSummaries: WorkflowSummary[] = employeeData.agents.map((agent) => {
-          const uniqueProviders = Array.from(new Set(agent.capabilities.map(cap => cap.providerId)));
-          const connectedProviders = uniqueProviders.filter(providerId =>
-            connectionsData.some(conn => conn.providerId === providerId && conn.status === 'active')
-          );
+        const workflowSummaries: WorkflowSummary[] = employeeData.agents.map(
+          (agent) => {
+            const uniqueProviders = Array.from(
+              new Set(agent.capabilities.map((cap) => cap.providerId)),
+            );
+            const connectedProviders = uniqueProviders.filter((providerId) =>
+              connectionsData.some(
+                (conn) =>
+                  conn.providerId === providerId && conn.status === "active",
+              ),
+            );
 
-          return {
-            id: agent.id || '',
-            name: agent.name,
-            description: agent.description,
-            status: agent.status,
-            triggers: [agent.trigger.id],
-            providers: uniqueProviders,
-            connectedProviders,
-          };
-        });
+            return {
+              id: agent.id || "",
+              name: agent.name,
+              description: agent.description,
+              status: agent.status,
+              triggers: [agent.trigger.id],
+              providers: uniqueProviders,
+              connectedProviders,
+            };
+          },
+        );
         setWorkflows(workflowSummaries);
 
         // Transform connections and capabilities into permissions
-        const providerCapabilityMap = capabilitiesData.reduce((acc, provider) => {
-          acc[provider.id] = provider;
-          return acc;
-        }, {} as Record<string, ProviderCapabilities>);
+        const providerCapabilityMap = capabilitiesData.reduce(
+          (acc, provider) => {
+            acc[provider.id] = provider;
+            return acc;
+          },
+          {} as Record<string, ProviderCapabilities>,
+        );
 
-        const allRequiredProviders = Array.from(new Set(
-          employeeData.agents.flatMap(agent => 
-            agent.capabilities.map(cap => cap.providerId)
-          )
-        ));
+        const allRequiredProviders = Array.from(
+          new Set(
+            employeeData.agents.flatMap((agent) =>
+              agent.capabilities.map((cap) => cap.providerId),
+            ),
+          ),
+        );
 
-        const permissionSummaries: ProviderPermission[] = allRequiredProviders.map(providerId => {
-          const connection = connectionsData.find(conn => conn.providerId === providerId);
-          const providerCapabilities = providerCapabilityMap[providerId];
-          
-          // Required capabilities for this employee
-          const requiredCapabilities = Array.from(new Set(
-            employeeData.agents.flatMap(agent =>
-              agent.capabilities
-                .filter(cap => cap.providerId === providerId)
-                .map(cap => cap.id)
-            )
-          ));
+        const permissionSummaries: ProviderPermission[] =
+          allRequiredProviders.map((providerId) => {
+            const connection = connectionsData.find(
+              (conn) => conn.providerId === providerId,
+            );
+            const providerCapabilities = providerCapabilityMap[providerId];
 
-          const capabilities = requiredCapabilities.map(capId => {
-            const capInfo = providerCapabilities?.capabilities?.find(cap => cap.id === capId);
-            const isGranted = connection?.capabilities?.includes(capId) || false;
+            // Required capabilities for this employee
+            const requiredCapabilities = Array.from(
+              new Set(
+                employeeData.agents.flatMap((agent) =>
+                  agent.capabilities
+                    .filter((cap) => cap.providerId === providerId)
+                    .map((cap) => cap.id),
+                ),
+              ),
+            );
+
+            const capabilities = requiredCapabilities.map((capId) => {
+              const capInfo = providerCapabilities?.capabilities?.find(
+                (cap) => cap.id === capId,
+              );
+              const isGranted =
+                connection?.capabilities?.includes(capId) || false;
+
+              return {
+                id: capId,
+                displayName: capInfo?.displayName || capId,
+                description: capInfo?.description,
+                granted: isGranted,
+                required: true,
+              };
+            });
 
             return {
-              id: capId,
-              displayName: capInfo?.displayName || capId,
-              description: capInfo?.description,
-              granted: isGranted,
-              required: true,
+              provider: connection?.displayName || providerId,
+              providerId,
+              connected: connection?.status === "active",
+              connectionId: connection?.id,
+              capabilities,
             };
           });
-
-          return {
-            provider: connection?.displayName || providerId,
-            providerId,
-            connected: connection?.status === 'active',
-            connectionId: connection?.id,
-            capabilities,
-          };
-        });
         setPermissions(permissionSummaries);
-
       } catch (error) {
         console.error("Failed to load employee:", error);
         navigate("/");
@@ -233,7 +246,13 @@ const AIEmployeeProfile: React.FC = () => {
     };
 
     loadEmployee();
-  }, [id, navigate, selectedWorkflow, getAgentsCoreClient, getConnectHubClient]);
+  }, [
+    id,
+    navigate,
+    selectedWorkflow,
+    getAgentsCoreClient,
+    getConnectHubClient,
+  ]);
 
   const handleWorkflowFilter = (workflowId: string | null) => {
     setSelectedWorkflow(workflowId);
@@ -248,19 +267,27 @@ const AIEmployeeProfile: React.FC = () => {
   };
 
   const getWorkflowStatus = (workflow: WorkflowSummary) => {
-    const missingProviders = workflow.providers.filter(p => !workflow.connectedProviders.includes(p));
+    const missingProviders = workflow.providers.filter(
+      (p) => !workflow.connectedProviders.includes(p),
+    );
     if (missingProviders.length > 0) return "needs-connection";
     return workflow.status;
   };
 
   const getWorkflowStatusColor = (status: string) => {
     switch (status) {
-      case "active": return "bg-emerald-100 text-emerald-800";
-      case "running": return "bg-blue-100 text-blue-800";
-      case "paused": return "bg-amber-100 text-amber-800";
-      case "error": return "bg-red-100 text-red-800";
-      case "needs-connection": return "bg-orange-100 text-orange-800";
-      default: return "bg-slate-100 text-slate-800";
+      case "active":
+        return "bg-emerald-100 text-emerald-800";
+      case "running":
+        return "bg-blue-100 text-blue-800";
+      case "paused":
+        return "bg-amber-100 text-amber-800";
+      case "error":
+        return "bg-red-100 text-red-800";
+      case "needs-connection":
+        return "bg-orange-100 text-orange-800";
+      default:
+        return "bg-slate-100 text-slate-800";
     }
   };
 
@@ -295,22 +322,35 @@ const AIEmployeeProfile: React.FC = () => {
     }
   };
 
-  const getScopeStatusIcon = (scope: { granted: boolean; required: boolean }) => {
-    if (scope.required && scope.granted) return <CheckCircle className="w-4 h-4 text-emerald-600" />;
-    if (scope.required && !scope.granted) return <XCircle className="w-4 h-4 text-red-600" />;
-    if (!scope.required && scope.granted) return <CheckCircle className="w-4 h-4 text-slate-400" />;
+  const getScopeStatusIcon = (scope: {
+    granted: boolean;
+    required: boolean;
+  }) => {
+    if (scope.required && scope.granted)
+      return <CheckCircle className="w-4 h-4 text-emerald-600" />;
+    if (scope.required && !scope.granted)
+      return <XCircle className="w-4 h-4 text-red-600" />;
+    if (!scope.required && scope.granted)
+      return <CheckCircle className="w-4 h-4 text-slate-400" />;
     return <div className="w-4 h-4 rounded-full bg-slate-200" />;
   };
 
-  const getScopeStatusText = (scope: { granted: boolean; required: boolean }) => {
+  const getScopeStatusText = (scope: {
+    granted: boolean;
+    required: boolean;
+  }) => {
     if (scope.required && scope.granted) return "Granted (Required)";
     if (scope.required && !scope.granted) return "Missing (Required)";
     if (!scope.required && scope.granted) return "Granted (Optional)";
     return "Not granted";
   };
 
-  const getScopeStatusColor = (scope: { granted: boolean; required: boolean }) => {
-    if (scope.required && scope.granted) return "text-emerald-700 bg-emerald-50";
+  const getScopeStatusColor = (scope: {
+    granted: boolean;
+    required: boolean;
+  }) => {
+    if (scope.required && scope.granted)
+      return "text-emerald-700 bg-emerald-50";
     if (scope.required && !scope.granted) return "text-red-700 bg-red-50";
     if (!scope.required && scope.granted) return "text-slate-700 bg-slate-50";
     return "text-slate-500 bg-slate-50";
@@ -343,51 +383,72 @@ const AIEmployeeProfile: React.FC = () => {
       {workflows && workflows.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
           <div className="mb-4">
-            <h2 className="text-lg font-semibold text-slate-800 mb-2">What this employee does</h2>
-            <p className="text-slate-600">Automated workflows and their current status</p>
+            <h2 className="text-lg font-semibold text-slate-800 mb-2">
+              What this employee does
+            </h2>
+            <p className="text-slate-600">
+              Automated workflows and their current status
+            </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {workflows.map((workflow) => {
               const status = getWorkflowStatus(workflow);
-              const missingProviders = workflow.providers.filter(p => !workflow.connectedProviders.includes(p));
-              
+              const missingProviders = workflow.providers.filter(
+                (p) => !workflow.connectedProviders.includes(p),
+              );
+
               return (
-                <div key={workflow.id} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div
+                  key={workflow.id}
+                  className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="font-medium text-slate-800">{workflow.name}</h3>
-                      <span className="text-xs text-slate-500">Agent ID: {workflow.id}</span>
+                      <h3 className="font-medium text-slate-800">
+                        {workflow.name}
+                      </h3>
+                      <span className="text-xs text-slate-500">
+                        Agent ID: {workflow.id}
+                      </span>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${getWorkflowStatusColor(status)}`}>
-                      {status === "needs-connection" ? "Needs connection" : status}
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${getWorkflowStatusColor(status)}`}
+                    >
+                      {status === "needs-connection"
+                        ? "Needs connection"
+                        : status}
                     </span>
                   </div>
-                  
-                  <p className="text-sm text-slate-600 mb-3">{workflow.description}</p>
-                  
+
+                  <p className="text-sm text-slate-600 mb-3">
+                    {workflow.description}
+                  </p>
+
                   <div className="space-y-2">
                     <div className="flex items-center text-xs text-slate-500">
                       <Zap className="w-3 h-3 mr-1" />
                       Triggers: {workflow.triggers.join(", ")}
                     </div>
-                    
+
                     <div className="flex items-center text-xs text-slate-500">
                       <Shield className="w-3 h-3 mr-1" />
-                      Providers: {workflow.providers.map(provider => (
-                        <span key={provider} className={`ml-1 px-1 rounded ${
-                          workflow.connectedProviders.includes(provider) 
-                            ? "bg-emerald-100 text-emerald-700" 
-                            : "bg-red-100 text-red-700"
-                        }`}>
+                      Providers:{" "}
+                      {workflow.providers.map((provider) => (
+                        <span
+                          key={provider}
+                          className={`ml-1 px-1 rounded ${
+                            workflow.connectedProviders.includes(provider)
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
                           {provider}
                         </span>
                       ))}
                     </div>
-                    
-
                   </div>
-                  
+
                   {missingProviders.length > 0 && (
                     <div className="mt-3 p-2 bg-orange-50 rounded border border-orange-200">
                       <p className="text-xs text-orange-800">
@@ -450,11 +511,13 @@ const AIEmployeeProfile: React.FC = () => {
                     </h3>
                     {activity.length > 0 && (
                       <span className="text-sm text-slate-500">
-                        {selectedWorkflow ? `Filtered by workflow` : `${activity.length} events`}
+                        {selectedWorkflow
+                          ? `Filtered by workflow`
+                          : `${activity.length} events`}
                       </span>
                     )}
                   </div>
-                  
+
                   {/* Workflow Filter Chips */}
                   {workflows && workflows.length > 1 && (
                     <div className="flex flex-wrap gap-2">
@@ -483,11 +546,14 @@ const AIEmployeeProfile: React.FC = () => {
                       ))}
                     </div>
                   )}
-                  
+
                   <div className="space-y-3">
                     {activity.length === 0 ? (
                       <div className="text-center py-8 text-slate-500">
-                        <p>No activity found{selectedWorkflow ? " for this workflow" : ""}</p>
+                        <p>
+                          No activity found
+                          {selectedWorkflow ? " for this workflow" : ""}
+                        </p>
                       </div>
                     ) : (
                       activity.map((event) => {
@@ -508,9 +574,6 @@ const AIEmployeeProfile: React.FC = () => {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-2">
-                                  <p className="text-sm font-medium text-slate-800">
-                                    {event.node}
-                                  </p>
                                   {event.workflowName && (
                                     <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
                                       {event.workflowName}
@@ -518,16 +581,17 @@ const AIEmployeeProfile: React.FC = () => {
                                   )}
                                 </div>
                                 <span className="text-xs text-slate-500">
-                                  {event.timestamp}
+                                  {new Date(event.timestamp).toLocaleString()}
                                 </span>
                               </div>
                               <p className="text-sm text-slate-600 mt-1">
                                 {event.message}
                               </p>
                               <div className="flex items-center justify-between mt-2">
-                                {event.duration && (
+                                {event.durationMs && (
                                   <span className="text-xs text-slate-400">
-                                    Completed in {event.duration}
+                                    Completed in{" "}
+                                    {(event.durationMs / 1000).toFixed(1)}s
                                   </span>
                                 )}
                                 {event.runId && (
@@ -571,7 +635,8 @@ const AIEmployeeProfile: React.FC = () => {
                       <Shield className="w-5 h-5 text-blue-600" />
                       <div>
                         <p className="text-sm text-blue-800">
-                          This employee requires permissions from external providers to function.
+                          This employee requires permissions from external
+                          providers to function.
                         </p>
                         <p className="text-xs text-blue-700 mt-1">
                           To connect or manage permissions, visit your{" "}
@@ -586,16 +651,20 @@ const AIEmployeeProfile: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     {permissions.map((provider) => {
-                      const hasRequiredMissing = provider.capabilities.some(c => c.required && !c.granted);
-                      
+                      const hasRequiredMissing = provider.capabilities.some(
+                        (c) => c.required && !c.granted,
+                      );
+
                       return (
                         <div
                           key={provider.providerId}
                           className={`border rounded-lg p-4 ${
-                            hasRequiredMissing ? "border-red-200 bg-red-50" : "border-slate-200"
+                            hasRequiredMissing
+                              ? "border-red-200 bg-red-50"
+                              : "border-slate-200"
                           }`}
                         >
                           <div className="flex items-center justify-between mb-4">
@@ -604,46 +673,69 @@ const AIEmployeeProfile: React.FC = () => {
                                 <Settings className="w-5 h-5 text-slate-600" />
                               </div>
                               <div>
-                                <h4 className="font-medium text-slate-800">{provider.provider}</h4>
+                                <h4 className="font-medium text-slate-800">
+                                  {provider.provider}
+                                </h4>
                                 <p className="text-sm text-slate-600">
-                                  {provider.capabilities.filter(c => c.granted).length} of {provider.capabilities.length} capabilities granted
+                                  {
+                                    provider.capabilities.filter(
+                                      (c) => c.granted,
+                                    ).length
+                                  }{" "}
+                                  of {provider.capabilities.length} capabilities
+                                  granted
                                 </p>
                               </div>
                             </div>
-                            
+
                             <div className="flex items-center space-x-3">
-                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                provider.connected 
-                                  ? "bg-emerald-100 text-emerald-800" 
-                                  : "bg-red-100 text-red-800"
-                              }`}>
-                                {provider.connected ? "Connected" : "Disconnected"}
+                              <span
+                                className={`px-2 py-1 text-xs rounded-full ${
+                                  provider.connected
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {provider.connected
+                                  ? "Connected"
+                                  : "Disconnected"}
                               </span>
                             </div>
                           </div>
-                          
+
                           <div className="space-y-2">
                             {provider.capabilities.map((capability, index) => (
-                              <div key={index} className="flex items-center justify-between py-2 px-3 bg-white rounded border border-slate-100">
+                              <div
+                                key={index}
+                                className="flex items-center justify-between py-2 px-3 bg-white rounded border border-slate-100"
+                              >
                                 <div className="flex items-center space-x-3">
                                   {getScopeStatusIcon(capability)}
                                   <div>
-                                    <p className="text-sm font-medium text-slate-800">{capability.displayName}</p>
-                                    <p className="text-xs text-slate-600">{capability.description || capability.id}</p>
+                                    <p className="text-sm font-medium text-slate-800">
+                                      {capability.displayName}
+                                    </p>
+                                    <p className="text-xs text-slate-600">
+                                      {capability.description || capability.id}
+                                    </p>
                                   </div>
                                 </div>
-                                
-                                <span className={`text-xs px-2 py-1 rounded ${getScopeStatusColor(capability)}`}>
+
+                                <span
+                                  className={`text-xs px-2 py-1 rounded ${getScopeStatusColor(capability)}`}
+                                >
                                   {getScopeStatusText(capability)}
                                 </span>
                               </div>
                             ))}
                           </div>
-                          
+
                           {hasRequiredMissing && (
                             <div className="mt-3 p-3 bg-red-100 rounded border border-red-200">
                               <p className="text-sm text-red-800">
-                                <strong>Action required:</strong> Some workflows cannot run without missing required capabilities.
+                                <strong>Action required:</strong> Some workflows
+                                cannot run without missing required
+                                capabilities.
                               </p>
                               <button
                                 onClick={() => navigate("/connections")}

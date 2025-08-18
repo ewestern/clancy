@@ -1,17 +1,12 @@
 import { Context } from "aws-lambda";
 import { Configuration, CapabilitiesApi } from "@ewestern/connect_hub_sdk";
 import {
-  parseEventBridgeEvent,
   getEnv,
-  handleLambdaError,
   publishToKinesis,
   requestCognitoM2MToken,
+  getCurrentTimestamp,
 } from "../shared/index.js";
-import {
-  RunIntentEvent,
-  ResumeIntentEvent,
-  RequestHumanFeedbackEvent,
-} from "@ewestern/events";
+import { RunIntentEvent, ResumeIntentEvent } from "@ewestern/events";
 import {
   Configuration as AgentsConfiguration,
   AgentsApi,
@@ -20,7 +15,7 @@ import { LLMResult } from "@langchain/core/outputs.js";
 import {
   LLMUsageEvent,
   RequestApprovalEvent,
-  FormattedApprovalRequest,
+  ApprovalRequest,
 } from "@ewestern/events";
 import { EventType } from "@ewestern/events";
 import { Executor } from "../shared/executor.js";
@@ -71,7 +66,7 @@ export const lambdaHandler = async (
         const llmUsageEvent: LLMUsageEvent = {
           type: EventType.LLMUsage,
           orgId: event.orgId,
-          timestamp: new Date().toISOString(),
+          timestamp: getCurrentTimestamp(),
           agentId: event.agentId,
           executionId: event.executionId,
           model: model,
@@ -94,55 +89,93 @@ export const lambdaHandler = async (
     accessToken: getToken,
   });
   const agentsApi = new AgentsApi(agentsConfiguration);
-  //
-  const agent = await agentsApi.v1AgentsIdGet({
-    id: event.agentId,
-  });
-  if (!agent) {
-    throw new Error("Agent not found");
-  }
-  const config = {
-    configurable: {
-      ...env,
-      orgId: event.orgId,
-      thread_id: event.executionId,
-    },
-    callbacks: [callbacks],
-  };
-  const executor = new Executor(
-    agent,
-    connectHubConfiguration,
-    env.checkpointerDbUrl!,
-    model
-  );
-  let stream: AsyncGenerator<any, any, any>;
-  if (event.type === EventType.RunIntent) {
-    stream = await executor.start("", config);
-  } else if (event.type === EventType.ResumeIntent) {
-    stream = await executor.resume(
-      new Command({ resume: event.resume }),
-      config
+  try {
+    const agent = await agentsApi.v1AgentsIdGet({
+      id: event.agentId,
+    });
+    if (!agent) {
+      throw new Error("Agent not found");
+    }
+    const config = {
+      configurable: {
+        ...env,
+        orgId: event.orgId,
+        thread_id: event.executionId,
+        agent_id: event.agentId,
+      },
+      callbacks: [callbacks],
+    };
+    const executor = new Executor(
+      agent,
+      connectHubConfiguration,
+      env.checkpointerDbUrl!,
+      model
     );
-  } else {
-    throw new Error(`Unsupported event type: ${event}`);
-  }
+    let stream: AsyncGenerator<any, any, any>;
+    if (event.type === EventType.RunIntent) {
+      const detail = event.details;
+      stream = await executor.start(detail, config);
+    } else if (event.type === EventType.ResumeIntent) {
+      stream = await executor.resume(
+        new Command({ resume: event.resume }),
+        config
+      );
+    } else {
+      throw new Error(`Unsupported event type: ${event}`);
+    }
 
-  for await (const chunk of stream) {
-    console.log(chunk);
-    if (isInterrupted(chunk)) {
-      const interrupt = chunk[
-        INTERRUPT
-      ][0] as Interrupt<FormattedApprovalRequest>;
-      const feedbackEvent: RequestApprovalEvent = {
-        type: EventType.RequestApproval,
+    for await (const chunk of stream) {
+      if (isInterrupted(chunk)) {
+        const interrupt = chunk[INTERRUPT][0] as Interrupt<{
+          capability: {
+            providerId: string;
+            id: string;
+          };
+          formattedRequest: ApprovalRequest;
+        }>;
+        const feedbackEvent: RequestApprovalEvent = {
+          type: EventType.RequestApproval,
+          orgId: event.orgId,
+          userId: event.userId,
+          timestamp: getCurrentTimestamp(),
+          capability: {
+            providerId: interrupt.value!.capability.providerId,
+            id: interrupt.value!.capability.id,
+          },
+          agentId: event.agentId,
+          executionId: event.executionId,
+          request: interrupt.value!.formattedRequest,
+        };
+        await publishToKinesis(feedbackEvent, event.executionId);
+        break;
+      }
+    }
+  } catch (error) {
+    await publishToKinesis(
+      {
+        type: EventType.RunCompleted,
         orgId: event.orgId,
         userId: event.userId,
-        timestamp: new Date().toISOString(),
+        timestamp: getCurrentTimestamp(),
         executionId: event.executionId,
-        request: interrupt.value,
-      };
-      await publishToKinesis(feedbackEvent, event.executionId);
-      break;
-    }
+        agentId: event.agentId,
+        status: "error" as const,
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      event.executionId
+    );
   }
+  await publishToKinesis(
+    {
+      type: EventType.RunCompleted,
+      orgId: event.orgId,
+      userId: event.userId,
+      timestamp: getCurrentTimestamp(),
+      executionId: event.executionId,
+      agentId: event.agentId,
+      status: "success" as const,
+      message: "",
+    },
+    event.executionId
+  );
 };

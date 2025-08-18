@@ -12,6 +12,10 @@ import registerDatabase from "./plugins/database.js";
 import { registerAuth } from "./plugins/auth.js";
 import fastifyRawBody from "fastify-raw-body";
 import { clerkPlugin } from "@clerk/fastify";
+import { startScheduler, stopScheduler } from "./subscriptions/scheduler.js";
+const __dirname = import.meta.dirname;
+import path from "path";
+const publicDir = path.join(__dirname, "../public");
 
 export async function createApp() {
   const app = Fastify({
@@ -113,20 +117,23 @@ export async function createApp() {
     global: false,
   });
 
-  // Register static file serving for OAuth redirect pages
   await app.register(fastifyStatic, {
-    root: new URL("../public", import.meta.url).pathname,
-    prefix: "/oauth/",
+    root: publicDir,
+    prefix: "/public/",
   });
 
   // Register routes
   await registerRoutes(app);
+
+  // Start subscription renewal scheduler
+  startScheduler(app.db);
 
   // Graceful shutdown
   const gracefulShutdown = async (signal: string) => {
     app.log.info(`Received ${signal}, shutting down gracefully`);
 
     try {
+      stopScheduler();
       await app.close();
       app.log.info("Application closed successfully");
       process.exit(0);

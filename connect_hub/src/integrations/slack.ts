@@ -11,6 +11,7 @@ import {
   Webhook,
   Trigger,
 } from "../providers/types.js";
+import { BaseProvider } from "../providers/base.js";
 
 import { ProviderAuth, ProviderKind } from "../models/providers.js";
 import { WebClient } from "@slack/web-api";
@@ -300,77 +301,42 @@ export function verifySlackRequest(
   return crypto.timingSafeEqual(expectedBuffer, providedBuffer);
 }
 
-export class SlackProvider
-  implements ProviderRuntime<typeof WebhookEndpoint, WebhookEvent>
-{
-  private readonly dispatchTable = new Map<string, Capability<any, any>>();
-  public readonly scopeMapping: Record<string, string[]>;
-  links = ["https://api.slack.com/apps/A095CEPRBGW/general"];
-
-  public readonly metadata = {
-    id: "slack",
-    displayName: "Slack",
-    description: "Slack is a team communication and collaboration platform.",
-    icon: "https://a.slack-edge.com/80588/marketing/img/meta/slack_hash_256.png",
-    docsUrl: "https://api.slack.com/",
-    kind: ProviderKind.External,
-    auth: ProviderAuth.OAuth2,
-  };
-
+export class SlackProvider extends BaseProvider<
+  typeof WebhookEndpoint,
+  WebhookEvent
+> {
   constructor() {
-    // Define capability factories
-    const capabilityFactories: Record<string, CapabilityFactory> = {
-      "chat.post": createChatPostCapability,
-      "chat.update": createChatUpdateCapability,
-      "chat.scheduleMessage": createChatScheduleMessageCapability,
-      "files.upload": createFilesUploadCapability,
-      "conversation.create": createConversationCreateCapability,
-      "reaction.add": createReactionAddCapability,
-      "conversations.list": createConversationsListCapability,
-      "users.list": createUsersListCapability,
-      "users.info": createUsersInfoCapability,
-      "conversations.history": createConversationsHistoryCapability,
-      "conversations.members": createConversationsMembersCapability,
-      "conversations.join": createConversationsJoinCapability,
-      "conversations.invite": createConversationsInviteCapability,
-      "users.lookupByEmail": createUsersLookupByEmailCapability,
-    };
-
-    // Populate dispatch table
-    for (const [capabilityId, factory] of Object.entries(capabilityFactories)) {
-      this.dispatchTable.set(capabilityId, factory());
-    }
-
-    // Generate scopeMapping from dispatch table
-    this.scopeMapping = {};
-    for (const [capabilityId, capability] of this.dispatchTable) {
-      for (const scope of capability.meta.requiredScopes) {
-        if (!this.scopeMapping[scope]) {
-          this.scopeMapping[capabilityId] = [];
-        }
-        this.scopeMapping[capabilityId]!.push(scope);
-      }
-    }
-  }
-
-  getCapability<P, R>(capabilityId: string): Capability<P, R> {
-    const capability = this.dispatchTable.get(capabilityId);
-    if (!capability) {
-      throw new Error(`Slack capability ${capabilityId} not implemented`);
-    }
-    return capability as Capability<P, R>;
-  }
-
-  webhooks = webhooks;
-
-  listCapabilities(): CapabilityMeta[] {
-    return Array.from(this.dispatchTable.values()).map((c) => c.meta);
-  }
-  getTrigger(triggerId: string): Trigger<WebhookEvent> {
-    return triggers.find((t) => t.id === triggerId)!;
-  }
-  listTriggers(): Trigger<WebhookEvent>[] {
-    return triggers;
+    super({
+      metadata: {
+        id: "slack",
+        displayName: "Slack",
+        description:
+          "Slack is a team communication and collaboration platform.",
+        icon: "https://a.slack-edge.com/80588/marketing/img/meta/slack_hash_256.png",
+        docsUrl: "https://api.slack.com/",
+        kind: ProviderKind.External,
+        auth: ProviderAuth.OAuth2,
+      },
+      capabilityFactories: {
+        "chat.post": createChatPostCapability,
+        "chat.update": createChatUpdateCapability,
+        "chat.scheduleMessage": createChatScheduleMessageCapability,
+        "files.upload": createFilesUploadCapability,
+        "conversation.create": createConversationCreateCapability,
+        "reaction.add": createReactionAddCapability,
+        "conversations.list": createConversationsListCapability,
+        "users.list": createUsersListCapability,
+        "users.info": createUsersInfoCapability,
+        "conversations.history": createConversationsHistoryCapability,
+        "conversations.members": createConversationsMembersCapability,
+        "conversations.join": createConversationsJoinCapability,
+        "conversations.invite": createConversationsInviteCapability,
+        "users.lookupByEmail": createUsersLookupByEmailCapability,
+      },
+      webhooks,
+      links: ["https://api.slack.com/apps/A095CEPRBGW/general"],
+      triggers,
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -425,7 +391,27 @@ export class SlackProvider
       );
     }
 
-    const tokenData = await tokenResponse.json();
+    const tokenData = (await tokenResponse.json()) as {
+      ok: boolean;
+      error?: string;
+      access_token: string;
+      token_type: string;
+      scope: string;
+      bot_user_id: string;
+      app_id: string;
+      team: {
+        id: string;
+        name: string;
+      };
+      enterprise: {
+        id: string;
+        name: string;
+      };
+      authed_user: {
+        id: string;
+        name: string;
+      };
+    };
 
     if (!tokenData.ok) {
       throw new Error(`Slack token exchange error: ${tokenData.error}`);

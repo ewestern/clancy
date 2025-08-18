@@ -15,6 +15,7 @@
 
 import * as runtime from '../runtime.js';
 import type {
+  DocumentsDocumentIdDelete200Response,
   DocumentsDocumentIdDownloadGet200Response,
   DocumentsDocumentIdStatusGet200Response,
   DocumentsFinalizePost200Response,
@@ -30,6 +31,8 @@ import type {
   KnowledgeSnippetsBulkPostRequestOwnershipScope,
 } from '../models/index.js';
 import {
+    DocumentsDocumentIdDelete200ResponseFromJSON,
+    DocumentsDocumentIdDelete200ResponseToJSON,
     DocumentsDocumentIdDownloadGet200ResponseFromJSON,
     DocumentsDocumentIdDownloadGet200ResponseToJSON,
     DocumentsDocumentIdStatusGet200ResponseFromJSON,
@@ -57,6 +60,10 @@ import {
     KnowledgeSnippetsBulkPostRequestOwnershipScopeFromJSON,
     KnowledgeSnippetsBulkPostRequestOwnershipScopeToJSON,
 } from '../models/index.js';
+
+export interface DocumentsDocumentIdDeleteRequest {
+    documentId: string;
+}
 
 export interface DocumentsDocumentIdDownloadGetRequest {
     documentId: string;
@@ -98,6 +105,47 @@ export interface KnowledgeSnippetsBulkPostOperationRequest {
  * 
  */
 export class DocumentsApi extends runtime.BaseAPI {
+
+    /**
+     * Delete document and all related snippets
+     */
+    async documentsDocumentIdDeleteRaw(requestParameters: DocumentsDocumentIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<DocumentsDocumentIdDelete200Response>> {
+        if (requestParameters['documentId'] == null) {
+            throw new runtime.RequiredError(
+                'documentId',
+                'Required parameter "documentId" was null or undefined when calling documentsDocumentIdDelete().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/documents/{documentId}`.replace(`{${"documentId"}}`, encodeURIComponent(String(requestParameters['documentId']))),
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => DocumentsDocumentIdDelete200ResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * Delete document and all related snippets
+     */
+    async documentsDocumentIdDelete(requestParameters: DocumentsDocumentIdDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<DocumentsDocumentIdDelete200Response> {
+        const response = await this.documentsDocumentIdDeleteRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Get presigned download URL for document

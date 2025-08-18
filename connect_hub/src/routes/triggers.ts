@@ -51,9 +51,11 @@ export async function triggerRoutes(app: FastifyTypeBox) {
       reply: FastifyReplyTypeBox<typeof CreateTriggerRegistrationEndpoint>,
     ) => {
       const body = request.body;
-      request.log.info(`Creating trigger registration: ${JSON.stringify(body)}`);
-      const auth = getAuth(request);
-      if (!auth.orgId || !auth.userId) {
+      request.log.info(
+        `Creating trigger registration: ${JSON.stringify(body)}`,
+      );
+      const { orgId, userId } = getAuth(request);
+      if (!orgId || !userId) {
         reply.status(401).send({
           error: "Unauthorized",
           message: "Unauthorized",
@@ -91,8 +93,8 @@ export async function triggerRoutes(app: FastifyTypeBox) {
       }
       request.log.info(
         `Creating trigger registration: ${JSON.stringify([
-          auth.orgId,
-          auth.userId,
+          orgId,
+          userId,
           body.providerId,
           body.triggerId,
           body.params,
@@ -102,8 +104,8 @@ export async function triggerRoutes(app: FastifyTypeBox) {
         async (tx) => {
           const connection = await tx.query.connections.findFirst({
             where: and(
-              eq(connections.orgId, auth.orgId!),
-              eq(connections.userId, auth.userId!),
+              eq(connections.orgId, orgId!),
+              eq(connections.userId, userId!),
               eq(connections.providerId, body.providerId),
               eq(connections.status, ConnectionStatus.Active),
             ),
@@ -125,6 +127,24 @@ export async function triggerRoutes(app: FastifyTypeBox) {
             .insert(triggerRegistrations)
             .values(toInsert)
             .returning();
+          if (provider?.metadata.kind === ProviderKind.External) {
+            const subscriptionResult = await trigger?.registerSubscription?.(
+              request.server.db,
+              connection?.externalAccountMetadata || {},
+              triggerRegistration!,
+            );
+            if (subscriptionResult) {
+              // Update the registration with subscription metadata and actual expiration
+              await tx
+                .update(triggerRegistrations)
+                .set({
+                  subscriptionMetadata: subscriptionResult.subscriptionMetadata,
+                  expiresAt: subscriptionResult.expiresAt,
+                  updatedAt: new Date(),
+                })
+                .where(eq(triggerRegistrations.id, triggerRegistration!.id));
+            }
+          }
           if (!triggerRegistration) {
             throw new Error("Failed to create trigger registration");
           }

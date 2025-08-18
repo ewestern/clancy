@@ -25,7 +25,6 @@ provider "google" {
   project     = "clancy-464816"
 }
 
-
 resource "google_pubsub_topic" "clancy_connect_hub_staging" {
   provider = google.google
   name = "clancy-connect-hub-staging"
@@ -37,7 +36,8 @@ resource "google_pubsub_subscription" "clancy_connect_hub_staging" {
   name = "clancy-connect-hub-staging-subscription"
   topic = google_pubsub_topic.clancy_connect_hub_staging.name
   push_config {
-    push_endpoint = "https://connect-hub.staging.clancy.systems/webhooks/google"
+    push_endpoint = "${local.connect_hub_lb_endpoint}/webhooks/google"
+    #push_endpoint = "https://connect-hub.staging.clancy.systems/webhooks/google"
   }
 }
 
@@ -115,6 +115,9 @@ module "lambdas" {
   openai_api_key_secret_arn = module.shared.openai_api_key_secret_arn
   anthropic_api_key_secret_arn = module.shared.anthropic_api_key_secret_arn
   checkpointer_db_url = module.checkpointer.db_url
+  cognito_client_id = module.shared.cognito_user_pool_client_id
+  cognito_client_secret = module.shared.cognito_user_pool_client_secret
+  cognito_domain = module.shared.cognito_user_pool_domain
   allowed_cors_origins = [
     "http://localhost:5173",  # Local UI development
     "http://localhost:3000",  # Alternative local port
@@ -144,6 +147,7 @@ module "connect_hub" {
   clerk_publishable_key = module.shared.clerk_publishable_key
   clerk_secret_key = module.shared.clerk_secret_key
   hosted_zone_id = data.aws_route53_zone.clancy_domain.id
+  kinesis_stream_name = module.events.kinesis_stream_name
 }
 module "agents_core" {
   source = "../../modules/agents_core"
@@ -162,6 +166,7 @@ module "agents_core" {
   clerk_secret_key = module.shared.clerk_secret_key
   hosted_zone_id = data.aws_route53_zone.clancy_domain.id
   connect_hub_api_url = module.connect_hub.lb_endpoint
+  kinesis_stream_name = module.events.kinesis_stream_name
 }
 
 module "checkpointer" {
@@ -178,12 +183,17 @@ module "events" {
   main_agent_executor_function_arn = module.lambdas.main_agent_executor_function_arn
   agents_core_lb_endpoint = local.agents_core_lb_endpoint
   connect_hub_lb_endpoint = local.connect_hub_lb_endpoint
+  cognito_user_pool_client_id = module.shared.cognito_user_pool_client_id
+  cognito_user_pool_client_secret = module.shared.cognito_user_pool_client_secret
+  cognito_authorization_endpoint = module.shared.cognito_authorization_endpoint
 }
 
 
 locals {
-  agents_core_lb_endpoint = "https://6dd64cbde246.ngrok-free.app"
-  connect_hub_lb_endpoint = "https://99d8eadafaaa.ngrok-free.app"
+  agents_core_lb_endpoint = module.agents_core.lb_endpoint
+  connect_hub_lb_endpoint = module.connect_hub.lb_endpoint
+  #agents_core_lb_endpoint = "https://6dd64cbde246.ngrok-free.app"
+  #connect_hub_lb_endpoint = "https://99d8eadafaaa.ngrok-free.app"
 }
 
 output "shared_subnet_ids" {

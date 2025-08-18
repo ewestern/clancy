@@ -1,0 +1,1 @@
+ALTER TABLE "trigger_registrations" ADD COLUMN "subscription_metadata" jsonb DEFAULT '{}'::jsonb NOT NULL;

@@ -196,4 +196,5 @@ resource "aws_route_table_association" "db_private" {
   for_each       = toset(var.db_azs)
   subnet_id      = aws_subnet.db_subnets[each.key].id
   route_table_id = aws_route_table.db_private.id
+  #route_table_id = aws_route_table.public.id
 }

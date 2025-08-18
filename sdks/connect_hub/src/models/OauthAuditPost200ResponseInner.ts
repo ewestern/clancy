@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime.js';
-import type { OauthAuditPost200ResponseInnerStatus } from './OauthAuditPost200ResponseInnerStatus.js';
+import type { OauthConnectionStatus } from './OauthConnectionStatus.js';
 import {
-    OauthAuditPost200ResponseInnerStatusFromJSON,
-    OauthAuditPost200ResponseInnerStatusFromJSONTyped,
-    OauthAuditPost200ResponseInnerStatusToJSON,
-    OauthAuditPost200ResponseInnerStatusToJSONTyped,
-} from './OauthAuditPost200ResponseInnerStatus.js';
+    OauthConnectionStatusFromJSON,
+    OauthConnectionStatusFromJSONTyped,
+    OauthConnectionStatusToJSON,
+    OauthConnectionStatusToJSONTyped,
+} from './OauthConnectionStatus.js';
 
 /**
  * 
@@ -47,10 +47,10 @@ export interface OauthAuditPost200ResponseInner {
     providerIcon: string;
     /**
      * 
-     * @type {OauthAuditPost200ResponseInnerStatus}
+     * @type {OauthConnectionStatus}
      * @memberof OauthAuditPost200ResponseInner
      */
-    status: OauthAuditPost200ResponseInnerStatus;
+    status: OauthConnectionStatus;
     /**
      * 
      * @type {Array<string>}
@@ -76,6 +76,8 @@ export interface OauthAuditPost200ResponseInner {
      */
     message?: string;
 }
+
+
 
 /**
  * Check if a given object implements the OauthAuditPost200ResponseInner interface.
@@ -104,7 +106,7 @@ export function OauthAuditPost200ResponseInnerFromJSONTyped(json: any, ignoreDis
         'providerId': json['providerId'],
         'providerDisplayName': json['providerDisplayName'],
         'providerIcon': json['providerIcon'],
-        'status': OauthAuditPost200ResponseInnerStatusFromJSON(json['status']),
+        'status': OauthConnectionStatusFromJSON(json['status']),
         'grantedCapabilities': json['grantedCapabilities'],
         'missingCapabilities': json['missingCapabilities'],
         'oauthUrl': json['oauthUrl'],
@@ -126,7 +128,7 @@ export function OauthAuditPost200ResponseInnerToJSONTyped(value?: OauthAuditPost
         'providerId': value['providerId'],
         'providerDisplayName': value['providerDisplayName'],
         'providerIcon': value['providerIcon'],
-        'status': OauthAuditPost200ResponseInnerStatusToJSON(value['status']),
+        'status': OauthConnectionStatusToJSON(value['status']),
         'grantedCapabilities': value['grantedCapabilities'],
         'missingCapabilities': value['missingCapabilities'],
         'oauthUrl': value['oauthUrl'],

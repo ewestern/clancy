@@ -38,12 +38,6 @@ variable "tags" {
   default     = {}
 }
 
-variable "lambda_timeout" {
-  description = "Timeout for lambda functions in seconds"
-  type        = number
-  default     = 30
-}
-
 variable "lambda_memory_size" {
   description = "Memory size for lambda functions in MB"
   type        = number
@@ -79,7 +73,7 @@ variable "vpc_security_group_ids" {
     )
     error_message = "If vpc_subnet_ids is provided, vpc_security_group_ids must also be provided, and vice versa."
   }
-} 
+}
 
 variable "lambdas_path" {
   description = "Path to the lambdas directory"
@@ -116,4 +110,16 @@ variable "allowed_cors_origins" {
   description = "List of allowed CORS origins for S3 bucket"
   type        = list(string)
   default     = ["*"] # Allow all origins by default, should be restricted per environment
+}
+variable "cognito_client_id" {
+  description = "Cognito client ID"
+  type        = string
+}
+variable "cognito_client_secret" {
+  description = "Cognito client secret"
+  type        = string
+}
+variable "cognito_domain" {
+  description = "Cognito domain"
+  type        = string
 }
