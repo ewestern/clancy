@@ -1,4 +1,4 @@
-import { Type } from "@sinclair/typebox";
+import { Static, Type } from "@sinclair/typebox";
 import { AgentSchema } from "./agents.js";
 import { ErrorSchema, Ref, StringEnum } from "./shared.js";
 
@@ -62,3 +62,5 @@ export const GetEmployeeEndpoint = {
     200: Ref(EmployeeSchema),
   },
 };
+
+export type Employee = Static<typeof EmployeeSchema>;
