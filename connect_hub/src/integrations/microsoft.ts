@@ -201,7 +201,7 @@ export class MicrosoftProvider extends BaseProvider {
         displayName: "Microsoft 365",
         description:
           "Microsoft 365 productivity and collaboration platform via Microsoft Graph",
-        icon: "https://developer.microsoft.com/en-us/graph/graph/images/graph-logo.png",
+        icon: "https://www.clancyai.com/_next/static/media/microsoft-365.ce3153c1.svg",
         docsUrl: "https://docs.microsoft.com/en-us/graph/",
         kind: ProviderKind.External,
         auth: ProviderAuth.OAuth2,

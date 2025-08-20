@@ -29,7 +29,8 @@
     "langsmith": "^0.3.39",
     "mammoth": "^1.10.0",
     "pdf-parse": "^1.1.1",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "pino": "^9.9.0"
   },
   "devDependencies": {
     "@jest/globals": "^29.2.0",

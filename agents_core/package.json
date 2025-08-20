@@ -15,7 +15,8 @@
     "db:migrate": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint src/**/*.ts --fix"
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "create-test-employee": "tsx scripts/createTestEmployee.ts"
   },
   "dependencies": {
     "@aws-sdk/client-eventbridge": "^3.844.0",
@@ -67,7 +68,8 @@
     "eslint": "^8.0.0",
     "ts-node": "^10.4.0",
     "tsx": "^4.6.0",
-    "vitest": "^0.34.0"
+    "vitest": "^0.34.0",
+    "@ewestern/agents_core_sdk": "file:../sdks/agents_core"
   },
   "keywords": [
     "fastify",

@@ -20,10 +20,14 @@ resource "aws_secretsmanager_secret" "anthropic_api_key" {
 data "aws_secretsmanager_secret_version" "clerk_secrets" {
   secret_id = aws_secretsmanager_secret.clerk_secrets.id
 }
+data "aws_secretsmanager_secret_version" "openai_api_key" {
+  secret_id = aws_secretsmanager_secret.openai_api_key.id
+}
 
 locals {
   agents_core_clerk_publishable_key = jsondecode(data.aws_secretsmanager_secret_version.clerk_secrets.secret_string).publishable_key
   agents_core_clerk_secret_key = jsondecode(data.aws_secretsmanager_secret_version.clerk_secrets.secret_string).secret_key
+  openai_api_key = jsondecode(data.aws_secretsmanager_secret_version.openai_api_key.secret_string).api_key
 }
 
 output "openai_api_key_secret_arn" {
@@ -47,4 +51,7 @@ output "clerk_publishable_key" {
 }
 output "clerk_secret_key" {
   value = local.agents_core_clerk_secret_key
+}
+output "openai_api_key" {
+  value = local.openai_api_key
 }

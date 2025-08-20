@@ -16,4 +16,11 @@ export default defineConfig({
       ],
     },
   },
+  resolve: {
+    alias: {
+      // Allow .js imports to resolve to .ts files during testing
+      "./schema.js": "./schema.ts",
+      "./relations.js": "./relations.ts",
+    },
+  },
 });

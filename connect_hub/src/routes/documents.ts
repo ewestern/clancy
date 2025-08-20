@@ -35,6 +35,7 @@ import {
   DocumentPresignEndpoint,
   DocumentFinalizeEndpoint,
   DocumentStatusEndpoint,
+  DocumentGetEndpoint,
   DocumentDownloadEndpoint,
   DocumentDeleteEndpoint,
   DocumentIngestionCompleteEndpoint,
@@ -252,6 +253,87 @@ export async function documentsRoutes(app: FastifyTypeBox) {
         return reply.status(500).send({
           error: "Internal server error",
           message: "Failed to fetch document status",
+          statusCode: 500,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    },
+  );
+
+  // GET /documents/:documentId - Get document details by ID
+  app.get(
+    "/documents/:documentId",
+    {
+      schema: DocumentGetEndpoint,
+    },
+    async (request, reply) => {
+      const { documentId } = request.params as { documentId: string };
+
+      const { orgId } = getAuth(request);
+      if (!orgId) {
+        return reply.status(401).send({
+          error: "Unauthorized",
+          message: "No organization ID found",
+          statusCode: 401,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      try {
+        const doc = await app.db.query.documentStore.findFirst({
+          where: and(
+            eq(documentStore.documentId, documentId),
+            eq(documentStore.orgId, orgId),
+          ),
+          with: {
+            documentTags: {
+              with: {
+                tag: true,
+              },
+            },
+          },
+        });
+
+        if (!doc) {
+          return reply.status(404).send({
+            message: `Document with ID ${documentId} not found or access denied`,
+            error: "Document not found",
+            statusCode: 404,
+            timestamp: new Date().toISOString(),
+          });
+        }
+
+        // Transform the response to match the Document schema
+        const documentResponse = {
+          id: doc.id,
+          orgId: doc.orgId,
+          documentId: doc.documentId,
+          documentType: doc.documentType || "",
+          documentUri: doc.documentUri || "",
+          title: doc.title || "",
+          mimeType: doc.mimeType || "",
+          sizeBytes: doc.sizeBytes || "",
+          uploaderUserId: doc.uploaderUserId,
+          ownershipScope: doc.ownershipScope,
+          ownerId: doc.ownerId,
+          status: doc.status,
+          tags: doc.documentTags.map((dt) => ({
+            id: dt.tag.id,
+            orgId: dt.tag.orgId,
+            name: dt.tag.name,
+            createdAt: dt.tag.createdAt.toISOString(),
+            updatedAt: dt.tag.updatedAt.toISOString(),
+          })),
+          createdAt: doc.createdAt.toISOString(),
+          updatedAt: doc.updatedAt.toISOString(),
+        };
+
+        return reply.status(200).send(documentResponse);
+      } catch (error) {
+        app.log.error("Error fetching document:", error);
+        return reply.status(500).send({
+          error: "Internal server error",
+          message: "Failed to fetch document",
           statusCode: 500,
           timestamp: new Date().toISOString(),
         });

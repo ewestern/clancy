@@ -11,6 +11,7 @@ import { Nullable } from "../../models/shared.js";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { CharacterTextSplitter } from "@langchain/textsplitters";
 import dotenv from "dotenv";
+import { getAuth } from "@clerk/fastify";
 dotenv.config();
 
 const embeddings = new OpenAIEmbeddings({
@@ -57,7 +58,7 @@ async function executeKnowledgeSearch(
   params: KnowledgeSearchParams,
   ctx: ExecutionContext & { orgId: string },
 ): Promise<KnowledgeSearchDocument[]> {
-  const { query, threshold = 0.8, limit = 5 } = params;
+  const { query, threshold = 0.5, limit = 5 } = params;
 
   // Create embedding for the search query
   const queryEmbedding = await embeddings.embedQuery(query);
@@ -80,8 +81,6 @@ async function executeKnowledgeSearch(
     )
     .orderBy(desc(similarity))
     .limit(limit);
-
-  console.log("Results:", results);
 
   return results;
 }

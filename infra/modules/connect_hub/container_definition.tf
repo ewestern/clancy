@@ -29,6 +29,10 @@ locals {
           value = var.environment
         },
         {
+          name  = "OPENAI_API_KEY"
+          value = var.openai_api_key
+        },
+        {
           name  = "REDIRECT_BASE_URL"
           value = local.lb_endpoint
         },

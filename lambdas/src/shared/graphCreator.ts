@@ -316,7 +316,7 @@ export class GraphCreator {
       name: this.WORKFLOW_MATCHER_AGENT,
       llm: llm,
       tools: [
-        ///this.getHumanInputTool(),
+        this.getHumanInputTool(),
         this.getCapabilitiesTool(),
         this.getTriggersTool(),
       ],
@@ -356,7 +356,7 @@ export class GraphCreator {
       name: this.WORKFLOW_AGENT_CREATOR_AGENT,
       llm: llm,
       tools: [
-        //this.getHumanInputTool()
+        this.getHumanInputTool()
       ],
       prompt: AGENT_CREATOR_PROMPT,
       responseFormat: Type.Object({

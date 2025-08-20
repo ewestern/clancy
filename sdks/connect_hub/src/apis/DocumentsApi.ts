@@ -15,6 +15,7 @@
 
 import * as runtime from '../runtime.js';
 import type {
+  Document,
   DocumentsDocumentIdDelete200Response,
   DocumentsDocumentIdDownloadGet200Response,
   DocumentsDocumentIdStatusGet200Response,
@@ -31,6 +32,8 @@ import type {
   KnowledgeSnippetsBulkPostRequestOwnershipScope,
 } from '../models/index.js';
 import {
+    DocumentFromJSON,
+    DocumentToJSON,
     DocumentsDocumentIdDelete200ResponseFromJSON,
     DocumentsDocumentIdDelete200ResponseToJSON,
     DocumentsDocumentIdDownloadGet200ResponseFromJSON,
@@ -66,6 +69,10 @@ export interface DocumentsDocumentIdDeleteRequest {
 }
 
 export interface DocumentsDocumentIdDownloadGetRequest {
+    documentId: string;
+}
+
+export interface DocumentsDocumentIdGetRequest {
     documentId: string;
 }
 
@@ -185,6 +192,47 @@ export class DocumentsApi extends runtime.BaseAPI {
      */
     async documentsDocumentIdDownloadGet(requestParameters: DocumentsDocumentIdDownloadGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<DocumentsDocumentIdDownloadGet200Response> {
         const response = await this.documentsDocumentIdDownloadGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get document details by ID
+     */
+    async documentsDocumentIdGetRaw(requestParameters: DocumentsDocumentIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Document>> {
+        if (requestParameters['documentId'] == null) {
+            throw new runtime.RequiredError(
+                'documentId',
+                'Required parameter "documentId" was null or undefined when calling documentsDocumentIdGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/documents/{documentId}`.replace(`{${"documentId"}}`, encodeURIComponent(String(requestParameters['documentId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => DocumentFromJSON(jsonValue));
+    }
+
+    /**
+     * Get document details by ID
+     */
+    async documentsDocumentIdGet(requestParameters: DocumentsDocumentIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Document> {
+        const response = await this.documentsDocumentIdGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

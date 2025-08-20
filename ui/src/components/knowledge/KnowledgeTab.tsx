@@ -1,10 +1,14 @@
 import React, { useState, useCallback } from "react";
-import { Search, BookOpen, Bot } from "lucide-react";
+import { Search } from "lucide-react";
 import {
   Configuration,
   type Document,
   ProxyApi,
+  DocumentsApi,
 } from "@ewestern/connect_hub_sdk";
+import { useAuth } from "@clerk/react-router";
+import { KnowledgeSearchCard } from "./KnowledgeSearchCard";
+import { DocumentModal } from "./DocumentModal";
 
 interface KnowledgeSnippet {
   id: string;
@@ -20,14 +24,10 @@ interface KnowledgeSearchResult {
 
 interface KnowledgeTabProps {
   getConnectHubConfig: () => Configuration;
-  documents: Document[];
-  onDocumentClick: () => void;
 }
 
 export const KnowledgeTab: React.FC<KnowledgeTabProps> = ({
   getConnectHubConfig,
-  documents,
-  onDocumentClick,
 }) => {
   const [knowledgeResults, setKnowledgeResults] = useState<KnowledgeSnippet[]>(
     [],
@@ -35,6 +35,33 @@ export const KnowledgeTab: React.FC<KnowledgeTabProps> = ({
   const [knowledgeLoading, setKnowledgeLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(
+    null,
+  );
+  const [documentLoading, setDocumentLoading] = useState<string | null>(null);
+  const { userId, orgId } = useAuth();
+
+  // Function to fetch a document by ID
+  const fetchDocumentById = useCallback(
+    async (documentId: string): Promise<Document | null> => {
+      setDocumentLoading(documentId);
+      try {
+        const config = getConnectHubConfig();
+        const documentsApi = new DocumentsApi(config);
+
+        const document = await documentsApi.documentsDocumentIdGet({
+          documentId,
+        });
+        return document;
+      } catch (error) {
+        console.error("Failed to fetch document:", error);
+        return null;
+      } finally {
+        setDocumentLoading(null);
+      }
+    },
+    [getConnectHubConfig],
+  );
 
   // Knowledge search functionality
   const searchKnowledge = useCallback(
@@ -56,12 +83,12 @@ export const KnowledgeTab: React.FC<KnowledgeTabProps> = ({
           capabilityId: "knowledge.search",
           proxyProviderIdCapabilityIdPostRequest: {
             // TODO: In Phase 2, backend can derive these from JWT
-            orgId: "", // Will be derived from auth token
-            userId: "", // Will be derived from auth token
+            orgId: orgId || "",
+            userId: userId || "",
             params: {
               query,
-              limit: 20,
-              threshold: 0.7,
+              limit: 10,
+              threshold: 0.5,
             },
           },
         })) as KnowledgeSearchResult;
@@ -74,7 +101,7 @@ export const KnowledgeTab: React.FC<KnowledgeTabProps> = ({
         setKnowledgeLoading(false);
       }
     },
-    [getConnectHubConfig],
+    [getConnectHubConfig, orgId, userId],
   );
 
   // Handle explicit search action
@@ -93,61 +120,25 @@ export const KnowledgeTab: React.FC<KnowledgeTabProps> = ({
     [handleKnowledgeSearch],
   );
 
+  // Handle opening document modal
+  const handleDocumentModalClick = useCallback(
+    async (documentId: string) => {
+      const document = await fetchDocumentById(documentId);
+      if (document) {
+        setSelectedDocument(document);
+      }
+    },
+    [fetchDocumentById],
+  );
+
   const renderSnippetCard = (snippet: KnowledgeSnippet) => {
-    const hasDocument = snippet.documentId;
-    const relatedDoc = hasDocument
-      ? documents.find((d) => d.documentId === snippet.documentId)
-      : null;
-
     return (
-      <div
+      <KnowledgeSearchCard
         key={snippet.id}
-        className="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-      >
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            {hasDocument ? (
-              <BookOpen className="w-4 h-4 text-blue-500" />
-            ) : (
-              <Bot className="w-4 h-4 text-purple-500" />
-            )}
-            <span className="text-xs text-slate-500">
-              {hasDocument ? "From Document" : "From Agent"}
-            </span>
-          </div>
-          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
-            {(snippet.similarity * 100).toFixed(0)}% match
-          </span>
-        </div>
-
-        <div className="mb-3">
-          <p className="text-sm text-slate-800 leading-relaxed line-clamp-4">
-            {snippet.content || "No preview available"}
-          </p>
-        </div>
-
-        {hasDocument && relatedDoc && (
-          <div className="pt-3 border-t border-slate-100">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-slate-800 truncate">
-                  {relatedDoc.title || "Untitled Document"}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {relatedDoc.mimeType?.split("/")[1]?.toUpperCase() ||
-                    "DOCUMENT"}
-                </p>
-              </div>
-              <button
-                onClick={() => onDocumentClick()}
-                className="ml-3 px-3 py-1 text-xs bg-primary-50 text-primary-700 rounded hover:bg-primary-100"
-              >
-                Open Document
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+        snippet={snippet}
+        onDocumentClick={handleDocumentModalClick}
+        isDocumentLoading={documentLoading === snippet.documentId}
+      />
     );
   };
 
@@ -250,6 +241,11 @@ export const KnowledgeTab: React.FC<KnowledgeTabProps> = ({
           )}
         </div>
       </div>
+
+      <DocumentModal
+        document={selectedDocument}
+        onClose={() => setSelectedDocument(null)}
+      />
     </div>
   );
 };

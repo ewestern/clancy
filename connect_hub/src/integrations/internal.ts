@@ -46,7 +46,7 @@ const cronTriggerParamsSchema = Type.Object({
   }),
 });
 
-const cronTrigger: Trigger<Record<string, any>> = {
+export const cronTrigger: Trigger<Record<string, any>> = {
   id: "cron",
   description: "Executes a workflow on a schedule",
   paramsSchema: cronTriggerParamsSchema,
