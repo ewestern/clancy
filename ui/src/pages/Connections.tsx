@@ -1,19 +1,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Shield,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
   RefreshCw,
   Search,
   X,
 } from "lucide-react";
+import { ConnectionCard, type ConnectionCard as ConnectionCardType } from "../components/ConnectionCard";
 import {
   ConnectionApi,
   CapabilitiesApi,
   OAuthApi,
   Configuration as ConnectHubConfiguration,
-  type Connection,
   ConnectionStatus,
   type ProviderCapabilities,
   type OauthAuditPostRequest,
@@ -22,15 +19,11 @@ import {
 } from "@ewestern/connect_hub_sdk";
 import { useAuth } from "@clerk/react-router";
 
-type ConnectionCard = Connection & {
-  capabilityDisplayNames: string[];
-  providerIcon?: string;
-  providerDisplayName?: string;
-};
+
 
 const Connections: React.FC = () => {
   const { getToken } = useAuth();
-  const [connectionCards, setConnectionCards] = useState<ConnectionCard[]>([]);
+  const [connectionCards, setConnectionCards] = useState<ConnectionCardType[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [allProviders, setAllProviders] = useState<ProviderCapabilities[]>([]);
@@ -40,6 +33,8 @@ const Connections: React.FC = () => {
   const [isCapModalOpen, setIsCapModalOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<ProviderCapabilities | null>(null);
   const [selectedCapabilities, setSelectedCapabilities] = useState<Set<string>>(new Set());
+  const [existingCapabilities, setExistingCapabilities] = useState<Set<string>>(new Set());
+  const [existingConnection, setExistingConnection] = useState<ConnectionCardType | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   console.log("Selected provider", selectedProvider?.capabilities);
@@ -86,7 +81,7 @@ const Connections: React.FC = () => {
         }
       }
 
-      const withNames: ConnectionCard[] = data.map((conn) => {
+      const withNames: ConnectionCardType[] = data.map((conn) => {
         const nameMap = capabilityNameByProvider[conn.providerId] || {};
         const capabilityDisplayNames = (conn.capabilities || []).map(
           (capId) => nameMap[capId] || capId,
@@ -146,12 +141,25 @@ const Connections: React.FC = () => {
     }
   };
 
-  const handleOpenCapabilityModal = (providerId: string) => {
+  const handleOpenCapabilityModal = (providerId: string, connection?: ConnectionCardType) => {
     const provider = allProviders.find(p => p.id === providerId);
     if (provider) {
       setSelectedProvider(provider);
-      setSelectedCapabilities(new Set());
       setSearchTerm("");
+      
+      if (connection) {
+        // For existing connections, pre-select existing capabilities
+        const existing = new Set(connection.capabilities || []);
+        setExistingCapabilities(existing);
+        setSelectedCapabilities(existing);
+        setExistingConnection(connection);
+      } else {
+        // For new connections, start fresh
+        setExistingCapabilities(new Set());
+        setSelectedCapabilities(new Set());
+        setExistingConnection(null);
+      }
+      
       setIsCapModalOpen(true);
     }
   };
@@ -160,11 +168,18 @@ const Connections: React.FC = () => {
     setIsCapModalOpen(false);
     setSelectedProvider(null);
     setSelectedCapabilities(new Set());
+    setExistingCapabilities(new Set());
+    setExistingConnection(null);
     setSearchTerm("");
     setIsConnecting(false);
   };
 
   const handleCapabilityToggle = (capabilityId: string) => {
+    // Don't allow toggling existing capabilities
+    if (existingCapabilities.has(capabilityId)) {
+      return;
+    }
+    
     const newSelected = new Set(selectedCapabilities);
     if (newSelected.has(capabilityId)) {
       newSelected.delete(capabilityId);
@@ -181,7 +196,15 @@ const Connections: React.FC = () => {
   };
 
   const handleConnect = async () => {
-    if (!selectedProvider || selectedCapabilities.size === 0) return;
+    if (!selectedProvider) return;
+    
+    // For existing connections, only audit new capabilities
+    // For new connections, audit all selected capabilities
+    const capabilitiesToAudit = existingConnection 
+      ? Array.from(selectedCapabilities).filter(capId => !existingCapabilities.has(capId))
+      : Array.from(selectedCapabilities);
+    
+    if (capabilitiesToAudit.length === 0) return;
     
     setIsConnecting(true);
     try {
@@ -189,7 +212,7 @@ const Connections: React.FC = () => {
       const oauthApi = new OAuthApi(connectHubConfig);
       
       const auditBody: OauthAuditPostRequest = {
-        capabilities: Array.from(selectedCapabilities).map(capabilityId => ({
+        capabilities: capabilitiesToAudit.map(capabilityId => ({
           providerId: selectedProvider.id,
           capabilityId,
         })),
@@ -226,40 +249,7 @@ const Connections: React.FC = () => {
     }
   };
 
-  const getStatusIcon = (status: ConnectionStatus) => {
-    switch (status) {
-      case ConnectionStatus.Active:
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case ConnectionStatus.Error:
-        return <XCircle className="h-5 w-5 text-red-500" />;
-      case ConnectionStatus.Inactive:
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
-      default:
-        return <XCircle className="h-5 w-5 text-gray-400" />;
-    }
-  };
 
-  const getStatusText = (status: ConnectionStatus) => {
-    switch (status) {
-      case ConnectionStatus.Active:
-        return "Connected";
-      case ConnectionStatus.Inactive:
-        return "Not Connected";
-      default:
-        return "Unknown";
-    }
-  };
-
-  const getStatusColor = (status: ConnectionStatus) => {
-    switch (status) {
-      case ConnectionStatus.Active:
-        return "text-green-700 bg-green-50 border-green-200";
-      case ConnectionStatus.Inactive:
-        return "text-red-700 bg-red-50 border-red-200";
-      default:
-        return "text-gray-700 bg-gray-50 border-gray-200";
-    }
-  };
 
   if (loading) {
     return (
@@ -299,105 +289,12 @@ const Connections: React.FC = () => {
         {/* Connection Cards */}
         <div className="space-y-6">
           {connectionCards.map((connectionCard) => (
-            <div
+            <ConnectionCard
               key={connectionCard.id}
-              className="bg-white shadow rounded-lg overflow-hidden"
-            >
-              <div className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex-shrink-0">
-                      <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                        {connectionCard.providerIcon ? (
-                          <>
-                            <img
-                              src={connectionCard.providerIcon}
-                              alt={
-                                connectionCard.providerDisplayName ||
-                                connectionCard.displayName
-                              }
-                              className="h-8 w-8"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                                (
-                                  e.currentTarget
-                                    .nextSibling as HTMLElement | null
-                                )?.classList.remove("hidden");
-                              }}
-                            />
-                            <span className="text-xl font-semibold text-gray-600 hidden">
-                              {(
-                                connectionCard.providerDisplayName ||
-                                connectionCard.displayName
-                              ).charAt(0)}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-xl font-semibold text-gray-600">
-                            {(
-                              connectionCard.providerDisplayName ||
-                              connectionCard.displayName
-                            ).charAt(0)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900">
-                        {connectionCard.providerDisplayName ||
-                          connectionCard.displayName}
-                      </h3>
-                      {/* Optionally show external account metadata summary */}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <div
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(connectionCard.status)}`}
-                    >
-                      {getStatusIcon(connectionCard.status)}
-                      <span className="ml-2">
-                        {getStatusText(connectionCard.status)}
-                      </span>
-                    </div>
-                    {connectionCard.status === ConnectionStatus.Active && (
-                      <button
-                        onClick={() => handleDisconnect(connectionCard.id)}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                      >
-                        Disconnect
-                      </button>
-                    )}
-                    {connectionCard.status === ConnectionStatus.Inactive && (
-                      <button
-                        onClick={() => handleOpenCapabilityModal(connectionCard.providerId)}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        Connect
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Capabilities list */}
-                {connectionCard.capabilityDisplayNames.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">
-                      Capabilities
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {connectionCard.capabilityDisplayNames.map((name) => (
-                        <span
-                          key={`${connectionCard.id}-${name}`}
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
-                        >
-                          {name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+              connection={connectionCard}
+              onDisconnect={handleDisconnect}
+              onOpenCapabilityModal={handleOpenCapabilityModal}
+            />
           ))}
         </div>
 
@@ -499,10 +396,10 @@ const Connections: React.FC = () => {
                       </div>
                       <div>
                         <h3 className="text-lg font-medium text-gray-900">
-                          Connect to {selectedProvider.displayName}
+                          {existingConnection ? `Add capabilities to ${selectedProvider.displayName}` : `Connect to ${selectedProvider.displayName}`}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          Select the capabilities you need
+                          {existingConnection ? 'Select additional capabilities to add' : 'Select the capabilities you need'}
                         </p>
                       </div>
                     </div>
@@ -558,27 +455,44 @@ const Connections: React.FC = () => {
                         );
                       }
 
-                      return filteredCapabilities.map((capability) => (
-                        <label
-                          key={capability.id}
-                          className="flex items-start space-x-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedCapabilities.has(capability.id)}
-                            onChange={() => handleCapabilityToggle(capability.id)}
-                            className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900">
-                              {capability.displayName}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {capability.description}
-                            </p>
-                          </div>
-                        </label>
-                      ));
+                      return filteredCapabilities.map((capability) => {
+                        const isExisting = existingCapabilities.has(capability.id);
+                        const isSelected = selectedCapabilities.has(capability.id);
+                        
+                        return (
+                          <label
+                            key={capability.id}
+                            className={`flex items-start space-x-3 p-3 border-b border-gray-100 last:border-b-0 ${
+                              isExisting ? 'bg-gray-50 cursor-default' : 'hover:bg-gray-50 cursor-pointer'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleCapabilityToggle(capability.id)}
+                              disabled={isExisting}
+                              className={`mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${
+                                isExisting ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2">
+                                <p className={`text-sm font-medium ${isExisting ? 'text-gray-600' : 'text-gray-900'}`}>
+                                  {capability.displayName}
+                                </p>
+                                {isExisting && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                    Connected
+                                  </span>
+                                )}
+                              </div>
+                              <p className={`text-xs mt-1 ${isExisting ? 'text-gray-400' : 'text-gray-500'}`}>
+                                {capability.description}
+                              </p>
+                            </div>
+                          </label>
+                        );
+                      });
                     })()}
                   </div>
                 </div>
@@ -586,10 +500,19 @@ const Connections: React.FC = () => {
                 <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                   <button
                     onClick={handleConnect}
-                    disabled={selectedCapabilities.size === 0 || isConnecting}
+                    disabled={
+                      isConnecting || 
+                      (existingConnection 
+                        ? Array.from(selectedCapabilities).filter(capId => !existingCapabilities.has(capId)).length === 0
+                        : selectedCapabilities.size === 0
+                      )
+                    }
                     className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isConnecting ? "Connecting..." : "Connect"}
+                    {isConnecting 
+                      ? (existingConnection ? "Adding..." : "Connecting...") 
+                      : (existingConnection ? "Add Capabilities" : "Connect")
+                    }
                   </button>
                   <button
                     onClick={handleCloseModal}

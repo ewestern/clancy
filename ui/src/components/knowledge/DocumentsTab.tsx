@@ -20,6 +20,7 @@ import {
   DocumentsGetRequest,
 } from "@ewestern/connect_hub_sdk";
 import { useOrganization } from "@clerk/react-router";
+import { DocumentModal } from "./DocumentModal";
 
 interface TagNode {
   id: string;
@@ -30,10 +31,12 @@ interface TagNode {
 
 interface DocumentsTabProps {
   getConnectHubConfig: () => Configuration;
+  onDocumentsLoad?: (documents: Document[]) => void;
 }
 
 export const DocumentsTab: React.FC<DocumentsTabProps> = ({
   getConnectHubConfig,
+  onDocumentsLoad,
 }) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
@@ -161,6 +164,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
         setDocuments(documentsResponse.data);
         setFilteredDocuments(documentsResponse.data);
         setTags(tagsData.data);
+        onDocumentsLoad?.(documentsResponse.data);
       } catch (error) {
         console.error("Failed to load data:", error);
       } finally {
@@ -170,7 +174,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
     };
 
     loadData();
-  }, [getConnectHubConfig, fetchTags]);
+  }, [getConnectHubConfig, fetchTags, onDocumentsLoad]);
 
   const refreshDocuments = useCallback(async () => {
     try {
@@ -183,10 +187,11 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
       setDocuments(documentsResponse.data);
       setFilteredDocuments(documentsResponse.data);
       setTags(tagsData.data);
+      onDocumentsLoad?.(documentsResponse.data);
     } catch (error) {
       console.error("Failed to refresh documents:", error);
     }
-  }, [getConnectHubConfig, fetchTags]);
+  }, [getConnectHubConfig, fetchTags, onDocumentsLoad]);
 
   const handleUploadClick = () => {
     setUploadError(null);
@@ -819,120 +824,14 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
         </div>
       </div>
 
-      {/* Document Viewer Modal */}
-      {selectedDocument && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-slate-200">
-              <div>
-                <h2 className="text-xl font-semibold text-slate-800">
-                  {selectedDocument.title || "Untitled Document"}
-                </h2>
-                <p className="text-sm text-slate-600">
-                  {selectedDocument.mimeType?.split("/")[1]?.toUpperCase() ||
-                    "DOCUMENT"}{" "}
-                  • Modified{" "}
-                  {new Date(selectedDocument.updatedAt).toLocaleDateString()}
-                </p>
-              </div>
-              <button
-                onClick={() => setSelectedDocument(null)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="flex h-96">
-              {/* Document preview area */}
-              <div className="flex-1 bg-slate-50 flex items-center justify-center">
-                <div className="text-center">
-                  {getFileIcon(selectedDocument.mimeType || "")}
-                  <p className="text-slate-600 mt-2">
-                    Document preview not available
-                  </p>
-                  <div className="mt-3 flex space-x-2">
-                    <button className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </button>
-                    <button
-                      className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                      onClick={() => setShowDeleteConfirm(selectedDocument)}
-                      disabled={isDeleting === selectedDocument.documentId}
-                    >
-                      {isDeleting === selectedDocument.documentId ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b border-white mr-2"></div>
-                      ) : (
-                        <Trash2 className="w-4 h-4 mr-2" />
-                      )}
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right sidebar with provenance */}
-              <div className="w-80 bg-white border-l border-slate-200 p-6">
-                <h3 className="text-lg font-medium text-slate-800 mb-4">
-                  Document Info
-                </h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-slate-600">
-                      Uploaded By
-                    </label>
-                    <p className="text-sm text-slate-800">
-                      {memberships[selectedDocument.uploaderUserId] ||
-                        "Unknown"}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-600">
-                      Last Modified
-                    </label>
-                    <p className="text-sm text-slate-800">
-                      {new Date(selectedDocument.updatedAt).toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-600">
-                      File Size
-                    </label>
-                    <p className="text-sm text-slate-800">
-                      {selectedDocument.sizeBytes
-                        ? `${Math.round(parseInt(selectedDocument.sizeBytes) / 1024)} KB`
-                        : "Unknown"}
-                    </p>
-                  </div>
-
-                  {/*
-                  <div className="pt-4 border-t border-slate-200">
-                    <h4 className="text-sm font-medium text-slate-800 mb-2">
-                      Provenance Chain
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-primary-600 rounded-full"></div>
-                        <span className="text-slate-600">Producing run</span>
-                      </div>
-                      <div className="flex items-center space-x-2 ml-4">
-                        <div className="w-2 h-2 bg-slate-400 rounded-full"></div>
-                        <span className="text-slate-600">Processing node</span>
-                      </div>
-                      <div className="flex items-center space-x-2 ml-8">
-                        <div className="w-2 h-2 bg-slate-300 rounded-full"></div>
-                        <span className="text-slate-600">Original source</span>
-                      </div>
-                    </div>
-                  </div>
-                  */}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <DocumentModal
+        document={selectedDocument}
+        onClose={() => setSelectedDocument(null)}
+        onDelete={setShowDeleteConfirm}
+        isDeleting={isDeleting === selectedDocument?.documentId}
+        uploaderMemberships={memberships}
+        showDeleteButton={true}
+      />
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (

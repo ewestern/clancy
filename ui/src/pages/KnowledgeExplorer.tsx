@@ -18,11 +18,6 @@ const KnowledgeExplorer: React.FC = () => {
     });
   }, [getToken]);
 
-  const handleDocumentClick = useCallback(() => {
-    // This will be handled by the DocumentsTab component internally
-    // But we can also handle cross-tab navigation here if needed
-  }, []);
-
   return (
     <div className="h-full flex flex-col">
       {/* Top-level Tab Navigation */}
@@ -56,12 +51,12 @@ const KnowledgeExplorer: React.FC = () => {
       {/* Tab Content */}
       <div className="flex-1">
         {activeTab === "documents" ? (
-          <DocumentsTab getConnectHubConfig={getConnectHubConfig} />
+          <DocumentsTab 
+            getConnectHubConfig={getConnectHubConfig}
+          />
         ) : (
           <KnowledgeTab
             getConnectHubConfig={getConnectHubConfig}
-            documents={[]}
-            onDocumentClick={handleDocumentClick}
           />
         )}
       </div>
