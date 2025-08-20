@@ -7,6 +7,7 @@ import { ProviderKind } from "../models/providers.js";
 import { connections, tokens } from "../database/schema.js";
 import { eq, and, isNotNull } from "drizzle-orm";
 import { OwnershipScope } from "../models/shared.js";
+import { getAuth } from "@clerk/fastify";
 
 export async function proxyRoutes(app: FastifyTypeBox) {
   app.addSchema(OwnershipScopeSchema);

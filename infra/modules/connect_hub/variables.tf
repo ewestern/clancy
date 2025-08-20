@@ -122,6 +122,10 @@ variable "kinesis_stream_name" {
   type        = string
   description = "The name of the Kinesis stream to use for the service"
 }
+variable "openai_api_key" {
+  type        = string
+  description = "The API key for the OpenAI API"
+}
 
 locals {
   lb_endpoint = "https://${aws_route53_record.connect_hub_service.fqdn}"

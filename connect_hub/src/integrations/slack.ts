@@ -151,7 +151,7 @@ const messageCreatedParamsSchema = Type.Object({
 });
 
 // need to support multiple triggrs per webhook
-const triggers: Trigger<WebhookEvent>[] = [
+export const slackTriggers: Trigger<WebhookEvent>[] = [
   {
     id: "message.created",
     description: "A message was created",
@@ -229,7 +229,7 @@ const triggers: Trigger<WebhookEvent>[] = [
 const webhooks = [
   {
     eventSchema: WebhookEndpoint,
-    triggers: triggers,
+    triggers: slackTriggers,
     validateRequest: validateWebhook,
     replyHook: replyHook,
   },
@@ -335,7 +335,7 @@ export class SlackProvider extends BaseProvider<
       },
       webhooks,
       links: ["https://api.slack.com/apps/A095CEPRBGW/general"],
-      triggers,
+      triggers: slackTriggers,
     });
   }
 

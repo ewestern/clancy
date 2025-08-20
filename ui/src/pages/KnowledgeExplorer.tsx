@@ -51,13 +51,9 @@ const KnowledgeExplorer: React.FC = () => {
       {/* Tab Content */}
       <div className="flex-1">
         {activeTab === "documents" ? (
-          <DocumentsTab 
-            getConnectHubConfig={getConnectHubConfig}
-          />
+          <DocumentsTab getConnectHubConfig={getConnectHubConfig} />
         ) : (
-          <KnowledgeTab
-            getConnectHubConfig={getConnectHubConfig}
-          />
+          <KnowledgeTab getConnectHubConfig={getConnectHubConfig} />
         )}
       </div>
     </div>

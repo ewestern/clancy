@@ -35,9 +35,11 @@ export const KnowledgeTab: React.FC<KnowledgeTabProps> = ({
   const [knowledgeLoading, setKnowledgeLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(
+    null,
+  );
   const [documentLoading, setDocumentLoading] = useState<string | null>(null);
-  const { userId, orgId} = useAuth();
+  const { userId, orgId } = useAuth();
 
   // Function to fetch a document by ID
   const fetchDocumentById = useCallback(
@@ -46,8 +48,10 @@ export const KnowledgeTab: React.FC<KnowledgeTabProps> = ({
       try {
         const config = getConnectHubConfig();
         const documentsApi = new DocumentsApi(config);
-        
-        const document = await documentsApi.documentsDocumentIdGet({ documentId });
+
+        const document = await documentsApi.documentsDocumentIdGet({
+          documentId,
+        });
         return document;
       } catch (error) {
         console.error("Failed to fetch document:", error);
@@ -117,12 +121,15 @@ export const KnowledgeTab: React.FC<KnowledgeTabProps> = ({
   );
 
   // Handle opening document modal
-  const handleDocumentModalClick = useCallback(async (documentId: string) => {
-    const document = await fetchDocumentById(documentId);
-    if (document) {
-      setSelectedDocument(document);
-    }
-  }, [fetchDocumentById]);
+  const handleDocumentModalClick = useCallback(
+    async (documentId: string) => {
+      const document = await fetchDocumentById(documentId);
+      if (document) {
+        setSelectedDocument(document);
+      }
+    },
+    [fetchDocumentById],
+  );
 
   const renderSnippetCard = (snippet: KnowledgeSnippet) => {
     return (

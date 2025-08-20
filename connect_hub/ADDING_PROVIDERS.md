@@ -1018,10 +1018,36 @@ headers: {
 ### Testing & Documentation
 
 - [ ] Unit tests for all capabilities
+- [ ] Trigger unit tests for all createEvents methods (if applicable)
 - [ ] OAuth flow integration tests
 - [ ] Error scenario testing
 - [ ] Scope mapping validation
 - [ ] Documentation updated
+
+## Testing Requirements
+
+When implementing a new provider, you must create unit tests to ensure reliability and maintainability. The testing strategy is designed to avoid database dependencies while providing thorough coverage of provider functionality.
+
+### Required Test Suites
+
+#### Trigger Tests (Required for providers with triggers)
+
+Create unit tests for all trigger `createEvents` methods in `tests/unit/triggers/{provider-name}.test.ts`:
+
+- **Test Structure**: One test file per provider with triggers, organized by trigger type
+- **Mock Strategy**: Use mock trigger registrations to avoid database interactions
+- **Event Coverage**: Test valid events, invalid events, edge cases, and error conditions
+- **Event Validation**: Verify generated events have correct structure, partition keys, and required fields
+- **Provider Logic**: Test provider-specific event transformations and data handling
+- **Realistic Scenarios**: Use actual webhook payloads and realistic event data in tests
+
+#### Capability Tests (Future requirement)
+
+Unit tests for provider capabilities will be added as a future requirement covering parameter validation, API response handling, and error scenarios.
+
+#### Integration Tests (Future requirement)
+
+End-to-end tests for OAuth flows and live API interactions will be added as a future requirement.
 
 ## Examples
 

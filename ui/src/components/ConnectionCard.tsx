@@ -1,13 +1,6 @@
 import React from "react";
-import {
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-} from "lucide-react";
-import {
-  ConnectionStatus,
-  type Connection,
-} from "@ewestern/connect_hub_sdk";
+import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { ConnectionStatus, type Connection } from "@ewestern/connect_hub_sdk";
 
 export type ConnectionCard = Connection & {
   capabilityDisplayNames: string[];
@@ -18,7 +11,10 @@ export type ConnectionCard = Connection & {
 interface ConnectionCardProps {
   connection: ConnectionCard;
   onDisconnect: (connectionId: string) => void;
-  onOpenCapabilityModal: (providerId: string, connection?: ConnectionCard) => void;
+  onOpenCapabilityModal: (
+    providerId: string,
+    connection?: ConnectionCard,
+  ) => void;
 }
 
 export const ConnectionCard: React.FC<ConnectionCardProps> = ({
@@ -74,30 +70,26 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
                     <img
                       src={connection.providerIcon}
                       alt={
-                        connection.providerDisplayName ||
-                        connection.displayName
+                        connection.providerDisplayName || connection.displayName
                       }
                       className="h-8 w-8"
                       onError={(e) => {
                         e.currentTarget.style.display = "none";
                         (
-                          e.currentTarget
-                            .nextSibling as HTMLElement | null
+                          e.currentTarget.nextSibling as HTMLElement | null
                         )?.classList.remove("hidden");
                       }}
                     />
                     <span className="text-xl font-semibold text-gray-600 hidden">
                       {(
-                        connection.providerDisplayName ||
-                        connection.displayName
+                        connection.providerDisplayName || connection.displayName
                       ).charAt(0)}
                     </span>
                   </>
                 ) : (
                   <span className="text-xl font-semibold text-gray-600">
                     {(
-                      connection.providerDisplayName ||
-                      connection.displayName
+                      connection.providerDisplayName || connection.displayName
                     ).charAt(0)}
                   </span>
                 )}
@@ -105,8 +97,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
             </div>
             <div>
               <h3 className="text-lg font-medium text-gray-900">
-                {connection.providerDisplayName ||
-                  connection.displayName}
+                {connection.providerDisplayName || connection.displayName}
               </h3>
             </div>
           </div>
@@ -116,9 +107,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
               className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(connection.status)}`}
             >
               {getStatusIcon(connection.status)}
-              <span className="ml-2">
-                {getStatusText(connection.status)}
-              </span>
+              <span className="ml-2">{getStatusText(connection.status)}</span>
             </div>
             {connection.status === ConnectionStatus.Active && (
               <button
@@ -140,15 +129,15 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
         </div>
 
         {/* Capabilities list with Add capabilities link */}
-        {(connection.capabilityDisplayNames.length > 0 || connection.status === ConnectionStatus.Active) && (
+        {(connection.capabilityDisplayNames.length > 0 ||
+          connection.status === ConnectionStatus.Active) && (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-medium text-gray-900">
-                Capabilities
-              </h4>
               {connection.status === ConnectionStatus.Active && (
                 <button
-                  onClick={() => onOpenCapabilityModal(connection.providerId, connection)}
+                  onClick={() =>
+                    onOpenCapabilityModal(connection.providerId, connection)
+                  }
                   className="text-sm text-blue-600 hover:text-blue-800 underline"
                 >
                   Add capabilities

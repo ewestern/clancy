@@ -22,12 +22,12 @@ export const KnowledgeSearchCard: React.FC<KnowledgeSearchCardProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasDocument = !!snippet.documentId;
-  
+
   // Determine if content needs expansion (more than 4 lines worth of content)
   const needsExpansion = snippet.content && snippet.content.length > 200;
-  
-  const displayContent = isExpanded 
-    ? snippet.content 
+
+  const displayContent = isExpanded
+    ? snippet.content
     : snippet.content?.substring(0, 200) + (needsExpansion ? "..." : "");
 
   return (
@@ -49,10 +49,12 @@ export const KnowledgeSearchCard: React.FC<KnowledgeSearchCardProps> = ({
       </div>
 
       <div className="mb-3">
-        <p className={`text-sm text-slate-800 leading-relaxed ${!isExpanded && needsExpansion ? 'line-clamp-4' : ''}`}>
+        <p
+          className={`text-sm text-slate-800 leading-relaxed ${!isExpanded && needsExpansion ? "line-clamp-4" : ""}`}
+        >
           {displayContent || "No preview available"}
         </p>
-        
+
         {needsExpansion && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
@@ -78,14 +80,14 @@ export const KnowledgeSearchCard: React.FC<KnowledgeSearchCardProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className="text-sm font-medium text-slate-800 truncate">
-                {snippet.metadata?.filename as string || "Document"}
+                {(snippet.metadata?.filename as string) || "Document"}
               </p>
-              <p className="text-xs text-slate-500">
-                DOCUMENT
-              </p>
+              <p className="text-xs text-slate-500">DOCUMENT</p>
             </div>
             <button
-              onClick={() => snippet.documentId && onDocumentClick(snippet.documentId)}
+              onClick={() =>
+                snippet.documentId && onDocumentClick(snippet.documentId)
+              }
               disabled={isDocumentLoading}
               className="ml-3 flex items-center space-x-1 px-3 py-1 text-xs bg-primary-50 text-primary-700 rounded hover:bg-primary-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >

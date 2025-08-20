@@ -23,6 +23,7 @@ export async function createApp() {
       level: "info",
     },
   }).withTypeProvider<TypeBoxTypeProvider>();
+
   await app.register(cors, {
     origin: true,
     methods: ["GET", "POST", "HEAD", "PUT", "DELETE", "OPTIONS"],

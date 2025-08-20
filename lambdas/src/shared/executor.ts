@@ -3,7 +3,6 @@ import { Command, CompiledStateGraph, interrupt } from "@langchain/langgraph";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { tool } from "@langchain/core/tools";
 import { RunnableConfig } from "@langchain/core/runnables";
-import { Type } from "@sinclair/typebox";
 import {
   ApprovalRequest,
   ApprovalRequestSchema,
@@ -21,6 +20,7 @@ import {
 } from "@ewestern/connect_hub_sdk";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { getCurrentTimestamp, publishToKinesis } from "./utils";
+import { Logger, pino } from "pino";
 
 interface MessageInput {
   messages: {
@@ -53,6 +53,7 @@ export class Executor {
   public agent: Agent;
   private capabilitiesApi: CapabilitiesApi;
   private proxyApi: ProxyApi;
+  private logger: Logger;
 
   constructor(
     agent: Agent,
@@ -67,6 +68,10 @@ export class Executor {
     this.proxyApi = new ProxyApi(connectHubConfiguration);
     this.checkpointer.setup();
     this.agent = agent;
+    this.logger = pino({
+      name: "executor",
+      level: "info",
+    });
   }
 
   async getLLm() {
@@ -136,47 +141,53 @@ export class Executor {
         return tool(
           async (request: any, config: RunnableConfig) => {
             let canRun = true;
-
-            if (capability.risk in [CapabilityRisk.High]) {
-              const formattedRequest = await this.formatApprovalRequest({
-                request,
-                capabilityName: capability.displayName,
-                capabilityDescription: capability.description,
-                providerName: displayName,
-                providerDescription: description,
-                schema: capability.paramsSchema,
-              });
-              const response = await interrupt({
-                formattedRequest,
-                capability: {
-                  id: capabilityId.id,
-                  providerId: capabilityId.providerId,
-                },
-              });
-              canRun = response.approved;
-            }
-            if (canRun) {
-              await this.publishActionInitiatedEvent(capabilityId, config);
-              const result =
-                await this.proxyApi.proxyProviderIdCapabilityIdPost({
-                  providerId: capabilityId.providerId,
-                  capabilityId: capabilityId.id,
-                  proxyProviderIdCapabilityIdPostRequest: {
-                    params: request,
-                    userId: this.agent.userId,
-                    orgId: this.agent.orgId,
+            try {
+              if (capability.risk in [CapabilityRisk.High]) {
+                const formattedRequest = await this.formatApprovalRequest({
+                  request,
+                  capabilityName: capability.displayName,
+                  capabilityDescription: capability.description,
+                  providerName: displayName,
+                  providerDescription: description,
+                  schema: capability.paramsSchema,
+                });
+                const response = await interrupt({
+                  formattedRequest,
+                  capability: {
+                    id: capabilityId.id,
+                    providerId: capabilityId.providerId,
                   },
                 });
-              await this.publishActionCompletedEvent(
-                capabilityId,
-                config,
-                result
-              );
-              return result;
-            }
+                canRun = response.approved;
+              }
+              if (canRun) {
+                await this.publishActionInitiatedEvent(capabilityId, config);
+                const result =
+                  await this.proxyApi.proxyProviderIdCapabilityIdPost({
+                    providerId: capabilityId.providerId,
+                    capabilityId: capabilityId.id,
+                    proxyProviderIdCapabilityIdPostRequest: {
+                      params: request,
+                      userId: this.agent.userId,
+                      orgId: this.agent.orgId,
+                    },
+                  });
+                await this.publishActionCompletedEvent(
+                  capabilityId,
+                  config,
+                  result
+                );
+                return result;
+              }
+              return {
+                error: "Approval has been denied",
+              };
+          } catch (error) {
+            this.logger.error(error, "Error running capability");
             return {
-              error: "Approval has been denied",
+              error: "An error occurred while running the capability",
             };
+          }
           },
           {
             name: capability.displayName

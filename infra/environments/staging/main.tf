@@ -119,6 +119,7 @@ module "lambdas" {
   cognito_client_secret = module.shared.cognito_user_pool_client_secret
   cognito_domain = module.shared.cognito_user_pool_domain
   allowed_cors_origins = [
+    "https://*.vercel.app",
     "http://localhost:5173",  # Local UI development
     "http://localhost:3000",  # Alternative local port
     "https://ui.staging.clancy.systems",  # Staging UI domain
@@ -146,6 +147,7 @@ module "connect_hub" {
   cluster_arn = module.shared.cluster_arn
   clerk_publishable_key = module.shared.clerk_publishable_key
   clerk_secret_key = module.shared.clerk_secret_key
+  openai_api_key = module.shared.openai_api_key
   hosted_zone_id = data.aws_route53_zone.clancy_domain.id
   kinesis_stream_name = module.events.kinesis_stream_name
 }

@@ -48,10 +48,8 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
               {document.title || "Untitled Document"}
             </h2>
             <p className="text-sm text-slate-600">
-              {document.mimeType?.split("/")[1]?.toUpperCase() ||
-                "DOCUMENT"}{" "}
-              • Modified{" "}
-              {new Date(document.updatedAt).toLocaleDateString()}
+              {document.mimeType?.split("/")[1]?.toUpperCase() || "DOCUMENT"} •
+              Modified {new Date(document.updatedAt).toLocaleDateString()}
             </p>
           </div>
           <button
@@ -66,9 +64,7 @@ export const DocumentModal: React.FC<DocumentModalProps> = ({
           {/* Document preview area */}
           <div className="flex-1 bg-slate-50 flex items-center justify-center">
             <div className="text-center">
-              <div className="mb-4">
-                {getFileIcon(document.mimeType || "")}
-              </div>
+              <div className="mb-4">{getFileIcon(document.mimeType || "")}</div>
               <p className="text-slate-600 mt-2">
                 Document preview not available
               </p>

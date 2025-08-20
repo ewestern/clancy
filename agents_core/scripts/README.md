@@ -7,9 +7,10 @@ The `createTestEmployee.ts` script automatically creates or updates an AI employ
 ### Environment Variables
 
 Required:
+
 - `AGENT_CORE_API_URL` - Agent Core service URL
 - `AGENT_CORE_TOKEN` - Authentication token for Agent Core
-- `CONNECT_HUB_API_URL` - Connect Hub service URL  
+- `CONNECT_HUB_API_URL` - Connect Hub service URL
 - `CONNECT_HUB_TOKEN` - Authentication token for Connect Hub
 - `CHECKPOINTER_DB_URL` - PostgreSQL connection string for LangGraph checkpointer
 - `ORG_ID` - Organization ID
@@ -17,9 +18,10 @@ Required:
 - `MODEL` - LLM model for intelligent bundle and prompt generation (e.g., "claude-3-5-sonnet-20241022")
 
 Optional:
+
 - `EMPLOYEE_NAME` - Name for the test employee (default: "Integration Test Employee")
 - `EMPLOYEE_ID` - If provided, updates existing employee; if not, creates new one
-- `CRON_SCHEDULE` - Cron expression for scheduled triggers (default: "0 */15 * * * *")
+- `CRON_SCHEDULE` - Cron expression for scheduled triggers (default: "0 _/15 _ \* \* \*")
 - `TEST_SAFE_EMAIL` - Safe email address for testing email capabilities
 - `ALLOW_DESTRUCTIVE=true` - Allow testing of destructive capabilities (delete, remove, etc.)
 - `PRUNE=true` - Remove stale test agents that no longer correspond to bundles
@@ -48,7 +50,7 @@ node dist/scripts/createTestEmployee.js
 
 # Dry run to see what would happen
 DRY_RUN=true \
-# ... other env vars  
+# ... other env vars
 node dist/scripts/createTestEmployee.js
 ```
 
@@ -73,6 +75,7 @@ This script uses LLM agents to intelligently create test coverage:
 ### Trigger Assignment Strategy
 
 The LLM intelligently assigns triggers based on:
+
 - **Coverage**: Ensures at least one bundle tests each available trigger
 - **Reliability**: Prefers cron triggers for consistent scheduled testing
 - **Safety**: Avoids complex trigger parameters that could cause issues
@@ -81,7 +84,7 @@ The LLM intelligently assigns triggers based on:
 ### Create vs Update
 
 - **Create mode** (no `EMPLOYEE_ID`): Creates a new employee with all test agents via EmployeesApi
-- **Update mode** (with `EMPLOYEE_ID`): 
+- **Update mode** (with `EMPLOYEE_ID`):
   - Fetches existing employee and agents via EmployeesApi
   - Creates missing agents for new capabilities/triggers via AgentsApi
   - Updates agents when capabilities, triggers, or prompts change via AgentsApi
@@ -91,6 +94,7 @@ The LLM intelligently assigns triggers based on:
 ### Generated Prompts
 
 The LLM creates intelligent, context-aware prompts that:
+
 - Specify exactly which capabilities to exercise and in what order
 - Include appropriate safety constraints and test markers
 - Provide guidance tailored to the specific capability types
@@ -102,7 +106,7 @@ The LLM creates intelligent, context-aware prompts that:
 ### Typical Test Bundles
 
 - `test:gmail/messages.send@cron` - Scheduled email sending test
-- `test:slack/chat.postMessage@message.received` - Slack auto-reply test  
+- `test:slack/chat.postMessage@message.received` - Slack auto-reply test
 - `test:google-calendar/events.list@cron` - Scheduled calendar sync test
 - `test:canvas/announcements.create@cron` - Scheduled Canvas announcement test
 

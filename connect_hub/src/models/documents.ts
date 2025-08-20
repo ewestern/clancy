@@ -302,6 +302,25 @@ export const DocumentStatusEndpoint = {
   security: [{ bearerAuth: [] }],
 };
 
+export const DocumentGetEndpoint = {
+  tags: ["Documents"],
+  description: "Get document details by ID",
+  params: {
+    type: "object",
+    properties: {
+      documentId: { type: "string" },
+    },
+    required: ["documentId"],
+  },
+  response: {
+    200: Ref(DocumentSchema),
+    400: Ref(ErrorSchema),
+    404: Ref(ErrorSchema),
+    500: Ref(ErrorSchema),
+  },
+  security: [{ bearerAuth: [] }],
+};
+
 export const DocumentDownloadEndpoint = {
   tags: ["Documents"],
   description: "Get presigned download URL for document",

@@ -97,7 +97,7 @@ const TestBundleSchema = Type.Object({
       providerId: Type.String(),
       id: Type.String(),
       description: Type.String(),
-    })
+    }),
   ),
   trigger: Type.Object({
     providerId: Type.String(),
@@ -115,7 +115,7 @@ const AgentSpecSchema = Type.Object({
     Type.Object({
       providerId: Type.String(),
       id: Type.String(),
-    })
+    }),
   ),
   trigger: Type.Object({
     providerId: Type.String(),
@@ -215,12 +215,14 @@ export class TestEmployeeCreator {
 
   async getLLM() {
     if (!this.config.model) {
-      throw new Error("MODEL environment variable is required for LLM-based bundle and prompt generation");
+      throw new Error(
+        "MODEL environment variable is required for LLM-based bundle and prompt generation",
+      );
     }
     return new ChatAnthropic({
       model: this.config.model,
       temperature: 0.0,
-      maxTokens: 4096 * 2
+      maxTokens: 4096 * 2,
     });
   }
 
@@ -255,7 +257,9 @@ export class TestEmployeeCreator {
   async bundleCreatorAgent(state: typeof GraphState.State) {
     const llm = await this.getLLM();
     if (!llm) {
-      throw new Error("LLM model is required for bundle creation. Set MODEL environment variable.");
+      throw new Error(
+        "LLM model is required for bundle creation. Set MODEL environment variable.",
+      );
     }
 
     const agent = createReactAgent({
@@ -286,13 +290,15 @@ export class TestEmployeeCreator {
     });
     console.log(result);
 
-    console.log(`Created ${result.structuredResponse.bundles.length} test bundles`);
+    console.log(
+      `Created ${result.structuredResponse.bundles.length} test bundles`,
+    );
     return { bundles: result.structuredResponse.bundles };
   }
 
-
-
-  async promptBuilderSubgraph(state: { bundle: Static<typeof TestBundleSchema> }) {
+  async promptBuilderSubgraph(state: {
+    bundle: Static<typeof TestBundleSchema>;
+  }) {
     const llm = await this.getLLM();
 
     const agent = createReactAgent({
@@ -332,27 +338,31 @@ export class TestEmployeeCreator {
     const graph = await this.createGraph();
 
     console.log("Running test employee creation/update...");
-    
+
     // Run the graph to generate agent specs
     const result = await graph.invoke(
       { messages: [{ role: "user", content: "Generate test bundles" }] },
-      { recursionLimit: 50 }
+      { recursionLimit: 50 },
     );
 
     const agentSpecs = result.agents as Static<typeof AgentSpecSchema>[];
-    const unsatisfied = result.unsatisfied as Static<typeof UnsatisfiedSpecSchema>[];
+    const unsatisfied = result.unsatisfied as Static<
+      typeof UnsatisfiedSpecSchema
+    >[];
 
-    console.log(`Generated ${agentSpecs.length} agent specs, ${unsatisfied.length} unsatisfied`);
+    console.log(
+      `Generated ${agentSpecs.length} agent specs, ${unsatisfied.length} unsatisfied`,
+    );
 
     if (this.config.dryRun) {
       console.log("\n--- DRY RUN MODE ---");
       console.log("Would create/update agents:");
-      agentSpecs.forEach(spec => {
+      agentSpecs.forEach((spec) => {
         console.log(`- ${spec.name}: ${spec.description}`);
       });
       if (unsatisfied.length > 0) {
         console.log("\nUnsatisfied bundles:");
-        unsatisfied.forEach(spec => {
+        unsatisfied.forEach((spec) => {
           console.log(`- ${spec.bundleId}: ${spec.reason}`);
         });
       }
@@ -367,7 +377,9 @@ export class TestEmployeeCreator {
     }
   }
 
-  async createNewEmployee(agentSpecs: Static<typeof AgentSpecSchema>[]): Promise<void> {
+  async createNewEmployee(
+    agentSpecs: Static<typeof AgentSpecSchema>[],
+  ): Promise<void> {
     console.log(`Creating new employee: ${this.config.employeeName}`);
 
     const employeeData: Employee = {
@@ -375,7 +387,7 @@ export class TestEmployeeCreator {
       userId: this.config.userId,
       name: this.config.employeeName,
       status: EmployeeStatus.Active,
-      agents: agentSpecs.map(spec => ({
+      agents: agentSpecs.map((spec) => ({
         orgId: this.config.orgId,
         userId: this.config.userId,
         name: spec.name,
@@ -391,24 +403,33 @@ export class TestEmployeeCreator {
       const createdEmployee = await this.employeesApi.v1EmployeesPost({
         employee: employeeData,
       });
-      console.log(`✅ Created employee ${createdEmployee.id} with ${createdEmployee.agents.length} agents`);
+      console.log(
+        `✅ Created employee ${createdEmployee.id} with ${createdEmployee.agents.length} agents`,
+      );
     } catch (error) {
       console.error("❌ Failed to create employee:", error);
       throw error;
     }
   }
 
-  async updateExistingEmployee(employeeId: string, agentSpecs: Static<typeof AgentSpecSchema>[]): Promise<void> {
+  async updateExistingEmployee(
+    employeeId: string,
+    agentSpecs: Static<typeof AgentSpecSchema>[],
+  ): Promise<void> {
     console.log(`Updating existing employee: ${employeeId}`);
 
     try {
       // Get existing employee
-      const existingEmployee = await this.employeesApi.v1EmployeesIdGet({ id: employeeId });
-      console.log(`Found existing employee with ${existingEmployee.agents.length} agents`);
+      const existingEmployee = await this.employeesApi.v1EmployeesIdGet({
+        id: employeeId,
+      });
+      console.log(
+        `Found existing employee with ${existingEmployee.agents.length} agents`,
+      );
 
       // Create a map of existing agents by name
       const existingAgentMap = new Map<string, Agent>();
-      existingEmployee.agents.forEach(agent => {
+      existingEmployee.agents.forEach((agent) => {
         existingAgentMap.set(agent.name, agent);
       });
 
@@ -435,15 +456,16 @@ export class TestEmployeeCreator {
         }
       }
 
-      console.log(`✅ Update complete: ${created} created, ${updated} updated, ${skipped} skipped`);
+      console.log(
+        `✅ Update complete: ${created} created, ${updated} updated, ${skipped} skipped`,
+      );
 
       // Optional: prune stale agents
       if (this.config.prune) {
         await this.pruneStaleAgents(existingEmployee, agentSpecs);
       }
-
     } catch (error) {
-      if (error.message?.includes('404') && this.config.createIfMissing) {
+      if (error.message?.includes("404") && this.config.createIfMissing) {
         console.log("Employee not found, creating new one...");
         await this.createNewEmployee(agentSpecs);
       } else {
@@ -453,7 +475,10 @@ export class TestEmployeeCreator {
     }
   }
 
-  async createAgent(spec: Static<typeof AgentSpecSchema>, employeeId: string): Promise<void> {
+  async createAgent(
+    spec: Static<typeof AgentSpecSchema>,
+    employeeId: string,
+  ): Promise<void> {
     const agentData: Agent = {
       orgId: this.config.orgId,
       userId: this.config.userId,
@@ -475,7 +500,10 @@ export class TestEmployeeCreator {
     console.log(`✅ Created agent: ${spec.name}`);
   }
 
-  async updateAgent(agentId: string, spec: Static<typeof AgentSpecSchema>): Promise<void> {
+  async updateAgent(
+    agentId: string,
+    spec: Static<typeof AgentSpecSchema>,
+  ): Promise<void> {
     const updateData = {
       name: spec.name,
       description: spec.description,
@@ -503,32 +531,48 @@ export class TestEmployeeCreator {
           params: agent.trigger.triggerParams,
           providerId: agent.trigger.providerId,
           triggerId: agent.trigger.id,
-          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString(), // 30 days
+          expiresAt: new Date(
+            Date.now() + 1000 * 60 * 60 * 24 * 30,
+          ).toISOString(), // 30 days
         },
       });
     } catch (error) {
-      console.warn(`⚠️ Failed to register trigger for agent ${agent.name}:`, error);
+      console.warn(
+        `⚠️ Failed to register trigger for agent ${agent.name}:`,
+        error,
+      );
     }
   }
 
-  needsUpdate(existingAgent: Agent, spec: Static<typeof AgentSpecSchema>): boolean {
+  needsUpdate(
+    existingAgent: Agent,
+    spec: Static<typeof AgentSpecSchema>,
+  ): boolean {
     // Check if key fields differ
     if (existingAgent.description !== spec.description) return true;
     if (existingAgent.prompt !== spec.prompt) return true;
-    
+
     // Check capabilities
-    if (JSON.stringify(existingAgent.capabilities) !== JSON.stringify(spec.capabilities)) return true;
-    
+    if (
+      JSON.stringify(existingAgent.capabilities) !==
+      JSON.stringify(spec.capabilities)
+    )
+      return true;
+
     // Check trigger
-    if (JSON.stringify(existingAgent.trigger) !== JSON.stringify(spec.trigger)) return true;
-    
+    if (JSON.stringify(existingAgent.trigger) !== JSON.stringify(spec.trigger))
+      return true;
+
     return false;
   }
 
-  async pruneStaleAgents(existingEmployee: Employee, agentSpecs: Static<typeof AgentSpecSchema>[]): Promise<void> {
-    const specNames = new Set(agentSpecs.map(spec => spec.name));
+  async pruneStaleAgents(
+    existingEmployee: Employee,
+    agentSpecs: Static<typeof AgentSpecSchema>[],
+  ): Promise<void> {
+    const specNames = new Set(agentSpecs.map((spec) => spec.name));
     const staleAgents = existingEmployee.agents.filter(
-      agent => agent.name.startsWith("Test ") && !specNames.has(agent.name)
+      (agent) => agent.name.startsWith("Test ") && !specNames.has(agent.name),
     );
 
     for (const staleAgent of staleAgents) {
@@ -566,7 +610,7 @@ export class TestEmployeeCreator {
           required: [],
           additionalProperties: false,
         },
-      }
+      },
     );
   }
 
@@ -592,7 +636,7 @@ export class TestEmployeeCreator {
           required: [],
           additionalProperties: false,
         },
-      }
+      },
     );
   }
 }
@@ -619,13 +663,20 @@ async function main() {
 
   // Validate required config
   const required = [
-    'agentCoreApiUrl', 'agentCoreToken', 'connectHubApiUrl', 
-    'connectHubToken', 'orgId', 'userId', 'model'
+    "agentCoreApiUrl",
+    "agentCoreToken",
+    "connectHubApiUrl",
+    "connectHubToken",
+    "orgId",
+    "userId",
+    "model",
   ];
-  
+
   for (const field of required) {
     if (!config[field as keyof TestEmployeeConfig]) {
-      console.error(`❌ Missing required environment variable: ${field.toUpperCase()}`);
+      console.error(
+        `❌ Missing required environment variable: ${field.toUpperCase()}`,
+      );
       process.exit(1);
     }
   }
