@@ -504,7 +504,7 @@ export class QuickBooksProvider extends BaseProvider {
         id: "quickbooks",
         displayName: "QuickBooks Online",
         description: "Accounting platform for small businesses",
-        icon: "https://developer.intuit.com/app/developer/qbo/docs/develop/icon.png",
+        icon: "https://www.clancyai.com/_next/static/media/quickbooks.7894bb1a.svg",
         docsUrl:
           "https://developer.intuit.com/app/developer/qbo/docs/api/accounting",
         kind: ProviderKind.External,

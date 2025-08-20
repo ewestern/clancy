@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import { tool, ToolRunnableConfig } from "@langchain/core/tools";
 import { StateGraph, START, END, Send, Annotation } from "@langchain/langgraph";
 import { RunnableConfig } from "@langchain/core/runnables";
@@ -22,8 +24,8 @@ import {
   Agent,
   AgentStatus,
 } from "@ewestern/agents_core_sdk";
-import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
-import { CompiledStateGraph } from "@langchain/langgraph";
+//import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
+//import { CompiledStateGraph } from "@langchain/langgraph";
 import { Static, Type } from "@sinclair/typebox";
 
 // Prompts for LLM agents
@@ -36,7 +38,7 @@ Your goal is to create comprehensive test coverage by:
 3. Ensuring broad coverage while being practical and safe
 
 STRATEGY:
-- Prefer 1 capability per bundle for clear, focused testing
+- Prefer 1-3 capabilities per bundle for clear, focused testing. You may group closely related capabilities into a single bundle.
 - Use the internal "cron" trigger as default for most capabilities (provides reliable scheduled testing)
 - Ensure at least one bundle tests each non-internal trigger (webhooks, email events, etc.)
 - Avoid destructive operations (delete, remove, destroy) unless explicitly allowed
@@ -46,7 +48,7 @@ BUNDLE STRUCTURE:
 Each bundle should have:
 - A unique ID following pattern: test:<providerId>/<capabilityId>[@<triggerId>]
 - Descriptive name and purpose
-- 1-3 capabilities max (prefer 1 for reliability)  
+- 1-3 capabilities max
 - Appropriate trigger with safe parameters
 - Clear test objective
 
@@ -218,6 +220,7 @@ export class TestEmployeeCreator {
     return new ChatAnthropic({
       model: this.config.model,
       temperature: 0.0,
+      maxTokens: 4096 * 2
     });
   }
 
@@ -259,7 +262,7 @@ export class TestEmployeeCreator {
       name: "bundle_creator",
       llm: llm,
       tools: [this.getCapabilitiesTool(), this.getTriggersTool()],
-      checkpointer: this.checkpointer,
+      //checkpointer: this.checkpointer,
       prompt: BUNDLE_CREATOR_PROMPT,
       responseFormat: Type.Object({
         bundles: Type.Array(TestBundleSchema),
@@ -281,6 +284,7 @@ export class TestEmployeeCreator {
         },
       ],
     });
+    console.log(result);
 
     console.log(`Created ${result.structuredResponse.bundles.length} test bundles`);
     return { bundles: result.structuredResponse.bundles };
@@ -295,7 +299,7 @@ export class TestEmployeeCreator {
       name: "prompt_builder",
       llm: llm,
       tools: [], // No tools needed for prompt building
-      checkpointer: this.checkpointer,
+      //checkpointer: this.checkpointer,
       prompt: PROMPT_BUILDER_PROMPT,
       responseFormat: Type.Object({
         agent: AgentSpecSchema,
@@ -324,7 +328,7 @@ export class TestEmployeeCreator {
   }
 
   async executeCreateOrUpdate(): Promise<void> {
-    await this.checkpointer.setup();
+    //await this.checkpointer.setup();
     const graph = await this.createGraph();
 
     console.log("Running test employee creation/update...");
@@ -597,16 +601,16 @@ export class TestEmployeeCreator {
 async function main() {
   const config: TestEmployeeConfig = {
     agentCoreApiUrl: process.env.AGENT_CORE_API_URL!,
-    agentCoreToken: process.env.AGENT_CORE_TOKEN!,
+    agentCoreToken: process.env.DEV_TOKEN!,
     connectHubApiUrl: process.env.CONNECT_HUB_API_URL!,
-    connectHubToken: process.env.CONNECT_HUB_TOKEN!,
+    connectHubToken: process.env.DEV_TOKEN!,
     orgId: process.env.ORG_ID!,
     userId: process.env.USER_ID!,
     employeeName: process.env.EMPLOYEE_NAME || "Integration Test Employee",
     employeeId: process.env.EMPLOYEE_ID,
     cronSchedule: process.env.CRON_SCHEDULE,
     testSafeEmail: process.env.TEST_SAFE_EMAIL,
-    model: process.env.MODEL!,
+    model: process.env.MODEL || "claude-sonnet-4-0",
     allowDestructive: process.env.ALLOW_DESTRUCTIVE === "true",
     prune: process.env.PRUNE === "true",
     dryRun: process.env.DRY_RUN === "true",
@@ -635,6 +639,4 @@ async function main() {
   }
 }
 
-if (require.main === module) {
-  main().catch(console.error);
-}
+main().catch(console.error);
