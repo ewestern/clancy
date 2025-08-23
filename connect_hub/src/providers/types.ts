@@ -29,6 +29,7 @@ export enum CapabilityRisk {
  * Rich metadata that the UI wizard and compiler consume.
  */
 export interface CapabilityMeta {
+  restricted?: boolean;
   id: string;
   displayName: string;
   description: string;
@@ -213,6 +214,7 @@ export interface ProviderRuntime<
   WebhookSchema extends FastifySchema = FastifySchema,
   E = WebhookEvent,
 > {
+
   links?: string[];
   /** Retrieve a capability implementation by id (e.g. "chat.post") */
   getCapability<P, R>(capabilityId: string): Capability<P, R>;

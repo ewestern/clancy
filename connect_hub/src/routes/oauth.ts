@@ -101,29 +101,24 @@ async function updateOrCreateConnection(
             eq(tokens.ownerId, oauthTransaction.userId),
           ),
         );
-
-      const previousScopes = new Set<string>(
-        (existingTokenRows[0]?.scopes || []) as string[],
-      );
-      for (const s of externalScopes) previousScopes.add(s);
-      const mergedScopes = Array.from(previousScopes);
-
-      if (existingTokenRows.length > 0) {
+      const existingToken = existingTokenRows[0] || null;
+      if (existingToken) {
         await tx
           .update(tokens)
           .set({
             tokenPayload: tokenPayload,
-            scopes: mergedScopes,
+            scopes: externalScopes,
             ownershipScope: OwnershipScope.User,
             ownerId: oauthTransaction.userId,
             updatedAt: new Date(),
           })
           .where(eq(tokens.id, existingTokenRows[0]!.id));
       } else {
+        // this shouldn't happen.
         await tx.insert(tokens).values({
           connectionId: existingConnection.id,
           tokenPayload: tokenPayload,
-          scopes: mergedScopes,
+          scopes: externalScopes,
           ownershipScope: OwnershipScope.User,
           ownerId: oauthTransaction.userId,
         });
@@ -132,6 +127,7 @@ async function updateOrCreateConnection(
       await tx
         .update(connections)
         .set({
+          capabilities: oauthTransaction.capabilities,
           externalAccountMetadata: externalAccountMetadata,
           status: ConnectionStatus.Active,
           updatedAt: new Date(),
@@ -547,7 +543,7 @@ export async function oauthRoutes(app: FastifyTypeBox) {
               status: OauthConnectionStatus.NeedsScopeUpgrade,
               grantedCapabilities: [],
               missingCapabilities: missingCapabilitiesDisplay,
-              oauthUrl: "",
+              oauthUrl: launchUrl.toString(),
             },
           ];
         }

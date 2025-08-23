@@ -16,6 +16,7 @@ import { ProviderKind, ProviderAuth } from "../models/providers.js";
 import { OwnershipScope } from "../models/shared.js";
 import { Type, Static } from "@sinclair/typebox";
 import OAuthClient from "intuit-oauth";
+import { FastifyReplyTypeBox, FastifyRequestTypeBox } from "../types/fastify.js";
 const __dirname = import.meta.dirname;
 
 // ---------------------------------------------------------------------------
@@ -494,12 +495,60 @@ function createReportPLCapability(): Capability<
   return { meta, execute: qbReportPL };
 }
 
+async function validateWebhook(request: FastifyRequestTypeBox<typeof WebhookEndpoint>): Promise<boolean> {
+  request.body.eventNotifications.forEach((event) => {
+    event.dataChangeEvent.entities.forEach((entity) => {
+      console.log("entity", entity);
+    });
+  });
+  return true;
+}
+async function replyHook(
+  request: FastifyRequestTypeBox<typeof WebhookEndpoint>,
+  reply: FastifyReplyTypeBox<typeof WebhookEndpoint>,
+) {
+  console.log("replyHook", request.body);
+  return reply.status(200).send("OK");
+}
+
+export const EventNotificationSchema = Type.Object({
+  realmId: Type.String(),
+  dataChangeEvent: Type.Object({
+    entities: Type.Array(Type.Object({
+      id: Type.String(),
+      operation: Type.String(),
+      name: Type.String(),
+      lastUpdated: Type.String(),
+    }))
+  }) 
+})
+export const WebhookEventSchema = Type.Object({
+  eventNotifications: Type.Array(EventNotificationSchema)
+})
+export type WebhookEvent = Static<typeof WebhookEventSchema>
+
+export const WebhookEndpoint = {
+  body: WebhookEventSchema,
+  response: Type.Any(),
+}
+
+const webhooks = [
+  {
+    eventSchema: WebhookEndpoint,
+    triggers: [],
+    validateRequest: validateWebhook,
+    replyHook: replyHook,
+  },
+
+]
+
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
-export class QuickBooksProvider extends BaseProvider {
+export class QuickBooksProvider extends BaseProvider<typeof WebhookEndpoint, WebhookEvent> {
   constructor() {
     super({
+      webhooks,
       metadata: {
         id: "quickbooks",
         displayName: "QuickBooks Online",
