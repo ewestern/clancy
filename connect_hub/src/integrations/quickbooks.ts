@@ -16,7 +16,10 @@ import { ProviderKind, ProviderAuth } from "../models/providers.js";
 import { OwnershipScope } from "../models/shared.js";
 import { Type, Static } from "@sinclair/typebox";
 import OAuthClient from "intuit-oauth";
-import { FastifyReplyTypeBox, FastifyRequestTypeBox } from "../types/fastify.js";
+import {
+  FastifyReplyTypeBox,
+  FastifyRequestTypeBox,
+} from "../types/fastify.js";
 const __dirname = import.meta.dirname;
 
 // ---------------------------------------------------------------------------
@@ -495,7 +498,9 @@ function createReportPLCapability(): Capability<
   return { meta, execute: qbReportPL };
 }
 
-async function validateWebhook(request: FastifyRequestTypeBox<typeof WebhookEndpoint>): Promise<boolean> {
+async function validateWebhook(
+  request: FastifyRequestTypeBox<typeof WebhookEndpoint>,
+): Promise<boolean> {
   request.body.eventNotifications.forEach((event) => {
     event.dataChangeEvent.entities.forEach((entity) => {
       console.log("entity", entity);
@@ -514,23 +519,25 @@ async function replyHook(
 export const EventNotificationSchema = Type.Object({
   realmId: Type.String(),
   dataChangeEvent: Type.Object({
-    entities: Type.Array(Type.Object({
-      id: Type.String(),
-      operation: Type.String(),
-      name: Type.String(),
-      lastUpdated: Type.String(),
-    }))
-  }) 
-})
+    entities: Type.Array(
+      Type.Object({
+        id: Type.String(),
+        operation: Type.String(),
+        name: Type.String(),
+        lastUpdated: Type.String(),
+      }),
+    ),
+  }),
+});
 export const WebhookEventSchema = Type.Object({
-  eventNotifications: Type.Array(EventNotificationSchema)
-})
-export type WebhookEvent = Static<typeof WebhookEventSchema>
+  eventNotifications: Type.Array(EventNotificationSchema),
+});
+export type WebhookEvent = Static<typeof WebhookEventSchema>;
 
 export const WebhookEndpoint = {
   body: WebhookEventSchema,
   response: Type.Any(),
-}
+};
 
 const webhooks = [
   {
@@ -539,13 +546,15 @@ const webhooks = [
     validateRequest: validateWebhook,
     replyHook: replyHook,
   },
-
-]
+];
 
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
-export class QuickBooksProvider extends BaseProvider<typeof WebhookEndpoint, WebhookEvent> {
+export class QuickBooksProvider extends BaseProvider<
+  typeof WebhookEndpoint,
+  WebhookEvent
+> {
   constructor() {
     super({
       webhooks,
@@ -602,21 +611,76 @@ export class QuickBooksProvider extends BaseProvider<typeof WebhookEndpoint, Web
       throw new Error("QuickBooks OAuth callback missing authorization code");
     }
 
-    const oauthClient = createOAuthClient(ctx);
-
     try {
-      const tokenData = await oauthClient.createToken(ctx.redirectUri);
+      // Manual token exchange implementation
+      const tokenUrl =
+        "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer";
+
+      // Prepare the request body
+      const requestBody = new URLSearchParams({
+        grant_type: "authorization_code",
+        code: callbackParams.code,
+        redirect_uri: ctx.redirectUri, // Clean redirect URI without query params
+      });
+
+      // Create Basic Auth header
+      const credentials = `${ctx.providerSecrets.clientId}:${ctx.providerSecrets.clientSecret}`;
+      const encodedCredentials = Buffer.from(credentials).toString("base64");
+
+      ctx.logger?.info(
+        {
+          tokenUrl,
+          redirectUri: ctx.redirectUri,
+          code: callbackParams.code,
+          clientId: ctx.providerSecrets.clientId,
+        },
+        "quickbooks token exchange request",
+      );
+
+      const response = await fetch(tokenUrl, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization: `Basic ${encodedCredentials}`,
+          "User-Agent": "Clancy-Connect-Hub/1.0.0",
+        },
+        body: requestBody.toString(),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        ctx.logger?.error(
+          {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText,
+            requestBody: requestBody.toString(),
+          },
+          "quickbooks token exchange failed",
+        );
+        throw new Error(
+          `Token exchange failed: ${response.status} ${response.statusText} - ${errorText}`,
+        );
+      }
+
+      const tokenData = await response.json();
+      ctx.logger?.info(tokenData, "quickbooks token exchange success");
+
+      // Extract realmId from callback params for external account metadata
+      const externalAccountMetadata: Record<string, unknown> = {};
+      if (callbackParams.realmId) {
+        externalAccountMetadata.realmId = callbackParams.realmId;
+      }
 
       return {
-        tokenPayload: tokenData.getJson(),
-        // TODO: this is not correct, but it doesn't look like intuit includes scopes in the token
-        scopes: ctx.requestedScopes!,
-        externalAccountMetadata: {},
+        tokenPayload: tokenData as Record<string, unknown>,
+        scopes: ctx.requestedScopes || [],
+        externalAccountMetadata,
       };
     } catch (error: any) {
-      throw new Error(
-        `QuickBooks token exchange failed: ${error.originalMessage || error.message}`,
-      );
+      ctx.logger?.error(error, "quickbooks token exchange error");
+      throw new Error(`QuickBooks token exchange failed: ${error.message}`);
     }
   }
 

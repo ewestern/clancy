@@ -14,6 +14,7 @@ import {
 } from "../types/fastify.js";
 import { TriggerRegistration } from "../models/triggers.js";
 import { OwnershipScopeType } from "../models/shared.js";
+import { FastifyBaseLogger } from "fastify";
 
 /**
  * Risk level assessment for capabilities.
@@ -77,7 +78,7 @@ export interface EventContext {
   connectionId?: string;
   correlationId?: string;
   // Using unknown for logger here to avoid bringing in a full logger dependency yet
-  logger?: unknown;
+  logger?: FastifyBaseLogger;
 }
 
 export interface ExecutionContext {
@@ -86,7 +87,7 @@ export interface ExecutionContext {
   externalAccountId?: string;
   tokenPayload: Record<string, unknown> | null;
   retryCount: number;
-  logger?: unknown;
+  logger?: FastifyBaseLogger;
 }
 
 export interface Capability<P = unknown, R = unknown> {
@@ -109,7 +110,6 @@ export interface OAuthCallbackParams {
   error?: string;
   /** Error description if authorization failed */
   error_description?: string;
-  redirectUri?: string;
   /** Additional provider-specific callback parameters */
   [key: string]: string | undefined;
 }
@@ -125,7 +125,7 @@ export interface OAuthContext {
   requestedScopes?: string[];
   /** Transaction ID for tracking the OAuth flow */
   transactionId?: string;
-  logger?: unknown;
+  logger?: FastifyBaseLogger;
 }
 
 export interface ScopeValidationResult {
@@ -214,7 +214,6 @@ export interface ProviderRuntime<
   WebhookSchema extends FastifySchema = FastifySchema,
   E = WebhookEvent,
 > {
-
   links?: string[];
   /** Retrieve a capability implementation by id (e.g. "chat.post") */
   getCapability<P, R>(capabilityId: string): Capability<P, R>;

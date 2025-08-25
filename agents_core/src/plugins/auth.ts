@@ -53,4 +53,47 @@ export const registerAuth = fp(async (fastify) => {
       }
     },
   );
+
+  fastify.decorate(
+    "requireScopes",
+    function requireScopes(opts: { anyOf?: string[]; allOf?: string[] }) {
+      const resourceServer =
+        process.env.COGNITO_RESOURCE_SERVER_IDENTIFIER ||
+        "https://clancyai.com";
+      const prefix = (scopes: string[] | undefined): string[] =>
+        (scopes || []).map((s) => `${resourceServer}/${s}`);
+
+      const requiredAny = new Set(prefix(opts.anyOf));
+      const requiredAll = new Set(prefix(opts.allOf));
+
+      return async function preHandler(
+        request: FastifyRequest,
+        reply: FastifyReply,
+      ) {
+        try {
+          const decoded = await request.jwtVerify<{ scope?: string }>();
+          const tokenScopes = new Set(
+            (decoded.scope || "")
+              .split(" ")
+              .map((s) => s.trim())
+              .filter((s) => s.length > 0),
+          );
+
+          const allOk = Array.from(requiredAll).every((s) =>
+            tokenScopes.has(s),
+          );
+          const anyOk =
+            requiredAny.size === 0
+              ? true
+              : Array.from(requiredAny).some((s) => tokenScopes.has(s));
+
+          if (!allOk || !anyOk) {
+            return reply.status(403).send({ error: "Forbidden" });
+          }
+        } catch (_err) {
+          return reply.status(401).send({ error: "Unauthorized" });
+        }
+      };
+    },
+  );
 });

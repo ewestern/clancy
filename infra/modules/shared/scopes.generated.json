@@ -1,0 +1,8 @@
+[
+  "internal:documents.read",
+  "internal:documents.write",
+  "connect_hub:triggers.manage",
+  "agents_core:webhooks.receive",
+  "events:publish"
+]
+

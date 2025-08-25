@@ -35,12 +35,14 @@ export async function proxyRoutes(app: FastifyTypeBox) {
       }
 
       let token: Record<string, unknown> | null = null;
+      let externalAccountId: string | undefined = undefined;
       if (provider.metadata.kind === ProviderKind.External) {
-        // Query tokens based on ownership scope
+        // Query tokens and connection metadata based on ownership scope
         const results = await request.server.db
           .select({
             tokenPayload: tokens.tokenPayload,
             scopes: tokens.scopes,
+            externalAccountMetadata: connections.externalAccountMetadata,
           })
           .from(tokens)
           .innerJoin(connections, eq(tokens.connectionId, connections.id))
@@ -77,12 +79,22 @@ export async function proxyRoutes(app: FastifyTypeBox) {
         }
 
         token = tokenRecord.tokenPayload;
+
+        // Extract external account ID from metadata based on provider
+        if (
+          providerId === "quickbooks" &&
+          tokenRecord.externalAccountMetadata?.realmId
+        ) {
+          externalAccountId = tokenRecord.externalAccountMetadata
+            .realmId as string;
+        }
       }
 
       const context: ExecutionContext = {
         db: request.server.db,
         orgId: orgId,
         tokenPayload: token,
+        externalAccountId: externalAccountId,
         retryCount: 0,
       };
 

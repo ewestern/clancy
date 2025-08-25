@@ -14,11 +14,11 @@ const providers: Record<string, ProviderRuntime<any, any>> = {
   slack: new SlackProvider(),
   google: new GoogleProvider(),
   quickbooks: new QuickBooksProvider(),
-  microsoft: new MicrosoftProvider(),
+  //microsoft: new MicrosoftProvider(),
 };
 
 export const registry = {
-  getProvider(id: string): ProviderRuntime<any, any> | undefined {
+  getProvider(id: string): ProviderRuntime<any, any> {
     const provider = providers[id];
     if (!provider) {
       throw new Error(`Provider ${id} not found`);

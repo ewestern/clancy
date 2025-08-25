@@ -182,12 +182,12 @@ export class Executor {
               return {
                 error: "Approval has been denied",
               };
-          } catch (error) {
-            this.logger.error(error, "Error running capability");
-            return {
-              error: "An error occurred while running the capability",
-            };
-          }
+            } catch (error) {
+              this.logger.error(error, "Error running capability");
+              return {
+                error: "An error occurred while running the capability",
+              };
+            }
           },
           {
             name: capability.displayName

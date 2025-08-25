@@ -362,7 +362,9 @@ export async function oauthRoutes(app: FastifyTypeBox) {
           orgId: oauthTransaction.orgId,
           provider: providerId,
           providerSecrets: providerSecrets,
-          redirectUri: `${process.env.REDIRECT_BASE_URL!}/oauth/callback/${providerId}`,
+          redirectUri: oauthTransaction.redirectUri,
+          requestedScopes: oauthTransaction.requestedScopes,
+          logger: app.log,
         };
 
         // Handle provider callback

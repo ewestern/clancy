@@ -197,6 +197,7 @@ export class TestEmployeeCreator {
   constructor(config: TestEmployeeConfig) {
     this.config = config;
     //this.checkpointer = PostgresSaver.fromConnString(config.checkpointerDbUrl);
+    console.log(config, "config");
 
     const connectHubConfig = new ConnectHubConfig({
       basePath: config.connectHubApiUrl,
@@ -342,7 +343,7 @@ export class TestEmployeeCreator {
     // Run the graph to generate agent specs
     const result = await graph.invoke(
       { messages: [{ role: "user", content: "Generate test bundles" }] },
-      { recursionLimit: 50 },
+      { recursionLimit: 50, maxConcurrency: 5 },
     );
 
     const agentSpecs = result.agents as Static<typeof AgentSpecSchema>[];

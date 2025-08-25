@@ -55,22 +55,24 @@ export async function triggerRoutes(app: FastifyTypeBox) {
         `Creating trigger registration: ${JSON.stringify(body)}`,
       );
       const { orgId, userId } = getAuth(request);
+      request.log.info(
+        `Creating trigger registration: ${JSON.stringify({ orgId, userId })}`,
+      );
       if (!orgId || !userId) {
-        reply.status(401).send({
+        return reply.status(401).send({
           error: "Unauthorized",
           message: "Unauthorized",
-        } as any);
+        });
       }
       // Find the trigger to validate against its schema
       const provider = registry.getProvider(body.providerId);
 
       const trigger = provider?.getTrigger?.(body.triggerId);
       if (!trigger) {
-        reply.status(400).send({
+        return reply.status(400).send({
           error: "Invalid triggerId",
           message: `Trigger '${body.triggerId}' not found`,
         } as any);
-        return;
       }
       // Validate metadata against trigger's paramsSchema
       if (trigger.paramsSchema && body.params) {
@@ -114,7 +116,11 @@ export async function triggerRoutes(app: FastifyTypeBox) {
             !connection &&
             provider?.metadata.kind === ProviderKind.External
           ) {
-            throw new Error("Connection not found");
+            throw new Error(
+              `Connection not found: ${JSON.stringify({
+                providerId: body.providerId,
+              })}`,
+            );
           }
           const toInsert = {
             ...body,

@@ -22,6 +22,9 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
     "/webhook",
     {
       schema: WebhookEndpoint,
+      preHandler: fastify.requireScopes({
+        anyOf: ["agents_core:webhooks.receive", "events:publish"],
+      }),
     },
     async (request: FastifyRequestTypeBox<typeof WebhookEndpoint>, reply) => {
       const payload = request.body as Event;

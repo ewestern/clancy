@@ -325,7 +325,8 @@ function createDriveDrivesListCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.drives.list",
     displayName: "List Google Drives",
-    description: "List shared drives accessible to the user. Requires broad Drive access permissions.",
+    description:
+      "List shared drives accessible to the user. Requires broad Drive access permissions.",
     docsUrl: "https://developers.google.com/drive/api/v3/reference/drives/list",
     paramsSchema: driveDrivesListParamsSchema,
     resultSchema: driveDrivesListResultSchema,
@@ -340,7 +341,8 @@ function createDriveDrivesGetCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.drives.get",
     displayName: "Get Drive Information",
-    description: "Get information about a specific Google Drive. Requires broad Drive access permissions.",
+    description:
+      "Get information about a specific Google Drive. Requires broad Drive access permissions.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/drives/get",
     paramsSchema: driveDrivesGetParamsSchema,
@@ -357,7 +359,8 @@ function createDriveAllFilesListCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.files.list.all",
     displayName: "List All Drive Files",
-    description: "List all files and folders in Google Drive, including those created by other apps. Requires broad Drive read access.",
+    description:
+      "List all files and folders in Google Drive, including those created by other apps. Requires broad Drive read access.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/list",
     paramsSchema: driveFilesListParamsSchema,
@@ -373,7 +376,8 @@ function createDriveAllFilesGetCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.files.get.all",
     displayName: "Get Any Drive File",
-    description: "Get information about any file in Google Drive, including those created by other apps. Requires broad Drive read access.",
+    description:
+      "Get information about any file in Google Drive, including those created by other apps. Requires broad Drive read access.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/get",
     paramsSchema: driveFilesGetParamsSchema,
@@ -389,7 +393,8 @@ function createDriveAllFilesUpdateCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.files.update.all",
     displayName: "Update Any Drive File",
-    description: "Update any existing file in Google Drive, including those created by other apps. Requires broad Drive write access.",
+    description:
+      "Update any existing file in Google Drive, including those created by other apps. Requires broad Drive write access.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/update",
     paramsSchema: driveFilesUpdateParamsSchema,
@@ -405,7 +410,8 @@ function createDriveAllFilesExportCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.files.export.all",
     displayName: "Export Any Drive File",
-    description: "Export any Google Workspace document in a specific format, including those created by other apps. Requires broad Drive read access.",
+    description:
+      "Export any Google Workspace document in a specific format, including those created by other apps. Requires broad Drive read access.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/export",
     paramsSchema: driveFilesExportParamsSchema,
@@ -421,7 +427,8 @@ function createDriveAllFilesDownloadCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.files.download.all",
     displayName: "Download Any Drive File",
-    description: "Download the content of any file from Google Drive, including those created by other apps. Requires broad Drive read access.",
+    description:
+      "Download the content of any file from Google Drive, including those created by other apps. Requires broad Drive read access.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/get",
     paramsSchema: driveFilesDownloadParamsSchema,
@@ -437,7 +444,8 @@ function createDriveAllCommentsListCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.comments.list.all",
     displayName: "List Comments on Any File",
-    description: "List comments on any Google Drive file, including those created by other apps. Requires broad Drive read access.",
+    description:
+      "List comments on any Google Drive file, including those created by other apps. Requires broad Drive read access.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/comments/list",
     paramsSchema: driveCommentsListParamsSchema,
@@ -453,7 +461,8 @@ function createDriveAllCommentsGetCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.comments.get.all",
     displayName: "Get Comment from Any File",
-    description: "Get a specific comment on any Google Drive file, including those created by other apps. Requires broad Drive read access.",
+    description:
+      "Get a specific comment on any Google Drive file, including those created by other apps. Requires broad Drive read access.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/comments/get",
     paramsSchema: driveCommentsGetParamsSchema,
@@ -469,7 +478,8 @@ function createDriveAllCommentsCreateCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.comments.create.all",
     displayName: "Comment on Any Drive File",
-    description: "Add a comment to any Google Drive file, including those created by other apps. Requires broad Drive write access.",
+    description:
+      "Add a comment to any Google Drive file, including those created by other apps. Requires broad Drive write access.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/comments/create",
     paramsSchema: driveCommentsCreateParamsSchema,
@@ -486,7 +496,8 @@ function createDriveAppFilesListCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.files.list.app",
     displayName: "List App-Created Files",
-    description: "List files and folders created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
+    description:
+      "List files and folders created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/list",
     paramsSchema: driveFilesListParamsSchema,
@@ -502,7 +513,8 @@ function createDriveAppFilesGetCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.files.get.app",
     displayName: "Get App-Created File",
-    description: "Get information about a file created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
+    description:
+      "Get information about a file created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/get",
     paramsSchema: driveFilesGetParamsSchema,
@@ -518,7 +530,8 @@ function createDriveAppFilesCreateCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.files.create.app",
     displayName: "Create New File",
-    description: "Create a new file or folder in Google Drive. Uses per-file access permissions, granting access only to files created by this app.",
+    description:
+      "Create a new file or folder in Google Drive. Uses per-file access permissions, granting access only to files created by this app.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/create",
     paramsSchema: driveFilesCreateParamsSchema,
@@ -534,7 +547,8 @@ function createDriveAppFilesUpdateCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.files.update.app",
     displayName: "Update App-Created File",
-    description: "Update a file created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
+    description:
+      "Update a file created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/update",
     paramsSchema: driveFilesUpdateParamsSchema,
@@ -550,7 +564,8 @@ function createDriveAppFilesExportCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.files.export.app",
     displayName: "Export App-Created File",
-    description: "Export a Google Workspace document created by this app or opened with this app in a specific format. Uses per-file access permissions.",
+    description:
+      "Export a Google Workspace document created by this app or opened with this app in a specific format. Uses per-file access permissions.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/export",
     paramsSchema: driveFilesExportParamsSchema,
@@ -566,7 +581,8 @@ function createDriveAppFilesDownloadCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.files.download.app",
     displayName: "Download App-Created File",
-    description: "Download the content of a file created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
+    description:
+      "Download the content of a file created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/get",
     paramsSchema: driveFilesDownloadParamsSchema,
@@ -582,7 +598,8 @@ function createDriveAppCommentsListCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.comments.list.app",
     displayName: "List Comments on App Files",
-    description: "List comments on files created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
+    description:
+      "List comments on files created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/comments/list",
     paramsSchema: driveCommentsListParamsSchema,
@@ -598,7 +615,8 @@ function createDriveAppCommentsGetCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.comments.get.app",
     displayName: "Get Comment from App File",
-    description: "Get a specific comment on a file created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
+    description:
+      "Get a specific comment on a file created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/comments/get",
     paramsSchema: driveCommentsGetParamsSchema,
@@ -614,7 +632,8 @@ function createDriveAppCommentsCreateCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.comments.create.app",
     displayName: "Comment on App Files",
-    description: "Add a comment to files created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
+    description:
+      "Add a comment to files created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/comments/create",
     paramsSchema: driveCommentsCreateParamsSchema,

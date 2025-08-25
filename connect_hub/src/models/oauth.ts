@@ -50,13 +50,16 @@ export const OAuthCallbackParamsSchema = Type.Object({
   provider: Type.String(),
 });
 
-export const OAuthCallbackQuerySchema = Type.Object({
-  code: Type.String(),
-  state: Type.String(),
-  error: Type.Optional(Type.String()),
-  errorDescription: Type.Optional(Type.String()),
-  errorUri: Type.Optional(Type.String()),
-});
+export const OAuthCallbackQuerySchema = Type.Intersect([
+  Type.Object({
+    code: Type.String(),
+    state: Type.String(),
+    error: Type.Optional(Type.String()),
+    errorDescription: Type.Optional(Type.String()),
+    errorUri: Type.Optional(Type.String()),
+  }),
+  Type.Record(Type.String(), Type.Any()),
+]);
 
 export enum OauthStatus {
   Pending = "pending",
