@@ -90,12 +90,26 @@ export async function proxyRoutes(app: FastifyTypeBox) {
         }
       }
 
+      const providerSecrets = await app.getProviderSecrets(providerId);
+      if (!providerSecrets) {
+        return reply.status(400).send({
+          error: "provider_not_found",
+          message: `Provider ${providerId} not found`,
+        });
+      }
       const context: ExecutionContext = {
         db: request.server.db,
         orgId: orgId,
         tokenPayload: token,
         externalAccountId: externalAccountId,
         retryCount: 0,
+        oauthContext: {
+          provider: providerId,
+          clientId: providerSecrets.clientId,
+          clientSecret: providerSecrets.clientSecret,
+          redirectUri: providerSecrets.redirectUri,
+          orgId: orgId,
+        },
       };
 
       const result = await capability.execute(params, context);

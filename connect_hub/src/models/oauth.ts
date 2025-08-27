@@ -42,6 +42,7 @@ export const OAuthNeedsResponseSchema = Type.Array(
 // OAuth Launch Request Schema
 export const OAuthLaunchQuerySchema = Type.Object({
   scopes: Type.Array(Type.String()),
+  triggers: Type.Optional(Type.Array(Type.String())),
   token: Type.String(),
 });
 

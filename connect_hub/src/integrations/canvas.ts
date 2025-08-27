@@ -322,7 +322,7 @@ export class CanvasProvider extends BaseProvider {
     const authUrl = new URL(`https://${instanceDomain}/login/oauth2/auth`);
     authUrl.searchParams.append(
       "client_id",
-      ctx.providerSecrets.clientId as string,
+      ctx.clientId,
     );
     authUrl.searchParams.append("response_type", "code");
     authUrl.searchParams.append("state", params.state);
@@ -354,8 +354,8 @@ export class CanvasProvider extends BaseProvider {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         grant_type: "authorization_code",
-        client_id: ctx.providerSecrets.clientId as string,
-        client_secret: ctx.providerSecrets.clientSecret as string,
+        client_id: ctx.clientId,
+        client_secret: ctx.clientSecret,
         redirect_uri: ctx.redirectUri,
         code: callbackParams.code,
       }),
@@ -421,8 +421,8 @@ export class CanvasProvider extends BaseProvider {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         grant_type: "refresh_token",
-        client_id: ctx.providerSecrets.clientId as string,
-        client_secret: ctx.providerSecrets.clientSecret as string,
+        client_id: ctx.clientId,
+        client_secret: ctx.clientSecret,
         refresh_token: tokenPayload.refresh_token,
       }),
     });

@@ -46,6 +46,6 @@ declare module "fastify" {
   interface FastifyInstance {
     getProviderSecrets: (
       providerId: string,
-    ) => Promise<Record<string, any> | undefined>;
+    ) => Promise<OauthConfig | undefined>;
   }
 }

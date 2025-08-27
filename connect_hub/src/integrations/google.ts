@@ -719,8 +719,8 @@ export class GoogleProvider extends BaseProvider<any, GoogleWebhookEvent> {
   // OAuth methods implementation
   generateAuthUrl(params: OAuthAuthUrlParams, ctx: OAuthContext): string {
     const oauth2Client = new google.auth.OAuth2(
-      ctx.providerSecrets.clientId as string,
-      ctx.providerSecrets.clientSecret as string,
+      ctx.clientId,
+      ctx.clientSecret,
       ctx.redirectUri,
     );
     return oauth2Client.generateAuthUrl({
@@ -735,8 +735,8 @@ export class GoogleProvider extends BaseProvider<any, GoogleWebhookEvent> {
     ctx: OAuthContext,
   ): Promise<CallbackResult> {
     const oauth2Client = new google.auth.OAuth2(
-      ctx.providerSecrets.clientId as string,
-      ctx.providerSecrets.clientSecret as string,
+      ctx.clientId,
+      ctx.clientSecret,
       ctx.redirectUri,
     );
     const { tokens } = await oauth2Client.getToken(callbackParams.code);

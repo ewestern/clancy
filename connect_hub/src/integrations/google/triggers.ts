@@ -12,12 +12,13 @@ import { randomUUID } from "crypto";
 export const gmailMessageReceivedTrigger: Trigger<GoogleWebhookEvent> = {
   id: "gmail.message.received",
   description: "Triggered when a new Gmail message is received",
+  requiredScopes: ["https://www.googleapis.com/auth/gmail.metadata"],
   paramsSchema: Type.Object({
     labelIds: Type.Optional(Type.Array(Type.String())),
     query: Type.Optional(Type.String()),
   }),
 
-  async registerSubscription(db, connectionMetadata, triggerRegistration) {
+  async registerSubscription(db, connectionMetadata, triggerRegistration, oauthContext) {
     // Get the user's token
     const token = await db.query.tokens.findFirst({
       where: eq(tokens.connectionId, triggerRegistration.connectionId!),
@@ -27,7 +28,11 @@ export const gmailMessageReceivedTrigger: Trigger<GoogleWebhookEvent> = {
       throw new Error("No token found for connection");
     }
 
-    const oauth2Client = new google.auth.OAuth2();
+    const oauth2Client = new google.auth.OAuth2({
+      clientId: oauthContext.clientId,
+      clientSecret: oauthContext.clientSecret,
+      redirectUri: oauthContext.redirectUri,
+    });
     oauth2Client.setCredentials(token.tokenPayload);
 
     const gmail = google.gmail({ version: "v1", auth: oauth2Client });
@@ -39,9 +44,7 @@ export const gmailMessageReceivedTrigger: Trigger<GoogleWebhookEvent> = {
     const watchResponse = await gmail.users.watch({
       userId: "me",
       requestBody: {
-        topicName:
-          process.env.GMAIL_PUBSUB_TOPIC ||
-          "projects/clancy-464816/topics/gmail-notifications",
+        topicName: `projects/clancy-464816/topics/clancy-connect-hub-${process.env.ENVIRONMENT}`,
         labelIds: triggerRegistration.params.labelIds,
         labelFilterAction: "include",
       },
@@ -122,6 +125,7 @@ export const gmailMessageReceivedTrigger: Trigger<GoogleWebhookEvent> = {
 export const driveFileChangeTrigger: Trigger<GoogleWebhookEvent> = {
   id: "drive.files.change",
   description: "Triggered when Drive files are created, modified, or deleted",
+  requiredScopes: ["https://www.googleapis.com/auth/drive.metadata.readonly"],
   paramsSchema: Type.Object({
     driveId: Type.Optional(Type.String()),
     includeRemoved: Type.Optional(Type.Boolean()),
@@ -223,6 +227,7 @@ export const calendarEventsChangeTrigger: Trigger<GoogleWebhookEvent> = {
   id: "calendar.events.change",
   description:
     "Triggered when calendar events are created, modified, or deleted",
+  requiredScopes: ["https://www.googleapis.com/auth/calendar.readonly"],
   paramsSchema: Type.Object({
     calendarId: Type.String({ default: "primary" }),
     timeMin: Type.Optional(Type.String()),

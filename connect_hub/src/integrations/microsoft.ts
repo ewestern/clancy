@@ -228,12 +228,12 @@ export class MicrosoftProvider extends BaseProvider {
   generateAuthUrl(params: OAuthAuthUrlParams, ctx: OAuthContext): string {
     // For client credentials flow, we typically don't generate auth URLs for end users
     // This would be used for admin consent flows
-    const authority = `https://login.microsoftonline.com/${ctx.providerSecrets.tenant_id}`;
+    const authority = `https://login.microsoftonline.com/${ctx.tenantId}`;
     const authUrl = new URL(`${authority}/adminconsent`);
 
     authUrl.searchParams.append(
       "client_id",
-      ctx.providerSecrets.client_id as string,
+      ctx.clientId,
     );
     authUrl.searchParams.append("state", params.state);
     authUrl.searchParams.append("redirect_uri", ctx.redirectUri);
@@ -260,9 +260,9 @@ export class MicrosoftProvider extends BaseProvider {
       );
     }
     const credential = new ClientSecretCredential(
-      ctx.providerSecrets.tenant_id as string,
-      ctx.providerSecrets.client_id as string,
-      ctx.providerSecrets.client_secret as string,
+      ctx.tenantId as string,
+      ctx.clientId,
+      ctx.clientSecret,
     );
 
     const tokenResponse = await credential.getToken(
@@ -275,8 +275,8 @@ export class MicrosoftProvider extends BaseProvider {
 
     // Extract tenant information for connection identification
     const externalAccountMetadata = {
-      tenantId: ctx.providerSecrets.tenant_id as string,
-      clientId: ctx.providerSecrets.client_id as string,
+      tenantId: ctx.tenantId as string,
+      clientId: ctx.clientId,
       authMethod: "client_credentials",
     };
 

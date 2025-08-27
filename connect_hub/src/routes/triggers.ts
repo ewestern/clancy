@@ -15,8 +15,9 @@ import { validateInput } from "../providers/utils.js";
 import { eq } from "drizzle-orm";
 import { and } from "drizzle-orm";
 import { ConnectionStatus } from "../models/connection.js";
-import { getAuth } from "@clerk/fastify";
 import { ProviderKind } from "../models/providers.js";
+import { getUnifiedAuth } from "../utils/auth.js";
+import { OAuthContext } from "../providers/types.js";
 
 export async function triggerRoutes(app: FastifyTypeBox) {
   app.addSchema(TriggerRegistrationSchema);
@@ -54,9 +55,9 @@ export async function triggerRoutes(app: FastifyTypeBox) {
       request.log.info(
         `Creating trigger registration: ${JSON.stringify(body)}`,
       );
-      const { orgId, userId } = getAuth(request);
+      const { orgId, userId } = getUnifiedAuth(request);
       request.log.info(
-        `Creating trigger registration: ${JSON.stringify({ orgId, userId })}`,
+        `Auth info: ${JSON.stringify({ orgId, userId })}`,
       );
       if (!orgId || !userId) {
         return reply.status(401).send({
@@ -134,21 +135,42 @@ export async function triggerRoutes(app: FastifyTypeBox) {
             .values(toInsert)
             .returning();
           if (provider?.metadata.kind === ProviderKind.External) {
-            const subscriptionResult = await trigger?.registerSubscription?.(
-              request.server.db,
-              connection?.externalAccountMetadata || {},
-              triggerRegistration!,
-            );
-            if (subscriptionResult) {
-              // Update the registration with subscription metadata and actual expiration
-              await tx
-                .update(triggerRegistrations)
-                .set({
-                  subscriptionMetadata: subscriptionResult.subscriptionMetadata,
-                  expiresAt: subscriptionResult.expiresAt,
-                  updatedAt: new Date(),
-                })
-                .where(eq(triggerRegistrations.id, triggerRegistration!.id));
+            try {
+              const providerSecrets =
+                await request.server.getProviderSecrets(body.providerId);
+              if (!providerSecrets) {
+                throw new Error("Provider secrets not found");
+              }
+              const { clientId, clientSecret, redirectUri } = providerSecrets;
+              const oauthContext: OAuthContext = {
+                orgId: orgId,
+                provider: body.providerId,
+                clientId: clientId,
+                clientSecret: clientSecret,
+                redirectUri: redirectUri,
+              };
+
+              const subscriptionResult = await trigger?.registerSubscription?.(
+                request.server.db,
+                connection?.externalAccountMetadata || {},
+                triggerRegistration!,
+                oauthContext,
+              );
+              if (subscriptionResult) {
+                // Update the registration with subscription metadata and actual expiration
+                await tx
+                  .update(triggerRegistrations)
+                  .set({
+                    subscriptionMetadata: subscriptionResult.subscriptionMetadata,
+                    expiresAt: subscriptionResult.expiresAt,
+                    updatedAt: new Date(),
+                  })
+                  .where(eq(triggerRegistrations.id, triggerRegistration!.id));
+              }
+            } catch (error) {
+              console.log(error, "error");
+              request.log.error(error);
+              throw error;
             }
           }
           if (!triggerRegistration) {

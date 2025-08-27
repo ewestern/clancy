@@ -26,6 +26,29 @@ import { publishEvents } from "../utils.js";
 import { EventType } from "@ewestern/events";
 import { OwnershipScope } from "../models/shared.js";
 import { ProviderKind } from "../models/providers.js";
+import { ProviderRuntime } from "../providers/types.js";
+
+// Helper function to resolve provider scopes from capabilities and triggers
+function resolveProviderScopes(
+  capabilities: string[],
+  triggers: string[],
+  provider: ProviderRuntime,
+): string[] {
+  // Get scopes from capabilities
+  const capabilityScopes = capabilities.flatMap((capability) => {
+    const mappedScopes = provider.scopeMapping[capability];
+    return mappedScopes || []; // fallback to empty if no mapping exists
+  });
+
+  // Get scopes from triggers
+  const triggerScopes = triggers.flatMap((triggerId) => {
+    const trigger = provider.getTrigger?.(triggerId);
+    return trigger?.requiredScopes || [];
+  });
+
+  // Union and deduplicate
+  return [...new Set([...capabilityScopes, ...triggerScopes])];
+}
 
 // Helper function to validate OAuth callback and get transaction
 async function validateOAuthCallback(db: Database, state: string) {
@@ -92,7 +115,7 @@ async function updateOrCreateConnection(
     if (existingConnection) {
       // Merge scopes with any existing token to avoid losing previously granted permissions
       const existingTokenRows = await tx
-        .select({ id: tokens.id, scopes: tokens.scopes })
+        .select({ id: tokens.id, scopes: tokens.scopes, tokenPayload: tokens.tokenPayload })
         .from(tokens)
         .where(
           and(
@@ -103,10 +126,15 @@ async function updateOrCreateConnection(
         );
       const existingToken = existingTokenRows[0] || null;
       if (existingToken) {
+        // sometimes providers don't return a refresh token, so we need to merge the existing token payload with the new one
+        const newTokenPayload = {
+          ...existingToken.tokenPayload,
+          ...tokenPayload,
+        };
         await tx
           .update(tokens)
           .set({
-            tokenPayload: tokenPayload,
+            tokenPayload: newTokenPayload,
             scopes: externalScopes,
             ownershipScope: OwnershipScope.User,
             ownerId: oauthTransaction.userId,
@@ -241,6 +269,7 @@ export async function oauthRoutes(app: FastifyTypeBox) {
     ) => {
       const { token } = request.query;
       const capabilities = request.query.scopes;
+      const triggers = request.query.triggers || [];
       const { provider: providerId } = request.params;
       const baseUrl = process.env.REDIRECT_BASE_URL!;
 
@@ -269,16 +298,20 @@ export async function oauthRoutes(app: FastifyTypeBox) {
             status: OauthStatus.Failed,
           });
         }
-        // Map internal Clancy scopes to provider-native scopes using scopeMapping
-        const providerScopes = capabilities.flatMap((capability) => {
-          const mappedScopes = provider.scopeMapping[capability];
-          return mappedScopes || []; // fallback to original scope if no mapping exists
-        });
+        // Resolve provider scopes from both capabilities and triggers
+        const uniqueProviderScopes = resolveProviderScopes(capabilities, triggers, provider);
 
-        // Remove duplicates
-        const uniqueProviderScopes = [...new Set(providerScopes)];
+        const providerSecrets = await request.server.getProviderSecrets(providerId);
 
-        const redirectUri = `${baseUrl}/oauth/callback/${providerId}`;
+        if (!providerSecrets) {
+          return reply.status(400).send({
+            error: "provider_not_found",
+            errorDescription: `Provider ${providerId} not found`,
+            provider: providerId,
+            status: OauthStatus.Failed,
+          });
+        }
+        const { clientId, clientSecret, redirectUri } = providerSecrets;
         const state = crypto.randomUUID();
         await request.server.db.insert(oauthTransactions).values({
           orgId: orgId,
@@ -291,22 +324,14 @@ export async function oauthRoutes(app: FastifyTypeBox) {
           status: OauthStatus.Pending,
         });
 
-        const providerSecrets =
-          await request.server.getProviderSecrets(providerId);
-        if (!providerSecrets) {
-          return reply.status(400).send({
-            error: "provider_not_found",
-            errorDescription: `Provider ${providerId} not found`,
-            provider: providerId,
-            status: OauthStatus.Failed,
-          });
-        }
+
 
         const oauthContext: OAuthContext = {
           orgId: orgId,
           provider: providerId,
-          providerSecrets: providerSecrets,
           redirectUri: redirectUri,
+          clientId: clientId,
+          clientSecret: clientSecret,
         };
 
         const authUrl = provider.generateAuthUrl(
@@ -361,7 +386,8 @@ export async function oauthRoutes(app: FastifyTypeBox) {
         const oauthContext: OAuthContext = {
           orgId: oauthTransaction.orgId,
           provider: providerId,
-          providerSecrets: providerSecrets,
+          clientId: providerSecrets.clientId,
+          clientSecret: providerSecrets.clientSecret,
           redirectUri: oauthTransaction.redirectUri,
           requestedScopes: oauthTransaction.requestedScopes,
           logger: app.log,
@@ -443,6 +469,23 @@ export async function oauthRoutes(app: FastifyTypeBox) {
         new Map<string, Set<string>>(),
       );
 
+      const requestedTriggersByProvider = triggers.reduce(
+        (acc, item) => {
+          if (!acc.has(item.providerId)) {
+            acc.set(item.providerId, new Set());
+          }
+          acc.get(item.providerId)!.add(item.triggerId);
+          return acc;
+        },
+        new Map<string, Set<string>>(),
+      );
+
+      // Combine providers from both capabilities and triggers
+      const allProviderIds = new Set([
+        ...requestedCapabilitiesByProvider.keys(),
+        ...requestedTriggersByProvider.keys(),
+      ]);
+
       const providerConnections =
         await request.server.db.query.connections.findMany({
           where: and(
@@ -451,53 +494,96 @@ export async function oauthRoutes(app: FastifyTypeBox) {
             eq(connections.status, ConnectionStatus.Active),
             inArray(
               connections.providerId,
-              Array.from(requestedCapabilitiesByProvider.keys()),
+              Array.from(allProviderIds),
             ),
           ),
         });
-      const existingProviderCapabilitySummary = providerConnections.reduce(
+      // Get user tokens for scope comparison
+      const connectionIds = providerConnections.map(conn => conn.id);
+      const userTokens = connectionIds.length > 0 ? await request.server.db.query.tokens.findMany({
+        where: and(
+          inArray(tokens.connectionId, connectionIds),
+          eq(tokens.ownershipScope, OwnershipScope.User),
+          eq(tokens.ownerId, userId),
+        ),
+      }) : [];
+
+      const tokensByConnectionId = new Map(
+        userTokens.map(token => [token.connectionId, token])
+      );
+
+      const existingProviderScopeSummary = providerConnections.reduce(
         (acc, connection) => {
           const providerId = connection.providerId;
-          const requestedCapabilities =
-            requestedCapabilitiesByProvider.get(providerId);
-          if (!requestedCapabilities) {
-            return acc;
-          }
-          const grantedCapabilities = new Set(connection.capabilities);
-          const missingCapabilities =
-            requestedCapabilities.difference(grantedCapabilities);
+          const provider = registry.getProvider(providerId);
+          if (!provider) return acc;
+
+          const requestedCapabilities = requestedCapabilitiesByProvider.get(providerId) || new Set();
+          const requestedTriggers = requestedTriggersByProvider.get(providerId) || new Set();
+          
+          // Get required provider scopes for this provider
+          const requiredScopes = resolveProviderScopes(
+            Array.from(requestedCapabilities),
+            Array.from(requestedTriggers),
+            provider
+          );
+
+          // Get granted scopes from the user's token
+          const userToken = tokensByConnectionId.get(connection.id);
+          const grantedScopes = new Set(userToken?.scopes || []);
+          
+          const missingScopes = requiredScopes.filter(scope => !grantedScopes.has(scope));
+
           return acc.set(providerId, {
-            grantedCapabilities,
-            missingCapabilities,
+            grantedScopes,
+            missingScopes,
+            requestedCapabilities,
+            requestedTriggers,
           });
         },
         new Map<
           string,
-          { grantedCapabilities: Set<string>; missingCapabilities: Set<string> }
+          { 
+            grantedScopes: Set<string>; 
+            missingScopes: string[];
+            requestedCapabilities: Set<string>;
+            requestedTriggers: Set<string>;
+          }
         >(),
       );
 
-      const results = Array.from(
-        requestedCapabilitiesByProvider.entries(),
-      ).flatMap(([providerId, requestedCapabilities]) => {
+      const results = Array.from(allProviderIds).flatMap((providerId) => {
         const provider = registry.getProvider(providerId);
         if (provider?.metadata.kind === ProviderKind.Internal) {
           return [];
         }
-        const summary = existingProviderCapabilitySummary.get(providerId);
+
+        const requestedCapabilities = requestedCapabilitiesByProvider.get(providerId) || new Set();
+        const requestedTriggers = requestedTriggersByProvider.get(providerId) || new Set();
+        const summary = existingProviderScopeSummary.get(providerId);
+        
         const baseUrl = process.env.REDIRECT_BASE_URL!;
         const launchUrl = new URL(`${baseUrl}/oauth/launch/${providerId}`);
+        
+        // Add capabilities and triggers to OAuth URL
+        for (const capabilityId of Array.from(requestedCapabilities)) {
+          launchUrl.searchParams.append("scopes", capabilityId);
+        }
+        for (const triggerId of Array.from(requestedTriggers)) {
+          launchUrl.searchParams.append("triggers", triggerId);
+        }
+
         if (!summary) {
-          // no existing connection for this provider
-          for (const scopeId of Array.from(requestedCapabilities)) {
-            launchUrl.searchParams.append("scopes", scopeId);
-          }
-          const missingCapabilitiesDisplay = Array.from(
-            requestedCapabilities,
-          ).map((capability) => {
+          // No existing connection for this provider
+          const missingCapabilitiesDisplay = Array.from(requestedCapabilities).map((capability) => {
             const capabilityMeta = provider?.getCapability(capability).meta;
             return capabilityMeta?.displayName || capability;
           });
+          const missingTriggersDisplay = Array.from(requestedTriggers).map((triggerId) => {
+            const trigger = provider?.getTrigger?.(triggerId);
+            return trigger?.description || triggerId;
+          });
+          
           return [
             {
               providerId: providerId,
@@ -505,20 +591,15 @@ export async function oauthRoutes(app: FastifyTypeBox) {
               providerIcon: provider?.metadata.icon || "",
               status: OauthConnectionStatus.NeedsAuth,
               grantedCapabilities: [],
-              missingCapabilities: missingCapabilitiesDisplay,
+              missingCapabilities: [...missingCapabilitiesDisplay, ...missingTriggersDisplay],
               oauthUrl: launchUrl.toString(),
             },
           ];
         }
-        const { grantedCapabilities, missingCapabilities } = summary;
-        const missingCapabilitiesDisplay = Array.from(
-          missingCapabilities?.values() || [],
-        ).map((capability) => {
-          const capabilityMeta = provider?.getCapability(capability).meta;
-          return capabilityMeta?.displayName || capability;
-        });
 
-        if (!missingCapabilities || missingCapabilities.size === 0) {
+        const { missingScopes } = summary;
+        
+        if (missingScopes.length === 0) {
           return [
             {
               providerId: providerId,
@@ -526,17 +607,21 @@ export async function oauthRoutes(app: FastifyTypeBox) {
               providerIcon: provider?.metadata.icon || "",
               status: OauthConnectionStatus.Connected,
               grantedCapabilities: [],
-              missingCapabilities: missingCapabilitiesDisplay,
+              missingCapabilities: [],
               oauthUrl: "",
             },
           ];
         } else {
-          const cumulativeCapabilityIds =
-            grantedCapabilities.union(missingCapabilities);
+          // Build display names for missing permissions
+          const missingCapabilitiesDisplay = Array.from(requestedCapabilities).map((capability) => {
+            const capabilityMeta = provider?.getCapability(capability).meta;
+            return capabilityMeta?.displayName || capability;
+          });
+          const missingTriggersDisplay = Array.from(requestedTriggers).map((triggerId) => {
+            const trigger = provider?.getTrigger?.(triggerId);
+            return trigger?.description || triggerId;
+          });
 
-          for (const scopeId of Array.from(cumulativeCapabilityIds)) {
-            launchUrl.searchParams.append("scopes", scopeId);
-          }
           return [
             {
               providerId: providerId,
@@ -544,7 +629,7 @@ export async function oauthRoutes(app: FastifyTypeBox) {
               providerIcon: provider?.metadata.icon || "",
               status: OauthConnectionStatus.NeedsScopeUpgrade,
               grantedCapabilities: [],
-              missingCapabilities: missingCapabilitiesDisplay,
+              missingCapabilities: [...missingCapabilitiesDisplay, ...missingTriggersDisplay],
               oauthUrl: launchUrl.toString(),
             },
           ];

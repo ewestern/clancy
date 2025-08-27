@@ -27,8 +27,8 @@ const __dirname = import.meta.dirname;
 // ---------------------------------------------------------------------------
 function createOAuthClient(ctx: OAuthContext): OAuthClient {
   return new OAuthClient({
-    clientId: ctx.providerSecrets.clientId as string,
-    clientSecret: ctx.providerSecrets.clientSecret as string,
+    clientId: ctx.clientId,
+    clientSecret: ctx.clientSecret,
     environment:
       process.env.NODE_ENV === "production" ? "production" : "sandbox",
     redirectUri: ctx.redirectUri,
@@ -46,13 +46,14 @@ async function qbFetch<T>(
     throw new Error("QuickBooks company (realm) id missing");
 
   const tokenPayload = ctx.tokenPayload;
+  const { clientId, clientSecret, redirectUri } = ctx.oauthContext;
 
   const oauthClient = new OAuthClient({
-    clientId: process.env.QUICKBOOKS_CLIENT_ID!,
-    clientSecret: process.env.QUICKBOOKS_CLIENT_SECRET!,
+    clientId: clientId,
+    clientSecret: clientSecret,
     environment:
       process.env.NODE_ENV === "production" ? "production" : "sandbox",
-    redirectUri: "", // Not needed for API calls
+    redirectUri: redirectUri,
   });
 
   // Set the token
@@ -624,7 +625,7 @@ export class QuickBooksProvider extends BaseProvider<
       });
 
       // Create Basic Auth header
-      const credentials = `${ctx.providerSecrets.clientId}:${ctx.providerSecrets.clientSecret}`;
+      const credentials = `${ctx.clientId}:${ctx.clientSecret}`;
       const encodedCredentials = Buffer.from(credentials).toString("base64");
 
       ctx.logger?.info(
@@ -632,7 +633,7 @@ export class QuickBooksProvider extends BaseProvider<
           tokenUrl,
           redirectUri: ctx.redirectUri,
           code: callbackParams.code,
-          clientId: ctx.providerSecrets.clientId,
+          clientId: ctx.clientId,
         },
         "quickbooks token exchange request",
       );

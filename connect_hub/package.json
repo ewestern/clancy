@@ -15,7 +15,7 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "db:generate": "tsx node_modules/.bin/drizzle-kit generate",
     "test:oauth": "tsx scripts/test_integration.ts",
-    "oauth:storeSecret": "tsx scripts/storeOauthSecret.ts",
+    "oauth:manage": "tsx scripts/manage-oauth-secrets.ts",
     "format": "tsx scripts/format.ts",
     "scratch": "tsx scripts/scratch.ts"
   },
@@ -65,12 +65,14 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/commander": "^2.12.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.10.2",
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.20.0",
     "@typescript-eslint/parser": "^8.20.0",
     "@vitest/coverage-v8": "^2.1.8",
+    "commander": "^14.0.0",
     "drizzle-kit": "^0.30.1",
     "eslint": "^9.17.0",
     "orval": "^7.10.0",

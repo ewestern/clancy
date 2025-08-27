@@ -54,7 +54,9 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
       reply: FastifyReplyTypeBox<typeof CreateEmployeeEndpoint>,
     ) => {
       // steps: create employee, create agents, create trigger-registrations, publish event
-      const { getToken, userId } = getAuth(request);
+      const auth = getAuth(request);
+      console.log(auth, "auth");
+      const { userId } = auth;
       if (!userId) {
         return reply.status(401).send({
           error: "Unauthorized",
@@ -65,14 +67,19 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       const { agents: newAgents, ...employee } = request.body;
+
       const forwardedAuth = request.headers["authorization"] ?? "";
+      console.log(forwardedAuth, "forwardedAuth");
       const bearer = Array.isArray(forwardedAuth)
         ? forwardedAuth[0]
         : forwardedAuth;
+      console.log(bearer, "bearer");
       const accessToken = bearer?.toString().replace(/^Bearer\s+/i, "");
+      console.log(accessToken, "accessToken");
+
       const configuration = new Configuration({
         basePath: process.env.CONNECT_HUB_API_URL!,
-        accessToken: accessToken,
+        accessToken: (name, scopes) => Promise.resolve(accessToken),
       });
       const triggersApi = new TriggersApi(configuration);
       return fastify.db.transaction(async (tx) => {

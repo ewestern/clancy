@@ -7,10 +7,12 @@ import {
 import {
   ConnectionApi,
   CapabilitiesApi,
+  TriggersApi,
   OAuthApi,
   Configuration as ConnectHubConfiguration,
   ConnectionStatus,
   type ProviderCapabilities,
+  type Trigger,
   type OauthAuditPostRequest,
   ProviderKind,
   ProviderAuth,
@@ -25,15 +27,19 @@ const Connections: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [allProviders, setAllProviders] = useState<ProviderCapabilities[]>([]);
+  const [allTriggers, setAllTriggers] = useState<Trigger[]>([]);
   const [unconnectedProviders, setUnconnectedProviders] = useState<
     ProviderCapabilities[]
   >([]);
 
   // Modal state
-  const [isCapModalOpen, setIsCapModalOpen] = useState(false);
+  const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] =
     useState<ProviderCapabilities | null>(null);
   const [selectedCapabilities, setSelectedCapabilities] = useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedTriggers, setSelectedTriggers] = useState<Set<string>>(
     new Set(),
   );
   const [existingCapabilities, setExistingCapabilities] = useState<Set<string>>(
@@ -53,16 +59,16 @@ const Connections: React.FC = () => {
   }, [getToken]);
 
   const loadData = useCallback(async () => {
-    console.log("Loading data");
     try {
       const connectHubConfig = getConnectHubClient();
       const connectionApi = new ConnectionApi(connectHubConfig);
       const capabilitiesApi = new CapabilitiesApi(connectHubConfig);
-      const [{ data }, providerCapabilities] = await Promise.all([
+      const triggersApi = new TriggersApi(connectHubConfig);
+      const [{ data }, providerCapabilities, triggers] = await Promise.all([
         connectionApi.connectionsGet(),
         capabilitiesApi.capabilitiesGet(),
+        triggersApi.triggersGet(),
       ]);
-      console.log(providerCapabilities);
 
       // Build lookups:
       //  - capability names by provider
@@ -106,6 +112,7 @@ const Connections: React.FC = () => {
       );
       setConnectionCards(sorted);
       setAllProviders(providerCapabilities);
+      setAllTriggers(triggers);
 
       // Compute unconnected providers
       const connectedProviderIds = new Set(
@@ -138,10 +145,11 @@ const Connections: React.FC = () => {
   const handleDisconnect = async (connectionId: string) => {
     try {
       const connectionApi = new ConnectionApi(getConnectHubClient());
-      await connectionApi.connectionsIdPatch({
+      const response = await connectionApi.connectionsIdPatch({
         id: connectionId,
         connectionsIdPatchRequest: { status: ConnectionStatus.Inactive },
       });
+      console.log("Disconnected", response);
       // Refresh list after disconnect
       await loadData();
     } catch (err) {
@@ -149,7 +157,7 @@ const Connections: React.FC = () => {
     }
   };
 
-  const handleOpenCapabilityModal = (
+  const handleOpenPermissionsModal = (
     providerId: string,
     connection?: ConnectionCardType,
   ) => {
@@ -163,22 +171,25 @@ const Connections: React.FC = () => {
         const existing = new Set(connection.capabilities || []);
         setExistingCapabilities(existing);
         setSelectedCapabilities(existing);
+        setSelectedTriggers(new Set()); // TODO: Get existing triggers from connection
         setExistingConnection(connection);
       } else {
         // For new connections, start fresh
         setExistingCapabilities(new Set());
         setSelectedCapabilities(new Set());
+        setSelectedTriggers(new Set());
         setExistingConnection(null);
       }
 
-      setIsCapModalOpen(true);
+      setIsPermissionsModalOpen(true);
     }
   };
 
   const handleCloseModal = () => {
-    setIsCapModalOpen(false);
+    setIsPermissionsModalOpen(false);
     setSelectedProvider(null);
     setSelectedCapabilities(new Set());
+    setSelectedTriggers(new Set());
     setExistingCapabilities(new Set());
     setExistingConnection(null);
     setSearchTerm("");
@@ -200,10 +211,24 @@ const Connections: React.FC = () => {
     setSelectedCapabilities(newSelected);
   };
 
+  const handleTriggerToggle = (triggerId: string) => {
+    const newSelected = new Set(selectedTriggers);
+    if (newSelected.has(triggerId)) {
+      newSelected.delete(triggerId);
+    } else {
+      newSelected.add(triggerId);
+    }
+    setSelectedTriggers(newSelected);
+  };
+
   const handleSelectAll = () => {
     if (!selectedProvider) return;
     const allCapIds = selectedProvider.capabilities.map((cap) => cap.id);
+    const allTriggerIds = allTriggers
+      .filter((trigger) => trigger.providerId === selectedProvider.id)
+      .map((trigger) => trigger.id);
     setSelectedCapabilities(new Set(allCapIds));
+    setSelectedTriggers(new Set(allTriggerIds));
   };
 
   const handleConnect = async () => {
@@ -217,7 +242,9 @@ const Connections: React.FC = () => {
         )
       : Array.from(selectedCapabilities);
 
-    if (capabilitiesToAudit.length === 0) return;
+    const triggersToAudit = Array.from(selectedTriggers);
+
+    if (capabilitiesToAudit.length === 0 && triggersToAudit.length === 0) return;
 
     setIsConnecting(true);
     try {
@@ -229,7 +256,10 @@ const Connections: React.FC = () => {
           providerId: selectedProvider.id,
           capabilityId,
         })),
-        triggers: [],
+        triggers: triggersToAudit.map((triggerId) => ({
+          providerId: selectedProvider.id,
+          triggerId,
+        })),
       };
 
       const results = await oauthApi.oauthAuditPost({
@@ -312,7 +342,7 @@ const Connections: React.FC = () => {
               key={connectionCard.id}
               connection={connectionCard}
               onDisconnect={handleDisconnect}
-              onOpenCapabilityModal={handleOpenCapabilityModal}
+              onOpenPermissionsModal={handleOpenPermissionsModal}
             />
           ))}
         </div>
@@ -363,7 +393,7 @@ const Connections: React.FC = () => {
                     {provider.description}
                   </p>
                   <button
-                    onClick={() => handleOpenCapabilityModal(provider.id)}
+                    onClick={() => handleOpenPermissionsModal(provider.id)}
                     className="w-full inline-flex justify-center items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     Connect
@@ -386,8 +416,8 @@ const Connections: React.FC = () => {
           </div>
         )}
 
-        {/* Capability Selection Modal */}
-        {isCapModalOpen && selectedProvider && (
+        {/* Permissions Selection Modal */}
+        {isPermissionsModalOpen && selectedProvider && (
           <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
               {/* Backdrop */}
@@ -426,13 +456,13 @@ const Connections: React.FC = () => {
                       <div>
                         <h3 className="text-lg font-medium text-gray-900">
                           {existingConnection
-                            ? `Add capabilities to ${selectedProvider.displayName}`
+                            ? `Add permissions to ${selectedProvider.displayName}`
                             : `Connect to ${selectedProvider.displayName}`}
                         </h3>
                         <p className="text-sm text-gray-500">
                           {existingConnection
-                            ? "Select additional capabilities to add"
-                            : "Select the capabilities you need"}
+                            ? "Select additional permissions to add"
+                            : "Select the permissions you need"}
                         </p>
                       </div>
                     </div>
@@ -450,7 +480,7 @@ const Connections: React.FC = () => {
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <input
                         type="text"
-                        placeholder="Search capabilities..."
+                        placeholder="Search permissions..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-9 pr-3 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -464,14 +494,14 @@ const Connections: React.FC = () => {
                       onClick={handleSelectAll}
                       className="text-sm text-blue-600 hover:text-blue-800"
                     >
-                      Select all ({selectedProvider.capabilities.length})
+                      Select all ({selectedProvider.capabilities.length + allTriggers.filter(t => t.providerId === selectedProvider.id).length})
                     </button>
                     <span className="text-sm text-gray-500">
-                      {selectedCapabilities.size} selected
+                      {selectedCapabilities.size + selectedTriggers.size} selected
                     </span>
                   </div>
 
-                  {/* Capabilities List */}
+                  {/* Permissions List */}
                   <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-md">
                     {(() => {
                       const filteredCapabilities =
@@ -485,68 +515,137 @@ const Connections: React.FC = () => {
                               .includes(searchTerm.toLowerCase()),
                         );
 
-                      if (filteredCapabilities.length === 0) {
+                      const filteredTriggers = allTriggers
+                        .filter((trigger) => trigger.providerId === selectedProvider.id)
+                        .filter(
+                          (trigger) =>
+                            trigger.description
+                              .toLowerCase()
+                              .includes(searchTerm.toLowerCase()) ||
+                            trigger.id
+                              .toLowerCase()
+                              .includes(searchTerm.toLowerCase()),
+                        );
+
+                      const totalFiltered = filteredCapabilities.length + filteredTriggers.length;
+
+                      if (totalFiltered === 0) {
                         return (
                           <div className="p-4 text-center text-gray-500">
                             {searchTerm
-                              ? "No capabilities match your search"
-                              : "No capabilities available"}
+                              ? "No permissions match your search"
+                              : "No permissions available"}
                           </div>
                         );
                       }
 
-                      return filteredCapabilities.map((capability) => {
-                        const isExisting = existingCapabilities.has(
-                          capability.id,
-                        );
-                        const isSelected = selectedCapabilities.has(
-                          capability.id,
-                        );
-
-                        return (
-                          <label
-                            key={capability.id}
-                            className={`flex items-start space-x-3 p-3 border-b border-gray-100 last:border-b-0 ${
-                              isExisting
-                                ? "bg-gray-50 cursor-default"
-                                : "hover:bg-gray-50 cursor-pointer"
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() =>
-                                handleCapabilityToggle(capability.id)
-                              }
-                              disabled={isExisting}
-                              className={`mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${
-                                isExisting
-                                  ? "opacity-50 cursor-not-allowed"
-                                  : ""
-                              }`}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center space-x-2">
-                                <p
-                                  className={`text-sm font-medium ${isExisting ? "text-gray-600" : "text-gray-900"}`}
-                                >
-                                  {capability.displayName}
-                                </p>
-                                {isExisting && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                    Connected
-                                  </span>
-                                )}
+                      return (
+                        <>
+                          {/* Capabilities Section */}
+                          {filteredCapabilities.length > 0 && (
+                            <>
+                              <div className="px-3 py-2 bg-gray-50 border-b border-gray-100">
+                                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                  Capabilities
+                                </h4>
                               </div>
-                              <p
-                                className={`text-xs mt-1 ${isExisting ? "text-gray-400" : "text-gray-500"}`}
-                              >
-                                {capability.description}
-                              </p>
-                            </div>
-                          </label>
-                        );
-                      });
+                              {filteredCapabilities.map((capability) => {
+                                const isExisting = existingCapabilities.has(
+                                  capability.id,
+                                );
+                                const isSelected = selectedCapabilities.has(
+                                  capability.id,
+                                );
+
+                                return (
+                                  <label
+                                    key={capability.id}
+                                    className={`flex items-start space-x-3 p-3 border-b border-gray-100 last:border-b-0 ${
+                                      isExisting
+                                        ? "bg-gray-50 cursor-default"
+                                        : "hover:bg-gray-50 cursor-pointer"
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() =>
+                                        handleCapabilityToggle(capability.id)
+                                      }
+                                      disabled={isExisting}
+                                      className={`mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${
+                                        isExisting
+                                          ? "opacity-50 cursor-not-allowed"
+                                          : ""
+                                      }`}
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center space-x-2">
+                                        <p
+                                          className={`text-sm font-medium ${isExisting ? "text-gray-600" : "text-gray-900"}`}
+                                        >
+                                          {capability.displayName}
+                                        </p>
+                                        {isExisting && (
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            Connected
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p
+                                        className={`text-xs mt-1 ${isExisting ? "text-gray-400" : "text-gray-500"}`}
+                                      >
+                                        {capability.description}
+                                      </p>
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                            </>
+                          )}
+
+                          {/* Triggers Section */}
+                          {filteredTriggers.length > 0 && (
+                            <>
+                              <div className="px-3 py-2 bg-gray-50 border-b border-gray-100">
+                                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                  Triggers
+                                </h4>
+                              </div>
+                              {filteredTriggers.map((trigger) => {
+                                const isSelected = selectedTriggers.has(trigger.id);
+
+                                return (
+                                  <label
+                                    key={trigger.id}
+                                    className="flex items-start space-x-3 p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 cursor-pointer"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() => handleTriggerToggle(trigger.id)}
+                                      className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center space-x-2">
+                                        <p className="text-sm font-medium text-gray-900">
+                                          {trigger.id}
+                                        </p>
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                          Trigger
+                                        </span>
+                                      </div>
+                                      <p className="text-xs mt-1 text-gray-500">
+                                        {trigger.description}
+                                      </p>
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                            </>
+                          )}
+                        </>
+                      );
                     })()}
                   </div>
                 </div>
@@ -559,8 +658,8 @@ const Connections: React.FC = () => {
                       (existingConnection
                         ? Array.from(selectedCapabilities).filter(
                             (capId) => !existingCapabilities.has(capId),
-                          ).length === 0
-                        : selectedCapabilities.size === 0)
+                          ).length === 0 && selectedTriggers.size === 0
+                        : selectedCapabilities.size === 0 && selectedTriggers.size === 0)
                     }
                     className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -569,7 +668,7 @@ const Connections: React.FC = () => {
                         ? "Adding..."
                         : "Connecting..."
                       : existingConnection
-                        ? "Add Capabilities"
+                        ? "Add Permissions"
                         : "Connect"}
                   </button>
                   <button

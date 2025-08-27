@@ -83,6 +83,7 @@ export interface EventContext {
 
 export interface ExecutionContext {
   db: Database;
+  oauthContext: OAuthContext;
   orgId: string;
   externalAccountId?: string;
   tokenPayload: Record<string, unknown> | null;
@@ -117,7 +118,10 @@ export interface OAuthCallbackParams {
 export interface OAuthContext {
   orgId: string;
   provider: string;
-  providerSecrets: Record<string, unknown>;
+  clientId: string;
+  clientSecret: string;
+  tenantId?: string;
+  //providerSecrets: Record<string, unknown>;
   redirectUri: string;
   /** Optional PKCE code verifier for enhanced security */
   codeVerifier?: string;
@@ -154,6 +158,7 @@ export interface Trigger<E = unknown> {
     db: Database,
     connectionMetadata: Record<string, unknown>,
     triggerRegistration: typeof triggerRegistrations.$inferSelect,
+    oauthContext: OAuthContext,
   ) => Promise<{
     expiresAt: Date;
     subscriptionMetadata: Record<string, unknown>;
