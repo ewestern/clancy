@@ -68,8 +68,7 @@
     "eslint": "^8.0.0",
     "ts-node": "^10.4.0",
     "tsx": "^4.6.0",
-    "vitest": "^0.34.0",
-    "@ewestern/agents_core_sdk": "file:../sdks/agents_core"
+    "vitest": "^0.34.0"
   },
   "keywords": [
     "fastify",
