@@ -2,6 +2,7 @@ import { Database } from "../plugins/database.js";
 import { triggerRegistrations } from "../database/schema.js";
 import { lt, eq, and } from "drizzle-orm";
 import { registry } from "../integrations.js";
+import { OAuthContext } from "../providers/types.js";
 
 /**
  * Renewal scheduler for Google event subscriptions.
@@ -117,6 +118,8 @@ export class SubscriptionScheduler {
         this.db,
         connectionMetadata,
         registration,
+        // TODO: Add real OAuth context here
+        {} as OAuthContext,
       );
 
       // Update the registration with new subscription details

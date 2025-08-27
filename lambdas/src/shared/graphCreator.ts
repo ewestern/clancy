@@ -355,9 +355,7 @@ export class GraphCreator {
     const agent = createReactAgent({
       name: this.WORKFLOW_AGENT_CREATOR_AGENT,
       llm: llm,
-      tools: [
-        this.getHumanInputTool()
-      ],
+      tools: [this.getHumanInputTool()],
       prompt: AGENT_CREATOR_PROMPT,
       responseFormat: Type.Object({
         agent: AgentSchema,

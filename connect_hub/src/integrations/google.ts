@@ -320,12 +320,13 @@ function createCalendarEventsListCapability(): Capability {
   return { meta, execute: calendarEventsList };
 }
 
-// Drive capabilities - Organization scope (shared drives, org-wide access)
+// Drive capabilities - Shared drives and organization-wide access
 function createDriveDrivesListCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.drives.list",
     displayName: "List Google Drives",
-    description: "List shared drives accessible to the user",
+    description:
+      "List shared drives accessible to the user. Requires broad Drive access permissions.",
     docsUrl: "https://developers.google.com/drive/api/v3/reference/drives/list",
     paramsSchema: driveDrivesListParamsSchema,
     resultSchema: driveDrivesListResultSchema,
@@ -339,8 +340,9 @@ function createDriveDrivesListCapability(): Capability {
 function createDriveDrivesGetCapability(): Capability {
   const meta: CapabilityMeta = {
     id: "drive.drives.get",
-    displayName: "Get Drive",
-    description: "Get information about a specific Google Drive",
+    displayName: "Get Drive Information",
+    description:
+      "Get information about a specific Google Drive. Requires broad Drive access permissions.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/drives/get",
     paramsSchema: driveDrivesGetParamsSchema,
@@ -352,11 +354,13 @@ function createDriveDrivesGetCapability(): Capability {
   return { meta, execute: driveDrivesGet };
 }
 
-function createDriveFilesListCapability(): Capability {
+// All Files (requires broad Drive access) - for files not created by this app
+function createDriveAllFilesListCapability(): Capability {
   const meta: CapabilityMeta = {
-    id: "drive.files.list",
-    displayName: "List Files",
-    description: "List files and folders in Google Drive",
+    id: "drive.files.list.all",
+    displayName: "List All Drive Files",
+    description:
+      "List all files and folders in Google Drive, including those created by other apps. Requires broad Drive read access.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/list",
     paramsSchema: driveFilesListParamsSchema,
@@ -368,11 +372,12 @@ function createDriveFilesListCapability(): Capability {
   return { meta, execute: driveFilesList };
 }
 
-function createDriveFilesGetCapability(): Capability {
+function createDriveAllFilesGetCapability(): Capability {
   const meta: CapabilityMeta = {
-    id: "drive.files.get",
-    displayName: "Get File",
-    description: "Get information about a specific file in Google Drive",
+    id: "drive.files.get.all",
+    displayName: "Get Any Drive File",
+    description:
+      "Get information about any file in Google Drive, including those created by other apps. Requires broad Drive read access.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/get",
     paramsSchema: driveFilesGetParamsSchema,
@@ -384,43 +389,29 @@ function createDriveFilesGetCapability(): Capability {
   return { meta, execute: driveFilesGet };
 }
 
-function createDriveFilesCreateCapability(): Capability {
+function createDriveAllFilesUpdateCapability(): Capability {
   const meta: CapabilityMeta = {
-    id: "drive.files.create",
-    displayName: "Create File",
-    description: "Create a new file or folder in Google Drive",
-    docsUrl:
-      "https://developers.google.com/drive/api/reference/rest/v3/files/create",
-    paramsSchema: driveFilesCreateParamsSchema,
-    resultSchema: driveFilesCreateResultSchema,
-    requiredScopes: ["https://www.googleapis.com/auth/drive.file"],
-    ownershipScope: OwnershipScope.Organization,
-    risk: CapabilityRisk.MEDIUM,
-  };
-  return { meta, execute: driveFilesCreate };
-}
-
-function createDriveFilesUpdateCapability(): Capability {
-  const meta: CapabilityMeta = {
-    id: "drive.files.update",
-    displayName: "Update File",
-    description: "Update an existing file in Google Drive",
+    id: "drive.files.update.all",
+    displayName: "Update Any Drive File",
+    description:
+      "Update any existing file in Google Drive, including those created by other apps. Requires broad Drive write access.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/update",
     paramsSchema: driveFilesUpdateParamsSchema,
     resultSchema: driveFilesUpdateResultSchema,
-    requiredScopes: ["https://www.googleapis.com/auth/drive.file"],
+    requiredScopes: ["https://www.googleapis.com/auth/drive"],
     ownershipScope: OwnershipScope.Organization,
-    risk: CapabilityRisk.MEDIUM,
+    risk: CapabilityRisk.HIGH,
   };
   return { meta, execute: driveFilesUpdate };
 }
 
-function createDriveFilesExportCapability(): Capability {
+function createDriveAllFilesExportCapability(): Capability {
   const meta: CapabilityMeta = {
-    id: "drive.files.export",
-    displayName: "Export File",
-    description: "Export a Google Workspace document in a specific format",
+    id: "drive.files.export.all",
+    displayName: "Export Any Drive File",
+    description:
+      "Export any Google Workspace document in a specific format, including those created by other apps. Requires broad Drive read access.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/export",
     paramsSchema: driveFilesExportParamsSchema,
@@ -432,11 +423,12 @@ function createDriveFilesExportCapability(): Capability {
   return { meta, execute: driveFilesExport };
 }
 
-function createDriveFilesDownloadCapability(): Capability {
+function createDriveAllFilesDownloadCapability(): Capability {
   const meta: CapabilityMeta = {
-    id: "drive.files.download",
-    displayName: "Download File",
-    description: "Download the content of a file from Google Drive",
+    id: "drive.files.download.all",
+    displayName: "Download Any Drive File",
+    description:
+      "Download the content of any file from Google Drive, including those created by other apps. Requires broad Drive read access.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/files/get",
     paramsSchema: driveFilesDownloadParamsSchema,
@@ -448,11 +440,12 @@ function createDriveFilesDownloadCapability(): Capability {
   return { meta, execute: driveFilesDownload };
 }
 
-function createDriveCommentsListCapability(): Capability {
+function createDriveAllCommentsListCapability(): Capability {
   const meta: CapabilityMeta = {
-    id: "drive.comments.list",
-    displayName: "List Comments",
-    description: "List comments on a Google Drive file",
+    id: "drive.comments.list.all",
+    displayName: "List Comments on Any File",
+    description:
+      "List comments on any Google Drive file, including those created by other apps. Requires broad Drive read access.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/comments/list",
     paramsSchema: driveCommentsListParamsSchema,
@@ -464,11 +457,12 @@ function createDriveCommentsListCapability(): Capability {
   return { meta, execute: driveCommentsList };
 }
 
-function createDriveCommentsGetCapability(): Capability {
+function createDriveAllCommentsGetCapability(): Capability {
   const meta: CapabilityMeta = {
-    id: "drive.comments.get",
-    displayName: "Get Comment",
-    description: "Get a specific comment on a Google Drive file",
+    id: "drive.comments.get.all",
+    displayName: "Get Comment from Any File",
+    description:
+      "Get a specific comment on any Google Drive file, including those created by other apps. Requires broad Drive read access.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/comments/get",
     paramsSchema: driveCommentsGetParamsSchema,
@@ -480,11 +474,166 @@ function createDriveCommentsGetCapability(): Capability {
   return { meta, execute: driveCommentsGet };
 }
 
-function createDriveCommentsCreateCapability(): Capability {
+function createDriveAllCommentsCreateCapability(): Capability {
   const meta: CapabilityMeta = {
-    id: "drive.comments.create",
-    displayName: "Create Comment",
-    description: "Add a comment to a Google Drive file",
+    id: "drive.comments.create.all",
+    displayName: "Comment on Any Drive File",
+    description:
+      "Add a comment to any Google Drive file, including those created by other apps. Requires broad Drive write access.",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/comments/create",
+    paramsSchema: driveCommentsCreateParamsSchema,
+    resultSchema: driveCommentsCreateResultSchema,
+    requiredScopes: ["https://www.googleapis.com/auth/drive"],
+    ownershipScope: OwnershipScope.Organization,
+    risk: CapabilityRisk.HIGH,
+  };
+  return { meta, execute: driveCommentsCreate };
+}
+
+// App Files (per-file access) - for files created by this app or opened with this app
+function createDriveAppFilesListCapability(): Capability {
+  const meta: CapabilityMeta = {
+    id: "drive.files.list.app",
+    displayName: "List App-Created Files",
+    description:
+      "List files and folders created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/files/list",
+    paramsSchema: driveFilesListParamsSchema,
+    resultSchema: driveFilesListResultSchema,
+    requiredScopes: ["https://www.googleapis.com/auth/drive.file"],
+    ownershipScope: OwnershipScope.Organization,
+    risk: CapabilityRisk.LOW,
+  };
+  return { meta, execute: driveFilesList };
+}
+
+function createDriveAppFilesGetCapability(): Capability {
+  const meta: CapabilityMeta = {
+    id: "drive.files.get.app",
+    displayName: "Get App-Created File",
+    description:
+      "Get information about a file created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/files/get",
+    paramsSchema: driveFilesGetParamsSchema,
+    resultSchema: driveFilesGetResultSchema,
+    requiredScopes: ["https://www.googleapis.com/auth/drive.file"],
+    ownershipScope: OwnershipScope.Organization,
+    risk: CapabilityRisk.LOW,
+  };
+  return { meta, execute: driveFilesGet };
+}
+
+function createDriveAppFilesCreateCapability(): Capability {
+  const meta: CapabilityMeta = {
+    id: "drive.files.create.app",
+    displayName: "Create New File",
+    description:
+      "Create a new file or folder in Google Drive. Uses per-file access permissions, granting access only to files created by this app.",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/files/create",
+    paramsSchema: driveFilesCreateParamsSchema,
+    resultSchema: driveFilesCreateResultSchema,
+    requiredScopes: ["https://www.googleapis.com/auth/drive.file"],
+    ownershipScope: OwnershipScope.Organization,
+    risk: CapabilityRisk.MEDIUM,
+  };
+  return { meta, execute: driveFilesCreate };
+}
+
+function createDriveAppFilesUpdateCapability(): Capability {
+  const meta: CapabilityMeta = {
+    id: "drive.files.update.app",
+    displayName: "Update App-Created File",
+    description:
+      "Update a file created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/files/update",
+    paramsSchema: driveFilesUpdateParamsSchema,
+    resultSchema: driveFilesUpdateResultSchema,
+    requiredScopes: ["https://www.googleapis.com/auth/drive.file"],
+    ownershipScope: OwnershipScope.Organization,
+    risk: CapabilityRisk.MEDIUM,
+  };
+  return { meta, execute: driveFilesUpdate };
+}
+
+function createDriveAppFilesExportCapability(): Capability {
+  const meta: CapabilityMeta = {
+    id: "drive.files.export.app",
+    displayName: "Export App-Created File",
+    description:
+      "Export a Google Workspace document created by this app or opened with this app in a specific format. Uses per-file access permissions.",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/files/export",
+    paramsSchema: driveFilesExportParamsSchema,
+    resultSchema: driveFilesExportResultSchema,
+    requiredScopes: ["https://www.googleapis.com/auth/drive.file"],
+    ownershipScope: OwnershipScope.Organization,
+    risk: CapabilityRisk.LOW,
+  };
+  return { meta, execute: driveFilesExport };
+}
+
+function createDriveAppFilesDownloadCapability(): Capability {
+  const meta: CapabilityMeta = {
+    id: "drive.files.download.app",
+    displayName: "Download App-Created File",
+    description:
+      "Download the content of a file created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/files/get",
+    paramsSchema: driveFilesDownloadParamsSchema,
+    resultSchema: driveFilesDownloadResultSchema,
+    requiredScopes: ["https://www.googleapis.com/auth/drive.file"],
+    ownershipScope: OwnershipScope.Organization,
+    risk: CapabilityRisk.LOW,
+  };
+  return { meta, execute: driveFilesDownload };
+}
+
+function createDriveAppCommentsListCapability(): Capability {
+  const meta: CapabilityMeta = {
+    id: "drive.comments.list.app",
+    displayName: "List Comments on App Files",
+    description:
+      "List comments on files created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/comments/list",
+    paramsSchema: driveCommentsListParamsSchema,
+    resultSchema: driveCommentsListResultSchema,
+    requiredScopes: ["https://www.googleapis.com/auth/drive.file"],
+    ownershipScope: OwnershipScope.Organization,
+    risk: CapabilityRisk.LOW,
+  };
+  return { meta, execute: driveCommentsList };
+}
+
+function createDriveAppCommentsGetCapability(): Capability {
+  const meta: CapabilityMeta = {
+    id: "drive.comments.get.app",
+    displayName: "Get Comment from App File",
+    description:
+      "Get a specific comment on a file created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
+    docsUrl:
+      "https://developers.google.com/drive/api/reference/rest/v3/comments/get",
+    paramsSchema: driveCommentsGetParamsSchema,
+    resultSchema: driveCommentsGetResultSchema,
+    requiredScopes: ["https://www.googleapis.com/auth/drive.file"],
+    ownershipScope: OwnershipScope.Organization,
+    risk: CapabilityRisk.LOW,
+  };
+  return { meta, execute: driveCommentsGet };
+}
+
+function createDriveAppCommentsCreateCapability(): Capability {
+  const meta: CapabilityMeta = {
+    id: "drive.comments.create.app",
+    displayName: "Comment on App Files",
+    description:
+      "Add a comment to files created by this app or opened with this app. Uses per-file access permissions for enhanced privacy.",
     docsUrl:
       "https://developers.google.com/drive/api/reference/rest/v3/comments/create",
     paramsSchema: driveCommentsCreateParamsSchema,
@@ -535,18 +684,28 @@ export class GoogleProvider extends BaseProvider<any, GoogleWebhookEvent> {
         // Calendar capabilities
         "calendar.events.create": createCalendarEventsCreateCapability,
         "calendar.events.list": createCalendarEventsListCapability,
-        // Drive capabilities
+        // Drive capabilities - Shared drives
         "drive.drives.list": createDriveDrivesListCapability,
         "drive.drives.get": createDriveDrivesGetCapability,
-        "drive.files.list": createDriveFilesListCapability,
-        "drive.files.get": createDriveFilesGetCapability,
-        "drive.files.create": createDriveFilesCreateCapability,
-        "drive.files.update": createDriveFilesUpdateCapability,
-        "drive.files.export": createDriveFilesExportCapability,
-        "drive.files.download": createDriveFilesDownloadCapability,
-        "drive.comments.list": createDriveCommentsListCapability,
-        "drive.comments.get": createDriveCommentsGetCapability,
-        "drive.comments.create": createDriveCommentsCreateCapability,
+        // Drive capabilities - All files (broad access)
+        "drive.files.list.all": createDriveAllFilesListCapability,
+        "drive.files.get.all": createDriveAllFilesGetCapability,
+        "drive.files.update.all": createDriveAllFilesUpdateCapability,
+        "drive.files.export.all": createDriveAllFilesExportCapability,
+        "drive.files.download.all": createDriveAllFilesDownloadCapability,
+        "drive.comments.list.all": createDriveAllCommentsListCapability,
+        "drive.comments.get.all": createDriveAllCommentsGetCapability,
+        "drive.comments.create.all": createDriveAllCommentsCreateCapability,
+        // Drive capabilities - App files (per-file access)
+        "drive.files.list.app": createDriveAppFilesListCapability,
+        "drive.files.get.app": createDriveAppFilesGetCapability,
+        "drive.files.create.app": createDriveAppFilesCreateCapability,
+        "drive.files.update.app": createDriveAppFilesUpdateCapability,
+        "drive.files.export.app": createDriveAppFilesExportCapability,
+        "drive.files.download.app": createDriveAppFilesDownloadCapability,
+        "drive.comments.list.app": createDriveAppCommentsListCapability,
+        "drive.comments.get.app": createDriveAppCommentsGetCapability,
+        "drive.comments.create.app": createDriveAppCommentsCreateCapability,
       },
       triggers,
       webhooks: [webhook],
@@ -560,8 +719,8 @@ export class GoogleProvider extends BaseProvider<any, GoogleWebhookEvent> {
   // OAuth methods implementation
   generateAuthUrl(params: OAuthAuthUrlParams, ctx: OAuthContext): string {
     const oauth2Client = new google.auth.OAuth2(
-      ctx.providerSecrets.clientId as string,
-      ctx.providerSecrets.clientSecret as string,
+      ctx.clientId,
+      ctx.clientSecret,
       ctx.redirectUri,
     );
     return oauth2Client.generateAuthUrl({
@@ -576,8 +735,8 @@ export class GoogleProvider extends BaseProvider<any, GoogleWebhookEvent> {
     ctx: OAuthContext,
   ): Promise<CallbackResult> {
     const oauth2Client = new google.auth.OAuth2(
-      ctx.providerSecrets.clientId as string,
-      ctx.providerSecrets.clientSecret as string,
+      ctx.clientId,
+      ctx.clientSecret,
       ctx.redirectUri,
     );
     const { tokens } = await oauth2Client.getToken(callbackParams.code);

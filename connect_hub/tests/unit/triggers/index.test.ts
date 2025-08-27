@@ -1,6 +1,6 @@
 /**
  * Integration trigger test suite - Main test runner
- * 
+ *
  * This file serves as the entry point for all trigger tests and provides
  * a comprehensive test suite for all implemented trigger createEvents methods.
  */
@@ -14,11 +14,12 @@ describe("Integration Triggers Test Suite", () => {
   });
 
   test("test utilities are properly exported", async () => {
-    const { createMockTriggerRegistration, assertEventStructure } = await import("./test-utils.js");
-    
+    const { createMockTriggerRegistration, assertEventStructure } =
+      await import("./test-utils.js");
+
     expect(typeof createMockTriggerRegistration).toBe("function");
     expect(typeof assertEventStructure).toBe("function");
-    
+
     // Test that createMockTriggerRegistration returns a valid object
     const mockReg = createMockTriggerRegistration();
     expect(mockReg).toHaveProperty("id");

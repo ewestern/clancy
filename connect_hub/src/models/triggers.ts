@@ -64,6 +64,14 @@ export const CreateTriggerRegistrationEndpoint = {
   body: Ref(TriggerRegistrationSchema),
   response: {
     200: Ref(TriggerRegistrationSchema),
+    400: Type.Object({
+      error: Type.String(),
+      message: Type.String(),
+    }),
+    401: Type.Object({
+      error: Type.String(),
+      message: Type.String(),
+    }),
   },
 };
 

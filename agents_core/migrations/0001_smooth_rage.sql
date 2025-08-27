@@ -1,0 +1,1 @@
+ALTER TABLE "ai_employees" ADD COLUMN "status" "employee_status" DEFAULT 'active' NOT NULL;

@@ -14,6 +14,7 @@ import {
 } from "../types/fastify.js";
 import { TriggerRegistration } from "../models/triggers.js";
 import { OwnershipScopeType } from "../models/shared.js";
+import { FastifyBaseLogger } from "fastify";
 
 /**
  * Risk level assessment for capabilities.
@@ -29,6 +30,7 @@ export enum CapabilityRisk {
  * Rich metadata that the UI wizard and compiler consume.
  */
 export interface CapabilityMeta {
+  restricted?: boolean;
   id: string;
   displayName: string;
   description: string;
@@ -76,16 +78,17 @@ export interface EventContext {
   connectionId?: string;
   correlationId?: string;
   // Using unknown for logger here to avoid bringing in a full logger dependency yet
-  logger?: unknown;
+  logger?: FastifyBaseLogger;
 }
 
 export interface ExecutionContext {
   db: Database;
+  oauthContext: OAuthContext;
   orgId: string;
   externalAccountId?: string;
   tokenPayload: Record<string, unknown> | null;
   retryCount: number;
-  logger?: unknown;
+  logger?: FastifyBaseLogger;
 }
 
 export interface Capability<P = unknown, R = unknown> {
@@ -108,7 +111,6 @@ export interface OAuthCallbackParams {
   error?: string;
   /** Error description if authorization failed */
   error_description?: string;
-  redirectUri?: string;
   /** Additional provider-specific callback parameters */
   [key: string]: string | undefined;
 }
@@ -116,7 +118,10 @@ export interface OAuthCallbackParams {
 export interface OAuthContext {
   orgId: string;
   provider: string;
-  providerSecrets: Record<string, unknown>;
+  clientId: string;
+  clientSecret: string;
+  tenantId?: string;
+  //providerSecrets: Record<string, unknown>;
   redirectUri: string;
   /** Optional PKCE code verifier for enhanced security */
   codeVerifier?: string;
@@ -124,7 +129,7 @@ export interface OAuthContext {
   requestedScopes?: string[];
   /** Transaction ID for tracking the OAuth flow */
   transactionId?: string;
-  logger?: unknown;
+  logger?: FastifyBaseLogger;
 }
 
 export interface ScopeValidationResult {
@@ -153,6 +158,7 @@ export interface Trigger<E = unknown> {
     db: Database,
     connectionMetadata: Record<string, unknown>,
     triggerRegistration: typeof triggerRegistrations.$inferSelect,
+    oauthContext: OAuthContext,
   ) => Promise<{
     expiresAt: Date;
     subscriptionMetadata: Record<string, unknown>;

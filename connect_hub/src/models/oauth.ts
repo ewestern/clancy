@@ -42,6 +42,7 @@ export const OAuthNeedsResponseSchema = Type.Array(
 // OAuth Launch Request Schema
 export const OAuthLaunchQuerySchema = Type.Object({
   scopes: Type.Array(Type.String()),
+  triggers: Type.Optional(Type.Array(Type.String())),
   token: Type.String(),
 });
 
@@ -50,13 +51,16 @@ export const OAuthCallbackParamsSchema = Type.Object({
   provider: Type.String(),
 });
 
-export const OAuthCallbackQuerySchema = Type.Object({
-  code: Type.String(),
-  state: Type.String(),
-  error: Type.Optional(Type.String()),
-  errorDescription: Type.Optional(Type.String()),
-  errorUri: Type.Optional(Type.String()),
-});
+export const OAuthCallbackQuerySchema = Type.Intersect([
+  Type.Object({
+    code: Type.String(),
+    state: Type.String(),
+    error: Type.Optional(Type.String()),
+    errorDescription: Type.Optional(Type.String()),
+    errorUri: Type.Optional(Type.String()),
+  }),
+  Type.Record(Type.String(), Type.Any()),
+]);
 
 export enum OauthStatus {
   Pending = "pending",

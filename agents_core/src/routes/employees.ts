@@ -21,12 +21,10 @@ import { eq } from "drizzle-orm";
 import { getCurrentTimestamp, publishToKinesis } from "../utils.js";
 import { EventType } from "@ewestern/events";
 
-async function createTriggerRegistration(agent: Agent, token: Promise<string>) {
-  const configuration = new Configuration({
-    basePath: process.env.CONNECT_HUB_API_URL!,
-    accessToken: token,
-  });
-  const triggersApi = new TriggersApi(configuration);
+async function createTriggerRegistration(
+  agent: Agent,
+  triggersApi: TriggersApi,
+) {
   const triggerRegistrations = await triggersApi.triggerRegistrationsPost({
     triggerRegistration: {
       orgId: agent.orgId,
@@ -56,7 +54,9 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
       reply: FastifyReplyTypeBox<typeof CreateEmployeeEndpoint>,
     ) => {
       // steps: create employee, create agents, create trigger-registrations, publish event
-      const { getToken, userId, orgId } = getAuth(request);
+      const auth = getAuth(request);
+      console.log(auth, "auth");
+      const { userId } = auth;
       if (!userId) {
         return reply.status(401).send({
           error: "Unauthorized",
@@ -67,6 +67,21 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       const { agents: newAgents, ...employee } = request.body;
+
+      const forwardedAuth = request.headers["authorization"] ?? "";
+      console.log(forwardedAuth, "forwardedAuth");
+      const bearer = Array.isArray(forwardedAuth)
+        ? forwardedAuth[0]
+        : forwardedAuth;
+      console.log(bearer, "bearer");
+      const accessToken = bearer?.toString().replace(/^Bearer\s+/i, "");
+      console.log(accessToken, "accessToken");
+
+      const configuration = new Configuration({
+        basePath: process.env.CONNECT_HUB_API_URL!,
+        accessToken: (name, scopes) => Promise.resolve(accessToken),
+      });
+      const triggersApi = new TriggersApi(configuration);
       return fastify.db.transaction(async (tx) => {
         const [createdEmployee] = await tx
           .insert(employees)
@@ -85,7 +100,7 @@ export const employeeRoutes: FastifyPluginAsync = async (fastify) => {
           .returning();
         const triggerRegistrations = await Promise.all(
           createdAgents.map((agent) =>
-            createTriggerRegistration(agent, getToken() as Promise<string>),
+            createTriggerRegistration(agent, triggersApi),
           ),
         );
         await publishToKinesis(

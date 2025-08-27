@@ -1,6 +1,9 @@
 import { test, expect, vi, beforeEach, afterEach, describe } from "vitest";
 import { cronTrigger } from "../../../src/integrations/internal.js";
-import { createMockTriggerRegistration, assertEventStructure } from "./test-utils.js";
+import {
+  createMockTriggerRegistration,
+  assertEventStructure,
+} from "./test-utils.js";
 
 describe("Internal Provider - Cron Trigger", () => {
   beforeEach(() => {
@@ -13,7 +16,7 @@ describe("Internal Provider - Cron Trigger", () => {
       const now = new Date();
       const currentMinute = now.getMinutes();
       const currentHour = now.getHours();
-      
+
       const triggerRegistration = createMockTriggerRegistration({
         id: "cron-trigger-123",
         agentId: "agent-456",
@@ -31,7 +34,7 @@ describe("Internal Provider - Cron Trigger", () => {
       const result = await cronTrigger.createEvents(event, triggerRegistration);
 
       expect(result).toHaveLength(1);
-      
+
       const createdEvent = result[0];
       assertEventStructure(createdEvent, "cron-trigger-123");
 
@@ -131,7 +134,9 @@ describe("Internal Provider - Cron Trigger", () => {
       const result = await cronTrigger.createEvents(event, triggerRegistration);
 
       expect(result).toHaveLength(1);
-      expect(result[0].event.executionId).toMatch(/^exec-internal\.cron-\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(result[0].event.executionId).toMatch(
+        /^exec-internal\.cron-\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+      );
     });
   });
 });

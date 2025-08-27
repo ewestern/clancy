@@ -15,8 +15,9 @@ import { validateInput } from "../providers/utils.js";
 import { eq } from "drizzle-orm";
 import { and } from "drizzle-orm";
 import { ConnectionStatus } from "../models/connection.js";
-import { getAuth } from "@clerk/fastify";
 import { ProviderKind } from "../models/providers.js";
+import { getUnifiedAuth } from "../utils/auth.js";
+import { OAuthContext } from "../providers/types.js";
 
 export async function triggerRoutes(app: FastifyTypeBox) {
   app.addSchema(TriggerRegistrationSchema);
@@ -54,23 +55,25 @@ export async function triggerRoutes(app: FastifyTypeBox) {
       request.log.info(
         `Creating trigger registration: ${JSON.stringify(body)}`,
       );
-      const { orgId, userId } = getAuth(request);
+      const { orgId, userId } = getUnifiedAuth(request);
+      request.log.info(
+        `Auth info: ${JSON.stringify({ orgId, userId })}`,
+      );
       if (!orgId || !userId) {
-        reply.status(401).send({
+        return reply.status(401).send({
           error: "Unauthorized",
           message: "Unauthorized",
-        } as any);
+        });
       }
       // Find the trigger to validate against its schema
       const provider = registry.getProvider(body.providerId);
 
       const trigger = provider?.getTrigger?.(body.triggerId);
       if (!trigger) {
-        reply.status(400).send({
+        return reply.status(400).send({
           error: "Invalid triggerId",
           message: `Trigger '${body.triggerId}' not found`,
         } as any);
-        return;
       }
       // Validate metadata against trigger's paramsSchema
       if (trigger.paramsSchema && body.params) {
@@ -114,7 +117,11 @@ export async function triggerRoutes(app: FastifyTypeBox) {
             !connection &&
             provider?.metadata.kind === ProviderKind.External
           ) {
-            throw new Error("Connection not found");
+            throw new Error(
+              `Connection not found: ${JSON.stringify({
+                providerId: body.providerId,
+              })}`,
+            );
           }
           const toInsert = {
             ...body,
@@ -128,21 +135,42 @@ export async function triggerRoutes(app: FastifyTypeBox) {
             .values(toInsert)
             .returning();
           if (provider?.metadata.kind === ProviderKind.External) {
-            const subscriptionResult = await trigger?.registerSubscription?.(
-              request.server.db,
-              connection?.externalAccountMetadata || {},
-              triggerRegistration!,
-            );
-            if (subscriptionResult) {
-              // Update the registration with subscription metadata and actual expiration
-              await tx
-                .update(triggerRegistrations)
-                .set({
-                  subscriptionMetadata: subscriptionResult.subscriptionMetadata,
-                  expiresAt: subscriptionResult.expiresAt,
-                  updatedAt: new Date(),
-                })
-                .where(eq(triggerRegistrations.id, triggerRegistration!.id));
+            try {
+              const providerSecrets =
+                await request.server.getProviderSecrets(body.providerId);
+              if (!providerSecrets) {
+                throw new Error("Provider secrets not found");
+              }
+              const { clientId, clientSecret, redirectUri } = providerSecrets;
+              const oauthContext: OAuthContext = {
+                orgId: orgId,
+                provider: body.providerId,
+                clientId: clientId,
+                clientSecret: clientSecret,
+                redirectUri: redirectUri,
+              };
+
+              const subscriptionResult = await trigger?.registerSubscription?.(
+                request.server.db,
+                connection?.externalAccountMetadata || {},
+                triggerRegistration!,
+                oauthContext,
+              );
+              if (subscriptionResult) {
+                // Update the registration with subscription metadata and actual expiration
+                await tx
+                  .update(triggerRegistrations)
+                  .set({
+                    subscriptionMetadata: subscriptionResult.subscriptionMetadata,
+                    expiresAt: subscriptionResult.expiresAt,
+                    updatedAt: new Date(),
+                  })
+                  .where(eq(triggerRegistrations.id, triggerRegistration!.id));
+              }
+            } catch (error) {
+              console.log(error, "error");
+              request.log.error(error);
+              throw error;
             }
           }
           if (!triggerRegistration) {

@@ -8,13 +8,19 @@ Client metadata for machine-to-machine (M2M) client credentials
 You can pass client metadata in M2M requests. Client metadata is additional information from a user or application environment that can contribute to the outcomes of a Pre token generation Lambda trigger. In authentication operations with a user principal, you can pass client metadata to the pre token generation trigger in the body of AdminRespondToAuthChallenge and RespondToAuthChallenge API requests. Because applications conduct the flow for generation of access tokens for M2M with direct requests to the Token endpoint, they have a different model. In the POST body of token requests for client credentials, pass an aws_client_metadata parameter with the client metadata object URL-encoded (x-www-form-urlencoded) to string. For an example request, see Client credentials with basic authorization. The following is an example parameter that passes the key-value pairs {"environment": "dev", "language": "en-US"}.
 */
 
+locals {
+  oauth_scopes = try(jsondecode(file("${path.module}/scopes.generated.json")), [])
+  resource_server_identifier = aws_cognito_resource_server.clancy_resource_server.identifier
+  oauth_scopes_prefixed = [for s in local.oauth_scopes : "${local.resource_server_identifier}/${s}"]
+}
+
 resource "aws_cognito_user_pool_client" "clancy_user_pool_client" {
-  name = "clancy-user-pool-client-${var.environment}"
-  user_pool_id = aws_cognito_user_pool.clancy_user_pool.id
-  allowed_oauth_flows = ["client_credentials"]
+  name                                = "clancy-user-pool-client-${var.environment}"
+  user_pool_id                        = aws_cognito_user_pool.clancy_user_pool.id
+  allowed_oauth_flows                 = ["client_credentials"]
   allowed_oauth_flows_user_pool_client = true
-  allowed_oauth_scopes = ["https://clancyai.com/all"]
-  depends_on = [aws_cognito_resource_server.clancy_resource_server]
+  allowed_oauth_scopes                = concat(["${aws_cognito_resource_server.clancy_resource_server.identifier}/all"], local.oauth_scopes_prefixed)
+  depends_on                          = [aws_cognito_resource_server.clancy_resource_server]
 }
 
 resource "aws_cognito_resource_server" "clancy_resource_server" {
@@ -24,6 +30,14 @@ resource "aws_cognito_resource_server" "clancy_resource_server" {
   scope {
     scope_name        = "all"
     scope_description = "All permissions"
+  }
+
+  dynamic "scope" {
+    for_each = toset(local.oauth_scopes)
+    content {
+      scope_name        = scope.value
+      scope_description = "Auto-generated capability scope"
+    }
   }
 
   user_pool_id = aws_cognito_user_pool.clancy_user_pool.id

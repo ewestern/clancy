@@ -25,8 +25,8 @@ export async function createApp() {
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   await app.register(cors, {
-    origin: true,
-    methods: ["GET", "POST", "HEAD", "PUT", "DELETE", "OPTIONS"],
+    origin: "*",
+    methods: ["GET", "POST", "HEAD", "PUT", "DELETE", "OPTIONS", "PATCH"],
   });
   // Promote ?sessionToken=... to Authorization header so Clerk can validate websocket requests
   // This must run before the clerkPlugin registration so it executes earlier in the onRequest phase.

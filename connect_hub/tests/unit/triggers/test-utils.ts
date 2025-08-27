@@ -6,7 +6,7 @@ import { expect, vi } from "vitest";
  */
 
 export function createMockTriggerRegistration(
-  overrides: Partial<TriggerRegistration> = {}
+  overrides: Partial<TriggerRegistration> = {},
 ): TriggerRegistration {
   return {
     id: "test-trigger-reg-123",
@@ -35,7 +35,7 @@ export function createMockTriggerRegistration(
  */
 export function assertEventStructure(
   event: { event: Record<string, unknown>; partitionKey: string },
-  expectedPartitionKey: string
+  expectedPartitionKey: string,
 ) {
   expect(event).toHaveProperty("event");
   expect(event).toHaveProperty("partitionKey", expectedPartitionKey);
@@ -49,27 +49,27 @@ export function assertEventStructure(
 export function mockCurrentDate(date: string = "2024-01-15T10:30:00Z") {
   const mockDate = new Date(date);
   const OriginalDate = Date;
-  
+
   const DateMock = function DateMock(...args: any[]) {
     if (args.length === 0) {
       return mockDate;
     }
     return new OriginalDate(...args);
   } as any;
-  
+
   // Copy all static methods from original Date
   Object.setPrototypeOf(DateMock, OriginalDate);
-  Object.getOwnPropertyNames(OriginalDate).forEach(name => {
-    if (name !== 'length' && name !== 'name' && name !== 'prototype') {
+  Object.getOwnPropertyNames(OriginalDate).forEach((name) => {
+    if (name !== "length" && name !== "name" && name !== "prototype") {
       DateMock[name] = OriginalDate[name as keyof typeof OriginalDate];
     }
   });
-  
+
   // Override specific methods if needed
   DateMock.now = () => mockDate.getTime();
-  
-  vi.stubGlobal('Date', DateMock);
-  
+
+  vi.stubGlobal("Date", DateMock);
+
   return mockDate;
 }
 

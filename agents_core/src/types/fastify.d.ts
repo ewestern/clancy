@@ -48,5 +48,9 @@ declare module "fastify" {
     // Database
     db: Database;
     wsService: WebSocketService;
+    requireScopes: (opts: {
+      anyOf?: string[];
+      allOf?: string[];
+    }) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }

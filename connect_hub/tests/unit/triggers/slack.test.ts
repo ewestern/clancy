@@ -1,10 +1,15 @@
 import { test, expect, vi, beforeEach, describe } from "vitest";
 import { slackTriggers } from "../../../src/integrations/slack.js";
-import { createMockTriggerRegistration, assertEventStructure } from "./test-utils.js";
+import {
+  createMockTriggerRegistration,
+  assertEventStructure,
+} from "./test-utils.js";
 import type { WebhookEvent } from "../../../src/integrations/slack.js";
 
 describe("Slack Provider - Message Created Trigger", () => {
-  const messageCreatedTrigger = slackTriggers.find(t => t.id === "message.created")!;
+  const messageCreatedTrigger = slackTriggers.find(
+    (t) => t.id === "message.created",
+  )!;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -41,10 +46,13 @@ describe("Slack Provider - Message Created Trigger", () => {
         event_time: 1234567890,
       };
 
-      const result = await messageCreatedTrigger.createEvents(slackEvent, triggerRegistration);
+      const result = await messageCreatedTrigger.createEvents(
+        slackEvent,
+        triggerRegistration,
+      );
 
       expect(result).toHaveLength(1);
-      
+
       const createdEvent = result[0];
       assertEventStructure(createdEvent, "slack-trigger-123");
 
@@ -89,7 +97,10 @@ describe("Slack Provider - Message Created Trigger", () => {
         event_time: 1234567890,
       };
 
-      const result = await messageCreatedTrigger.createEvents(slackEvent, triggerRegistration);
+      const result = await messageCreatedTrigger.createEvents(
+        slackEvent,
+        triggerRegistration,
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0].event).toEqual(slackEvent);
@@ -126,7 +137,10 @@ describe("Slack Provider - Message Created Trigger", () => {
         event_time: 1234567890,
       };
 
-      const result = await messageCreatedTrigger.createEvents(slackEvent, triggerRegistration);
+      const result = await messageCreatedTrigger.createEvents(
+        slackEvent,
+        triggerRegistration,
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0].event).toEqual(slackEvent);
@@ -161,7 +175,10 @@ describe("Slack Provider - Message Created Trigger", () => {
         event_time: 1234567890,
       };
 
-      const result = await messageCreatedTrigger.createEvents(slackEvent, triggerRegistration);
+      const result = await messageCreatedTrigger.createEvents(
+        slackEvent,
+        triggerRegistration,
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0].event).toEqual(slackEvent);
@@ -197,7 +214,10 @@ describe("Slack Provider - Message Created Trigger", () => {
         event_time: 1234567890,
       };
 
-      const result = await messageCreatedTrigger.createEvents(slackEvent, triggerRegistration);
+      const result = await messageCreatedTrigger.createEvents(
+        slackEvent,
+        triggerRegistration,
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0].event).toEqual(slackEvent);
@@ -244,13 +264,16 @@ describe("Slack Provider - Message Created Trigger", () => {
         event_time: 1234567890,
       };
 
-      const result = await messageCreatedTrigger.createEvents(slackEvent, triggerRegistration);
+      const result = await messageCreatedTrigger.createEvents(
+        slackEvent,
+        triggerRegistration,
+      );
 
       expect(result).toHaveLength(1);
-      
+
       // Verify the entire Slack event is preserved
       expect(result[0].event).toEqual(slackEvent);
-      
+
       // Verify specific complex properties are preserved
       expect((result[0].event as any).event.edited).toEqual({
         user: "U123456",
@@ -291,7 +314,10 @@ describe("Slack Provider - Message Created Trigger", () => {
         event_time: 1234567890,
       };
 
-      const result = await messageCreatedTrigger.createEvents(slackEvent, triggerRegistration);
+      const result = await messageCreatedTrigger.createEvents(
+        slackEvent,
+        triggerRegistration,
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0].event).toEqual(slackEvent);

@@ -4,9 +4,16 @@ import { SecretsManager } from "@aws-sdk/client-secrets-manager";
 import dotenv from "dotenv";
 dotenv.config();
 
+interface OauthConfig {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  signingSecret?: string;
+}
+
 async function getProviderMetadata(
   providerId: string,
-): Promise<Record<string, any> | undefined> {
+): Promise<OauthConfig | undefined> {
   const secretsManager = new SecretsManager({
     region: "us-east-1",
     profile: "clancy",
@@ -21,10 +28,10 @@ async function getProviderMetadata(
 }
 const registerOauthProviders: FastifyPluginAsync = async (fastify) => {
   // create function to get the provider metadata, as well as a cache of the metadata
-  const providerMetadataCache = new Map<string, Record<string, any>>();
+  const providerMetadataCache = new Map<string, OauthConfig>();
   const getCachedProviderMetadata = async (
     providerId: string,
-  ): Promise<Record<string, any> | undefined> => {
+  ): Promise<OauthConfig | undefined> => {
     if (providerMetadataCache.has(providerId)) {
       return providerMetadataCache.get(providerId);
     }

@@ -4,7 +4,10 @@ import {
   driveFileChangeTrigger,
   calendarEventsChangeTrigger,
 } from "../../../src/integrations/google/triggers.js";
-import { createMockTriggerRegistration, assertEventStructure } from "./test-utils.js";
+import {
+  createMockTriggerRegistration,
+  assertEventStructure,
+} from "./test-utils.js";
 import type { GoogleWebhookEvent } from "../../../src/integrations/google/webhooks.js";
 
 describe("Google Provider - Triggers", () => {
@@ -24,20 +27,25 @@ describe("Google Provider - Triggers", () => {
         const gmailEvent: GoogleWebhookEvent = {
           type: "gmail_message",
           pubsubMessage: {
-            data: Buffer.from(JSON.stringify({
-              messageId: "msg123456789",
-              historyId: "hist987654321",
-              emailAddress: "user@example.com",
-            })).toString("base64"),
+            data: Buffer.from(
+              JSON.stringify({
+                messageId: "msg123456789",
+                historyId: "hist987654321",
+                emailAddress: "user@example.com",
+              }),
+            ).toString("base64"),
             messageId: "pubsub-msg-123",
             publishTime: "2024-01-15T10:30:00Z",
           },
         };
 
-        const result = await gmailMessageReceivedTrigger.createEvents(gmailEvent, triggerRegistration);
+        const result = await gmailMessageReceivedTrigger.createEvents(
+          gmailEvent,
+          triggerRegistration,
+        );
 
         expect(result).toHaveLength(1);
-        
+
         const createdEvent = result[0];
         assertEventStructure(createdEvent, "gmail-agent-456");
 
@@ -62,7 +70,10 @@ describe("Google Provider - Triggers", () => {
           resourceState: "sync",
         };
 
-        const result = await gmailMessageReceivedTrigger.createEvents(nonGmailEvent, triggerRegistration);
+        const result = await gmailMessageReceivedTrigger.createEvents(
+          nonGmailEvent,
+          triggerRegistration,
+        );
 
         expect(result).toHaveLength(0);
       });
@@ -77,7 +88,10 @@ describe("Google Provider - Triggers", () => {
           // Missing pubsubMessage
         };
 
-        const result = await gmailMessageReceivedTrigger.createEvents(incompleteEvent, triggerRegistration);
+        const result = await gmailMessageReceivedTrigger.createEvents(
+          incompleteEvent,
+          triggerRegistration,
+        );
 
         expect(result).toHaveLength(0);
       });
@@ -101,13 +115,18 @@ describe("Google Provider - Triggers", () => {
         const gmailEvent: GoogleWebhookEvent = {
           type: "gmail_message",
           pubsubMessage: {
-            data: Buffer.from(JSON.stringify(complexMessageData)).toString("base64"),
+            data: Buffer.from(JSON.stringify(complexMessageData)).toString(
+              "base64",
+            ),
             messageId: "pubsub-msg-456",
             publishTime: "2024-01-15T10:30:00Z",
           },
         };
 
-        const result = await gmailMessageReceivedTrigger.createEvents(gmailEvent, triggerRegistration);
+        const result = await gmailMessageReceivedTrigger.createEvents(
+          gmailEvent,
+          triggerRegistration,
+        );
 
         expect(result).toHaveLength(1);
         expect(result[0].event).toMatchObject({
@@ -138,10 +157,13 @@ describe("Google Provider - Triggers", () => {
           resourceUri: "https://www.googleapis.com/drive/v3/files/file123",
         };
 
-        const result = await driveFileChangeTrigger.createEvents(driveEvent, triggerRegistration);
+        const result = await driveFileChangeTrigger.createEvents(
+          driveEvent,
+          triggerRegistration,
+        );
 
         expect(result).toHaveLength(1);
-        
+
         const createdEvent = result[0];
         assertEventStructure(createdEvent, "drive-agent-456");
 
@@ -168,7 +190,10 @@ describe("Google Provider - Triggers", () => {
           resourceState: "sync",
         };
 
-        const result = await driveFileChangeTrigger.createEvents(driveEvent, triggerRegistration);
+        const result = await driveFileChangeTrigger.createEvents(
+          driveEvent,
+          triggerRegistration,
+        );
 
         expect(result).toHaveLength(1);
         expect(result[0].event).toMatchObject({
@@ -192,7 +217,10 @@ describe("Google Provider - Triggers", () => {
           resourceState: "sync",
         };
 
-        const result = await driveFileChangeTrigger.createEvents(nonDriveEvent, triggerRegistration);
+        const result = await driveFileChangeTrigger.createEvents(
+          nonDriveEvent,
+          triggerRegistration,
+        );
 
         expect(result).toHaveLength(0);
       });
@@ -213,13 +241,17 @@ describe("Google Provider - Triggers", () => {
           channelId: "calendar-channel123",
           resourceId: "calendar-resource456",
           resourceState: "exists",
-          resourceUri: "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+          resourceUri:
+            "https://www.googleapis.com/calendar/v3/calendars/primary/events",
         };
 
-        const result = await calendarEventsChangeTrigger.createEvents(calendarEvent, triggerRegistration);
+        const result = await calendarEventsChangeTrigger.createEvents(
+          calendarEvent,
+          triggerRegistration,
+        );
 
         expect(result).toHaveLength(1);
-        
+
         const createdEvent = result[0];
         assertEventStructure(createdEvent, "calendar-agent-456");
 
@@ -246,7 +278,10 @@ describe("Google Provider - Triggers", () => {
           resourceState: "not_exists",
         };
 
-        const result = await calendarEventsChangeTrigger.createEvents(calendarEvent, triggerRegistration);
+        const result = await calendarEventsChangeTrigger.createEvents(
+          calendarEvent,
+          triggerRegistration,
+        );
 
         expect(result).toHaveLength(1);
         expect(result[0].event).toMatchObject({
@@ -270,7 +305,10 @@ describe("Google Provider - Triggers", () => {
           resourceState: "sync",
         };
 
-        const result = await calendarEventsChangeTrigger.createEvents(nonCalendarEvent, triggerRegistration);
+        const result = await calendarEventsChangeTrigger.createEvents(
+          nonCalendarEvent,
+          triggerRegistration,
+        );
 
         expect(result).toHaveLength(0);
       });
@@ -287,10 +325,14 @@ describe("Google Provider - Triggers", () => {
           channelId: "calendar-sync-123",
           resourceId: "calendar-sync-456",
           resourceState: "sync",
-          resourceUri: "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+          resourceUri:
+            "https://www.googleapis.com/calendar/v3/calendars/primary/events",
         };
 
-        const result = await calendarEventsChangeTrigger.createEvents(calendarEvent, triggerRegistration);
+        const result = await calendarEventsChangeTrigger.createEvents(
+          calendarEvent,
+          triggerRegistration,
+        );
 
         expect(result).toHaveLength(1);
         expect(result[0].event).toMatchObject({

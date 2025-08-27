@@ -348,11 +348,11 @@ export class SlackProvider extends BaseProvider<
     const authUrl = new URL("https://slack.com/oauth/v2/authorize");
     authUrl.searchParams.append(
       "client_id",
-      ctx.providerSecrets.clientId as string,
+      ctx.clientId,
     );
     authUrl.searchParams.append("scope", params.scopes.join(","));
     authUrl.searchParams.append("state", params.state);
-    authUrl.searchParams.append("redirect_uri", ctx.redirectUri);
+    authUrl.searchParams.append("redirect_uri", ctx.redirectUri!);
     return authUrl.toString();
   }
 
@@ -377,10 +377,10 @@ export class SlackProvider extends BaseProvider<
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        client_id: ctx.providerSecrets.clientId as string,
-        client_secret: ctx.providerSecrets.clientSecret as string,
+        client_id: ctx.clientId,
+        client_secret: ctx.clientSecret,
         code: callbackParams.code,
-        redirect_uri: ctx.redirectUri,
+        redirect_uri: ctx.redirectUri!,
       }),
     });
 

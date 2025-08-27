@@ -11,7 +11,7 @@ export type ConnectionCard = Connection & {
 interface ConnectionCardProps {
   connection: ConnectionCard;
   onDisconnect: (connectionId: string) => void;
-  onOpenCapabilityModal: (
+  onOpenPermissionsModal: (
     providerId: string,
     connection?: ConnectionCard,
   ) => void;
@@ -20,7 +20,7 @@ interface ConnectionCardProps {
 export const ConnectionCard: React.FC<ConnectionCardProps> = ({
   connection,
   onDisconnect,
-  onOpenCapabilityModal,
+  onOpenPermissionsModal,
 }) => {
   const getStatusIcon = (status: ConnectionStatus) => {
     switch (status) {
@@ -119,7 +119,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
             )}
             {connection.status === ConnectionStatus.Inactive && (
               <button
-                onClick={() => onOpenCapabilityModal(connection.providerId)}
+                onClick={() => onOpenPermissionsModal(connection.providerId)}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Connect
@@ -128,7 +128,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
           </div>
         </div>
 
-        {/* Capabilities list with Add capabilities link */}
+        {/* Permissions list with Add permissions link */}
         {(connection.capabilityDisplayNames.length > 0 ||
           connection.status === ConnectionStatus.Active) && (
           <div className="mt-4">
@@ -136,11 +136,11 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
               {connection.status === ConnectionStatus.Active && (
                 <button
                   onClick={() =>
-                    onOpenCapabilityModal(connection.providerId, connection)
+                    onOpenPermissionsModal(connection.providerId, connection)
                   }
                   className="text-sm text-blue-600 hover:text-blue-800 underline"
                 >
-                  Add capabilities
+                  Add permissions
                 </button>
               )}
             </div>
@@ -149,11 +149,12 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
                 {connection.capabilityDisplayNames.map((name) => (
                   <span
                     key={`${connection.id}-${name}`}
-                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                   >
                     {name}
                   </span>
                 ))}
+                {/* TODO: Add trigger display names here when available */}
               </div>
             )}
           </div>
