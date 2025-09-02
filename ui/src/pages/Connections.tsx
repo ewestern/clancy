@@ -75,7 +75,7 @@ const Connections: React.FC = () => {
           itemNameByProvider[provider.id][cap.id] = cap.displayName;
         }
         for (const trg of triggers) {
-          itemNameByProvider[provider.id][trg.id] = trg.description;
+          itemNameByProvider[provider.id][trg.id] = trg.displayName;
         }
       }
 
