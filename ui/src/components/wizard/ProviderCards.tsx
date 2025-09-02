@@ -78,9 +78,9 @@ const ProviderCardComponent = ({
         )}
         */}
 
-      {/* Available Tasks */}
+      {/* Requested Permissions */}
       <div className="mb-3">
-        <p className="text-xs text-gray-500 mb-1">Required Tasks:</p>
+        <p className="text-xs text-gray-500 mb-1">Requested Permissions:</p>
         <div className="flex flex-wrap gap-1 justify-center">
           {provider.requiredScopes.slice(0, 3).map((capability, index) => (
             <span

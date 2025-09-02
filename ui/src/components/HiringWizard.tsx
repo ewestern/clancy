@@ -29,17 +29,8 @@ import type {
   AgentPrototypeSchema,
 } from "@ewestern/events";
 import { EventType } from "@ewestern/events";
-import {
-  Configuration,
-  CapabilitiesApi,
-  TriggersApi,
-  OAuthApi,
-} from "@ewestern/connect_hub_sdk";
-import type {
-  Trigger,
-  ProviderCapabilities,
-  OauthAuditPost200ResponseInner,
-} from "@ewestern/connect_hub_sdk";
+import { Configuration, CapabilitiesApi, TriggersApi } from "@ewestern/connect_hub_sdk";
+import type { Trigger, ProviderCapabilities } from "@ewestern/connect_hub_sdk";
 import { useWebSocketCtx } from "../context/WebSocketContext";
 import { useUser, useOrganization, useAuth } from "@clerk/react-router";
 import { WebsocketMessage } from "../types";
@@ -113,11 +104,6 @@ export function HiringWizard({
     pinToDashboard: true,
   });
 
-  // Store audit results separately to use as single source of truth
-  const [auditResults, setAuditResults] = useState<
-    OauthAuditPost200ResponseInner[]
-  >([]);
-
   // Store simple workflows separately for the workflows phase
   const [simpleWorkflows, setSimpleWorkflows] = useState<SimpleWorkflow[]>([]);
 
@@ -143,14 +129,7 @@ export function HiringWizard({
   const { organization } = useOrganization();
   const { getToken } = useAuth();
 
-  const getAuditApi = useCallback(() => {
-    return new OAuthApi(
-      new Configuration({
-        basePath: import.meta.env.VITE_CONNECT_HUB_URL!,
-        accessToken: getToken() as Promise<string>,
-      }),
-    );
-  }, [getToken]);
+  // No audit API needed; we construct provider cards and OAuth URLs client-side
 
   const getCapabilityApi = useCallback(() => {
     return new CapabilitiesApi(
@@ -233,102 +212,56 @@ export function HiringWizard({
       setSimpleWorkflows([]);
       setAgents([]);
       setUnsatisfiedWorkflows([]);
-      setAuditResults([]);
       setFeedbackRequested(false);
     }
   }, [isOpen]);
-
-  const performOAuthAudit = useCallback(
-    async (agents: AgentPrototype[]) => {
-      if (!organization?.id) {
-        console.error("No organization ID available for OAuth audit");
-        return;
-      }
-
-      try {
-        // Build unified permission strings providerId/itemId
-        const permissionSet = new Set<string>();
-        for (const agent of agents) {
-          // capabilities
-          for (const cap of agent.capabilities) {
-            permissionSet.add(`${cap.providerId}/${cap.id}`);
-          }
-          // trigger
-          permissionSet.add(`${agent.trigger.providerId}/${agent.trigger.id}`);
-        }
-
-        const permissions = Array.from(permissionSet);
-
-        const auditApi = getAuditApi();
-        const auditResults = await auditApi.oauthAuditPost({
-          oauthAuditPostRequest: { permissions },
-        });
-
-        console.log("OAuth audit results:", auditResults);
-        setAuditResults(auditResults);
-
-        // Convert audit results to provider cards for UI compatibility
-        const providers: ProviderCard[] = auditResults.map((result) => {
-          // Map missing permission strings to friendly names where possible
-          const providerCaps =
-            providerCapabilities[result.providerId]?.capabilities || [];
-          const capNameById = providerCaps.reduce<Record<string, string>>(
-            (acc, cap) => {
-              acc[cap.id] = cap.displayName;
-              return acc;
-            },
-            {},
-          );
-          const missingDisplay = (result.missingPermissions || []).map(
-            (perm) => {
-              const [, itemId = ""] = perm.split("/");
-              return capNameById[itemId] || itemId;
-            },
-          );
-
-          return {
-            id: result.providerId,
-            name: result.providerDisplayName,
-            logo: result.providerIcon,
-            connectionStatus:
-              result.status === "connected" ? "connected" : "disconnected",
-            requiredScopes: missingDisplay,
-            oauthUrl: result.oauthUrl,
-          };
-        });
-
-        // Check if all providers are connected
-        const allConnected =
-          auditResults.length === 0 ||
-          auditResults.every((result) => result.status === "connected");
-
-        setWizardData((prev) => ({
-          ...prev,
-          availableProviders: providers,
-          // Transition to naming phase if no OAuth is needed OR all providers are connected
-          phase:
-            auditResults.length === 0 || allConnected ? "naming" : prev.phase,
-        }));
-      } catch (error) {
-        console.error("OAuth audit failed:", error);
-        // On audit failure, proceed to naming phase anyway
-        setWizardData((prev) => ({
-          ...prev,
-          phase: "naming",
-          availableProviders: [], // No providers available due to audit failure
-        }));
-        setAuditResults([]);
-      }
-    },
-    [getAuditApi, organization?.id],
-  );
-
-  // Handle OAuth audit when agents are set
+  // Build provider cards from agents' requested permissions
   useEffect(() => {
     if (agents.length > 0 && wizardData.phase === "connect") {
-      performOAuthAudit(agents);
+      const providerToItems: Record<string, Set<string>> = {};
+      for (const agent of agents) {
+        for (const cap of agent.capabilities) {
+          if (!providerToItems[cap.providerId]) providerToItems[cap.providerId] = new Set();
+          providerToItems[cap.providerId]!.add(cap.id);
+        }
+        if (agent.trigger) {
+          const pid = agent.trigger.providerId;
+          if (!providerToItems[pid]) providerToItems[pid] = new Set();
+          providerToItems[pid]!.add(agent.trigger.id);
+        }
+      }
+
+      const providers: ProviderCard[] = Object.entries(providerToItems).map(
+        ([providerId, itemIds]) => {
+          const meta = providerCapabilities[providerId];
+          const friendlyNames: string[] = [];
+          const caps = meta?.capabilities || [];
+          const capNameById = caps.reduce<Record<string, string>>((acc, c) => {
+            acc[c.id] = c.displayName;
+            return acc;
+          }, {});
+          for (const itemId of itemIds) {
+            const triggerDisplay = triggers[itemId]?.displayName;
+            friendlyNames.push(capNameById[itemId] || triggerDisplay || itemId);
+          }
+          return {
+            id: providerId,
+            name: meta?.displayName || providerId,
+            logo: meta?.icon || "",
+            connectionStatus: "disconnected",
+            requiredScopes: friendlyNames,
+            oauthUrl: "",
+          };
+        },
+      );
+
+      setWizardData((prev) => ({
+        ...prev,
+        availableProviders: providers,
+        phase: providers.length === 0 ? "naming" : prev.phase,
+      }));
     }
-  }, [agents, wizardData.phase, performOAuthAudit]);
+  }, [agents, wizardData.phase, providerCapabilities, triggers]);
 
   const handleEmployeeStateUpdate = useCallback(
     async (event: EmployeeStateUpdateEvent) => {
@@ -374,23 +307,20 @@ export function HiringWizard({
       setIsProcessing(false);
 
       if (event.connectionStatus === "connected") {
-        // Update provider status optimistically
-        setWizardData((prev) => ({
-          ...prev,
-          availableProviders: prev.availableProviders.map((p) =>
+        // Update provider status and advance if all connected
+        setWizardData((prev) => {
+          const updated = prev.availableProviders.map((p) =>
             p.id === event.providerId
-              ? {
-                  ...p,
-                  connectionStatus: "connected" as const,
-                  connectionId: event.connectionId,
-                }
+              ? { ...p, connectionStatus: "connected" as const, connectionId: event.connectionId }
               : p,
-          ),
-        }));
-
-        // Re-run OAuth audit to get the latest status
-        // This will update all provider statuses and potentially advance to naming phase
-        await performOAuthAudit(agents);
+          );
+          const allConnected = updated.every((p) => p.connectionStatus === "connected");
+          return {
+            ...prev,
+            availableProviders: updated,
+            phase: allConnected ? "naming" : prev.phase,
+          };
+        });
       } else {
         // Connection failed - reset provider status
         setWizardData((prev) => ({
@@ -403,7 +333,7 @@ export function HiringWizard({
         }));
       }
     },
-    [agents, performOAuthAudit],
+    [],
   );
 
   const handleRequestHumanFeedback = useCallback(
@@ -542,15 +472,6 @@ export function HiringWizard({
   };
 
   const handleConnectProvider = async (providerId: string) => {
-    // Find the provider from our audit results
-    const auditResult = auditResults.find(
-      (result) => result.providerId === providerId,
-    );
-    if (!auditResult?.oauthUrl) {
-      console.error("No OAuth URL found for provider:", providerId);
-      return;
-    }
-
     // Update provider status to connecting (optimistic update)
     setWizardData((prev) => ({
       ...prev,
@@ -562,28 +483,38 @@ export function HiringWizard({
     }));
 
     try {
-      // Get the Clerk token and append it to the OAuth URL
       const token = await getToken();
       if (!token) {
         console.error("No authentication token available");
         return;
       }
 
-      const url = new URL(auditResult.oauthUrl);
+      // Build permission list for provider from agents
+      const permissionsSet = new Set<string>();
+      for (const agent of agents) {
+        for (const cap of agent.capabilities) {
+          if (cap.providerId === providerId) {
+            permissionsSet.add(`${providerId}/${cap.id}`);
+          }
+        }
+        if (agent.trigger && agent.trigger.providerId === providerId) {
+          permissionsSet.add(`${providerId}/${agent.trigger.id}`);
+        }
+      }
+
+      const baseUrl = (import.meta.env.VITE_CONNECT_HUB_URL || "").replace(/\/$/, "");
+      const url = new URL(`${baseUrl}/oauth/launch/${providerId}`);
+      for (const perm of permissionsSet) {
+        url.searchParams.append("permissions", perm);
+      }
       url.searchParams.set("token", token);
 
-      // Open the authenticated OAuth URL
       window.open(
         url.toString(),
         "_blank",
         "width=600,height=700,scrollbars=yes,resizable=yes",
       );
-
-      console.log(
-        "Opening OAuth flow for provider:",
-        providerId,
-        "with authenticated URL",
-      );
+      console.log("Opening OAuth flow for provider:", providerId);
     } catch (error) {
       console.error("Failed to launch OAuth flow:", error);
     }
@@ -880,7 +811,7 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
             {wizardData.phase === "connect" && (
               <>
                 {/* Empty state when no OAuth is needed */}
-                {auditResults.length === 0 ? (
+                {wizardData.availableProviders.length === 0 ? (
                   <div className="text-center py-8">
                     <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
                       <div className="flex items-center justify-center mb-4">
@@ -951,7 +882,7 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
                   Give your AI employee a name to identify it.
                 </p>
                 {/* Show subtle notice if no OAuth was needed */}
-                {auditResults.length === 0 && (
+                {wizardData.availableProviders.length === 0 && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
                     <p className="text-sm text-blue-700">
                       ✓ All required integrations are already connected. Your AI
