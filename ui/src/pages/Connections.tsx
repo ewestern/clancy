@@ -57,7 +57,7 @@ const Connections: React.FC = () => {
         triggersApi.triggersGet(),
       ]);
 
-      const capabilityNameByProvider: Record<
+      const itemNameByProvider: Record<
         string,
         Record<string, string>
       > = {};
@@ -70,23 +70,26 @@ const Connections: React.FC = () => {
           icon: provider.icon,
           displayName: provider.displayName,
         };
-        capabilityNameByProvider[provider.id] = {};
+        itemNameByProvider[provider.id] = {};
         for (const cap of provider.capabilities) {
-          capabilityNameByProvider[provider.id][cap.id] = cap.displayName;
+          itemNameByProvider[provider.id][cap.id] = cap.displayName;
+        }
+        for (const trg of triggers) {
+          itemNameByProvider[provider.id][trg.id] = trg.description;
         }
       }
 
       const withNames: ConnectionCardType[] = data.map((conn) => {
-        const nameMap = capabilityNameByProvider[conn.providerId] || {};
-        const capabilityDisplayNames = (conn.permissions || [])
+        const nameMap = itemNameByProvider[conn.providerId] || {};
+        const permissionDisplayNames = (conn.permissions || [])
           .filter((perm) => perm.startsWith(`${conn.providerId}/`))
           .map((perm) => perm.split("/")[1])
-          .filter((capId): capId is string => Boolean(capId))
-          .map((capId) => nameMap[capId] || capId);
+          .filter((iteId): iteId is string => Boolean(iteId))
+          .map((iteId) => nameMap[iteId] || iteId);
         const meta = providerMetaById[conn.providerId] || {};
         return {
           ...conn,
-          capabilityDisplayNames,
+          permissionDisplayNames,
           providerIcon: meta.icon,
           providerDisplayName: meta.displayName || conn.displayName,
         };

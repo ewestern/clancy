@@ -8,8 +8,7 @@ export type ConnectionCard = {
   displayName: string;
   status: ConnectionStatus;
   permissions: string[];
-  capabilityDisplayNames: string[];
-  triggerDisplayNames?: string[];
+  permissionDisplayNames: string[];
   providerIcon?: string;
   providerDisplayName?: string;
 };
@@ -135,9 +134,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
         </div>
 
         {/* Permissions list with Add permissions link */}
-        {(connection.capabilityDisplayNames.length > 0 ||
-          (connection.triggerDisplayNames &&
-            connection.triggerDisplayNames.length > 0) ||
+        {(connection.permissionDisplayNames.length > 0 ||
           connection.status === ConnectionStatus.Active) && (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
@@ -153,18 +150,10 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
               )}
             </div>
             <div className="flex flex-wrap gap-2">
-              {connection.capabilityDisplayNames.map((name) => (
+              {connection.permissionDisplayNames.map((name) => (
                 <span
-                  key={`${connection.id}-cap-${name}`}
+                  key={`${connection.id}-item-${name}`}
                   className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                >
-                  {name}
-                </span>
-              ))}
-              {(connection.triggerDisplayNames || []).map((name) => (
-                <span
-                  key={`${connection.id}-trg-${name}`}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
                 >
                   {name}
                 </span>
