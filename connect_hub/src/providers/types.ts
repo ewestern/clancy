@@ -182,6 +182,7 @@ export interface Trigger<E = unknown> {
   ) => string;
 
   description: string;
+  displayName: string;
 
   eventSatisfies: (event: E) => boolean;
 }

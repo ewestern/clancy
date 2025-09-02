@@ -210,7 +210,10 @@ function formatMonths(months: number[]): string {
     .join(", ");
 }
 
-function formatWeekdays(weekdays: number[]): string {
+function formatWeekdays(weekdays: (number | "L")[]): string {
+  // replace "L" with Saturday if it exists
+  const weekdayNumbers = weekdays.map((d) => (d === "L" ? 6 : d));
+
   const dayNames = [
     "Sunday",
     "Monday",
@@ -221,24 +224,24 @@ function formatWeekdays(weekdays: number[]): string {
     "Saturday",
   ];
 
-  if (weekdays.length === 1 && weekdays[0] !== undefined) {
-    return dayNames[weekdays[0]] || "Unknown day";
+  if (weekdayNumbers.length === 1 && weekdayNumbers[0] !== undefined) {
+    return dayNames[weekdayNumbers[0]] || "Unknown day";
   } else if (weekdays.length === 7) {
     return "every day";
   } else if (
-    weekdays.length === 5 &&
-    weekdays.every((d) => d !== undefined && d >= 1 && d <= 5)
+    weekdayNumbers.length === 5 &&
+    weekdayNumbers.every((d) => d !== undefined && d >= 1 && d <= 5)
   ) {
     return "weekdays";
   } else if (
-    weekdays.length === 2 &&
-    weekdays.includes(0) &&
-    weekdays.includes(6)
+    weekdayNumbers.length === 2 &&
+    weekdayNumbers.includes(0) &&
+    weekdayNumbers.includes(6)
   ) {
     return "weekends";
   }
 
-  return weekdays
+  return weekdayNumbers
     .filter((d) => d !== undefined)
     .map((d) => dayNames[d] || "Unknown day")
     .join(", ");

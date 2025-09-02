@@ -131,7 +131,7 @@ export async function documentsRoutes(app: FastifyTypeBox) {
           documentId,
         });
       } catch (error) {
-        app.log.error("Error generating presigned URL:", error);
+        app.log.error(error, "Error generating presigned URL");
         return reply.status(500).send({
           message: "Failed to generate upload URL",
           error: "Internal server error",
@@ -192,7 +192,7 @@ export async function documentsRoutes(app: FastifyTypeBox) {
           message: "Document uploaded successfully and queued for processing",
         });
       } catch (error) {
-        app.log.error("Error finalizing document:", error);
+        app.log.error(error, "Error finalizing document");
         return reply.status(500).send({
           message: "Failed to finalize document upload",
           error: "Internal server error",
@@ -249,7 +249,7 @@ export async function documentsRoutes(app: FastifyTypeBox) {
           updatedAt: doc.updatedAt.toISOString(),
         });
       } catch (error) {
-        app.log.error("Error fetching document status:", error);
+        app.log.error(error, "Error fetching document status");
         return reply.status(500).send({
           error: "Internal server error",
           message: "Failed to fetch document status",
@@ -330,7 +330,7 @@ export async function documentsRoutes(app: FastifyTypeBox) {
 
         return reply.status(200).send(documentResponse);
       } catch (error) {
-        app.log.error("Error fetching document:", error);
+        app.log.error(error, "Error fetching document");
         return reply.status(500).send({
           error: "Internal server error",
           message: "Failed to fetch document",
@@ -413,7 +413,7 @@ export async function documentsRoutes(app: FastifyTypeBox) {
           expiresIn,
         });
       } catch (error) {
-        app.log.error("Error generating download URL:", error);
+        app.log.error(error, "Error generating download URL");
         return reply.status(500).send({
           error: "Internal server error",
           message: "Failed to generate download URL",
@@ -513,28 +513,28 @@ export async function documentsRoutes(app: FastifyTypeBox) {
               Key: s3Key,
             });
             await s3Client.send(deleteCommand);
-            app.log.info("Successfully deleted document from S3", {
+            app.log.info({
               bucket: s3Bucket,
               key: s3Key,
               documentId,
-            });
+            }, "Successfully deleted document from S3");
           } catch (s3Error) {
             app.log.warn(
-              "Failed to delete document from S3, but database deletion succeeded",
               {
                 bucket: s3Bucket,
                 key: s3Key,
                 documentId,
                 error: s3Error,
               },
+              "Failed to delete document from S3, but database deletion succeeded",
             );
             // Continue - database deletion succeeded, which is more important
           }
         } else {
-          app.log.warn("No valid S3 URI found for document", {
+          app.log.warn({
             documentId,
             documentUri: doc.documentUri,
-          });
+          }, "No valid S3 URI found for document");
         }
 
         return reply.status(200).send({
@@ -542,7 +542,7 @@ export async function documentsRoutes(app: FastifyTypeBox) {
           documentId,
         });
       } catch (error) {
-        app.log.error("Error deleting document:", error);
+        app.log.error(error, "Error deleting document");
         return reply.status(500).send({
           error: "Internal server error",
           message: "Failed to delete document",
@@ -573,16 +573,16 @@ export async function documentsRoutes(app: FastifyTypeBox) {
 
         if (metadata) {
           // Could store additional metadata in document_store or separate table
-          app.log.info("Ingestion metadata:", { documentId, metadata });
+          app.log.info({ documentId, metadata }, "Ingestion metadata:");
         }
 
         if (error) {
-          app.log.error("Ingestion failed:", { documentId, error });
+          app.log.error({ documentId, error }, "Ingestion failed:");
         }
 
         return reply.status(200).send({ status: DocumentStatus.Completed });
       } catch (dbError) {
-        app.log.error("Error updating ingestion status:", dbError);
+        app.log.error(dbError, "Error updating ingestion status:");
         return reply.status(500).send({
           error: "Internal server error",
           message: "Failed to update ingestion status",
@@ -633,10 +633,10 @@ export async function documentsRoutes(app: FastifyTypeBox) {
             inserted += rows.length;
           } catch (insertError) {
             // Handle constraint violations (duplicates)
-            app.log.warn("Some snippets were duplicates:", {
+            app.log.warn({
               documentId,
               batchStart: i,
-            });
+            }, "Some snippets were duplicates:");
             duplicates += rows.length;
           }
         }
@@ -646,11 +646,12 @@ export async function documentsRoutes(app: FastifyTypeBox) {
           duplicates,
         });
       } catch (error) {
-        app.log.error("Error bulk inserting snippets:", error);
+        app.log.error(error, "Error bulk inserting snippets:");
         return reply.status(500).send({
           error: "Internal server error",
           message: "Failed to bulk insert snippets",
           statusCode: 500,
+          timestamp: new Date().toISOString(),
         });
       }
     },
@@ -679,10 +680,10 @@ export async function documentsRoutes(app: FastifyTypeBox) {
       const { orgId } = getAuth(request);
       if (!orgId) {
         return reply.status(401).send({
-          error: "Unauthorized",
-          message: "No organization ID found",
           statusCode: 401,
           timestamp: new Date().toISOString(),
+          error: "Unauthorized",
+          message: "No organization ID found",
         });
       }
 
@@ -856,7 +857,7 @@ export async function documentsRoutes(app: FastifyTypeBox) {
           limit,
         });
       } catch (error) {
-        app.log.error("Error fetching knowledge snippets:", error);
+        app.log.error(error, "Error fetching knowledge snippets:");
         return reply.status(500).send({
           error: "Internal server error",
           message: "Failed to fetch knowledge snippets",

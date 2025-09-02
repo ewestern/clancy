@@ -48,7 +48,7 @@ export const connections = pgTable(
       .$type<Record<string, unknown>>()
       .notNull()
       .default({}),
-    capabilities: text("capabilities").array().notNull(), // Array of strings
+    permissions: text("permissions").array().notNull(), // Array of canonical permission strings: providerId/itemId
     status: connectionStatus("status")
       .notNull()
       .default(ConnectionStatus.Active),
@@ -92,7 +92,7 @@ export const oauthTransactions = pgTable("oauth_transactions", {
   userId: varchar("user_id", { length: 255 }).notNull(), // user who initiated the oauth transaction
   orgId: varchar("org_id", { length: 255 }).notNull(),
   provider: varchar("provider", { length: 255 }).notNull(),
-  capabilities: text("capabilities").array().notNull(), // Array of strings
+  requestedPermissions: text("requested_permissions").array().notNull(), // Array of canonical permission strings: providerId/itemId
   requestedScopes: text("requested_scopes").array().notNull(), // Array of strings
   state: varchar("state", { length: 255 }).notNull(),
   codeVerifier: text("code_verifier"), // For PKCE

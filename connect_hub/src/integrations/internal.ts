@@ -49,6 +49,7 @@ const cronTriggerParamsSchema = Type.Object({
 export const cronTrigger: Trigger<Record<string, any>> = {
   id: "cron",
   description: "Executes a workflow on a schedule",
+  displayName: "Scheduled Workflow",
   paramsSchema: cronTriggerParamsSchema,
   renderTriggerDefinition: (trigger, triggerRegistration) => {
     const cronExpression = CronExpressionParser.parse(

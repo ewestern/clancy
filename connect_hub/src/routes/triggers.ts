@@ -38,6 +38,7 @@ export async function triggerRoutes(app: FastifyTypeBox) {
             providerId: provider.metadata.id,
             paramsSchema: trigger.paramsSchema,
             description: trigger.description,
+            displayName: trigger.displayName,
           };
         });
       });
@@ -56,9 +57,7 @@ export async function triggerRoutes(app: FastifyTypeBox) {
         `Creating trigger registration: ${JSON.stringify(body)}`,
       );
       const { orgId, userId } = getUnifiedAuth(request);
-      request.log.info(
-        `Auth info: ${JSON.stringify({ orgId, userId })}`,
-      );
+      request.log.info(`Auth info: ${JSON.stringify({ orgId, userId })}`);
       if (!orgId || !userId) {
         return reply.status(401).send({
           error: "Unauthorized",
@@ -136,8 +135,9 @@ export async function triggerRoutes(app: FastifyTypeBox) {
             .returning();
           if (provider?.metadata.kind === ProviderKind.External) {
             try {
-              const providerSecrets =
-                await request.server.getProviderSecrets(body.providerId);
+              const providerSecrets = await request.server.getProviderSecrets(
+                body.providerId,
+              );
               if (!providerSecrets) {
                 throw new Error("Provider secrets not found");
               }
@@ -161,7 +161,8 @@ export async function triggerRoutes(app: FastifyTypeBox) {
                 await tx
                   .update(triggerRegistrations)
                   .set({
-                    subscriptionMetadata: subscriptionResult.subscriptionMetadata,
+                    subscriptionMetadata:
+                      subscriptionResult.subscriptionMetadata,
                     expiresAt: subscriptionResult.expiresAt,
                     updatedAt: new Date(),
                   })
@@ -180,7 +181,7 @@ export async function triggerRoutes(app: FastifyTypeBox) {
         },
       );
 
-      reply.status(201).send({
+      reply.status(200).send({
         id: triggerRegistration.id,
         orgId: triggerRegistration.orgId,
         agentId: triggerRegistration.agentId,

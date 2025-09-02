@@ -267,6 +267,7 @@ export const DocumentPresignEndpoint = {
   response: {
     200: DocumentPresignResponseSchema,
     400: Ref(ErrorSchema),
+    401: Ref(ErrorSchema),
     500: Ref(ErrorSchema),
   },
   security: [{ bearerAuth: [] }],
@@ -278,6 +279,8 @@ export const DocumentFinalizeEndpoint = {
   response: {
     200: DocumentFinalizeResponseSchema,
     400: Ref(ErrorSchema),
+    401: Ref(ErrorSchema),
+    404: Ref(ErrorSchema),
     500: Ref(ErrorSchema),
   },
   security: [{ bearerAuth: [] }],
@@ -296,6 +299,7 @@ export const DocumentStatusEndpoint = {
   response: {
     200: DocumentStatusResponseSchema,
     400: Ref(ErrorSchema),
+    401: Ref(ErrorSchema),
     404: Ref(ErrorSchema),
     500: Ref(ErrorSchema),
   },
@@ -315,6 +319,7 @@ export const DocumentGetEndpoint = {
   response: {
     200: Ref(DocumentSchema),
     400: Ref(ErrorSchema),
+    401: Ref(ErrorSchema),
     404: Ref(ErrorSchema),
     500: Ref(ErrorSchema),
   },
@@ -334,6 +339,7 @@ export const DocumentDownloadEndpoint = {
   response: {
     200: DocumentDownloadResponseSchema,
     400: Ref(ErrorSchema),
+    401: Ref(ErrorSchema),
     404: Ref(ErrorSchema),
     500: Ref(ErrorSchema),
   },
@@ -352,6 +358,7 @@ export const DocumentDeleteEndpoint = {
   },
   response: {
     200: DocumentDeleteResponseSchema,
+    401: Ref(ErrorSchema),
     404: Ref(ErrorSchema),
     500: Ref(ErrorSchema),
   },
@@ -364,6 +371,7 @@ export const DocumentIngestionCompleteEndpoint = {
   response: {
     200: IngestionCompleteResponseSchema,
     400: Ref(ErrorSchema),
+    401: Ref(ErrorSchema),
     500: Ref(ErrorSchema),
   },
 };
@@ -374,6 +382,7 @@ export const BulkSnippetsEndpoint = {
   response: {
     200: BulkSnippetsResponseSchema,
     400: Ref(ErrorSchema),
+    401: Ref(ErrorSchema),
     500: Ref(ErrorSchema),
   },
 };
@@ -385,6 +394,7 @@ export const DocumentsListEndpoint = {
   response: {
     200: PaginatedResponseSchema(Ref(DocumentSchema)),
     400: Ref(ErrorSchema),
+    401: Ref(ErrorSchema),
     500: Ref(ErrorSchema),
   },
   security: [{ bearerAuth: [] }],
@@ -397,6 +407,8 @@ export const KnowledgeSnippetsListEndpoint = {
   response: {
     200: PaginatedResponseSchema(Ref(KnowledgeSnippetSchema)),
     400: Ref(ErrorSchema),
+    401: Ref(ErrorSchema),
+    404: Ref(ErrorSchema),
     500: Ref(ErrorSchema),
   },
   security: [{ bearerAuth: [] }],

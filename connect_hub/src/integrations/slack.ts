@@ -154,6 +154,7 @@ const messageCreatedParamsSchema = Type.Object({
 export const slackTriggers: Trigger<WebhookEvent>[] = [
   {
     id: "message.created",
+    displayName: "Message Created",
     description: "A message was created",
     paramsSchema: messageCreatedParamsSchema,
     eventSatisfies: (event: WebhookEvent | WebhookChallenge) => {
@@ -346,10 +347,7 @@ export class SlackProvider extends BaseProvider<
   generateAuthUrl(params: OAuthAuthUrlParams, ctx: OAuthContext): string {
     // Build Slack OAuth 2.0 authorization URL
     const authUrl = new URL("https://slack.com/oauth/v2/authorize");
-    authUrl.searchParams.append(
-      "client_id",
-      ctx.clientId,
-    );
+    authUrl.searchParams.append("client_id", ctx.clientId);
     authUrl.searchParams.append("scope", params.scopes.join(","));
     authUrl.searchParams.append("state", params.state);
     authUrl.searchParams.append("redirect_uri", ctx.redirectUri!);

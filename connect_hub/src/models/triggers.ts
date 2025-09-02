@@ -42,6 +42,7 @@ export const TriggerSchema = Type.Object(
   {
     id: Type.String(),
     providerId: Type.String(),
+    displayName: Type.String(),
     paramsSchema: ParamsSchema,
     description: Type.String(),
   },

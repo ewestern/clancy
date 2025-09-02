@@ -2,8 +2,8 @@ import { FastifyTypeBox } from "../types/fastify.js";
 import {
   ConnectionSchema,
   ConnectionListEndpoint,
-  ConnectionStatus,
   ConnectionStatusSchema,
+  ConnectionUpdateEndpoint,
 } from "../models/connection.js";
 import { connections } from "../database/schema.js";
 import { eq, and } from "drizzle-orm";
@@ -16,26 +16,6 @@ import {
 import { Ref } from "../models/shared.js";
 import { getAuth } from "@clerk/fastify";
 
-// Schema for connection update (only status allowed)
-export const ConnectionUpdateSchema = Type.Object({
-  status: Type.Optional(Ref(ConnectionStatusSchema)),
-  employeeId: Type.Optional(Type.String()),
-});
-
-export const ConnectionUpdateEndpoint = {
-  tags: ["Connection"],
-  description: "Update connection status",
-  params: Type.Object({
-    id: Type.String({ format: "uuid" }),
-  }),
-  body: ConnectionUpdateSchema,
-  response: {
-    200: ConnectionSchema,
-    404: Type.Object({
-      error: Type.String(),
-    }),
-  },
-};
 
 export async function connectionRoutes(app: FastifyTypeBox) {
   app.addSchema(ConnectionStatusSchema);
@@ -57,7 +37,7 @@ export async function connectionRoutes(app: FastifyTypeBox) {
           id: connections.id,
           orgId: connections.orgId,
           providerId: connections.providerId,
-          capabilities: connections.capabilities,
+          permissions: connections.permissions,
           status: connections.status,
           externalAccountMetadata: connections.externalAccountMetadata,
           userId: connections.userId,
@@ -76,7 +56,7 @@ export async function connectionRoutes(app: FastifyTypeBox) {
             orgId: dbConnection.orgId,
             userId: dbConnection.userId,
             providerId: dbConnection.providerId,
-            capabilities: dbConnection.capabilities,
+            permissions: dbConnection.permissions,
             status: dbConnection.status,
             metadata: dbConnection.externalAccountMetadata || {},
             displayName: displayName,
@@ -115,7 +95,7 @@ export async function connectionRoutes(app: FastifyTypeBox) {
             id: connections.id,
             orgId: connections.orgId,
             providerId: connections.providerId,
-            capabilities: connections.capabilities,
+            permissions: connections.permissions,
             status: connections.status,
             externalAccountMetadata: connections.externalAccountMetadata,
             userId: connections.userId,
@@ -124,6 +104,9 @@ export async function connectionRoutes(app: FastifyTypeBox) {
         if (updatedConnections.length === 0) {
           return reply.status(404).send({
             error: "Connection not found",
+            message: "Connection not found",
+            statusCode: 404,
+            timestamp: new Date().toISOString(),
           });
         }
         const updatedConnection = updatedConnections[0]!;
@@ -134,16 +117,19 @@ export async function connectionRoutes(app: FastifyTypeBox) {
           id: updatedConnection.id,
           orgId: updatedConnection.orgId,
           providerId: updatedConnection.providerId,
-          capabilities: updatedConnection.capabilities,
+          permissions: updatedConnection.permissions,
           status: updatedConnection.status,
           metadata: updatedConnection.externalAccountMetadata || {},
           displayName: displayName,
           userId: updatedConnection.userId,
         });
       } catch (error) {
-        app.log.error("Error updating connection:", error);
+        app.log.error(error, "Error updating connection:");
         return reply.status(500).send({
           error: "Internal server error",
+          message: "Failed to update connection",
+          statusCode: 500,
+          timestamp: new Date().toISOString(),
         });
       }
     },

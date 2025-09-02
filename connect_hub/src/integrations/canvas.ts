@@ -320,10 +320,7 @@ export class CanvasProvider extends BaseProvider {
       );
     }
     const authUrl = new URL(`https://${instanceDomain}/login/oauth2/auth`);
-    authUrl.searchParams.append(
-      "client_id",
-      ctx.clientId,
-    );
+    authUrl.searchParams.append("client_id", ctx.clientId);
     authUrl.searchParams.append("response_type", "code");
     authUrl.searchParams.append("state", params.state);
     authUrl.searchParams.append("redirect_uri", ctx.redirectUri);
