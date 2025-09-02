@@ -13,7 +13,7 @@
     "@auth0/auth0-react": "^2.3.0",
     "@clerk/react-router": "^1.8.9",
     "@ewestern/agents_core_sdk": "^0.0.8",
-    "@ewestern/connect_hub_sdk": "file:../sdks/connect_hub",
+    "@ewestern/connect_hub_sdk": "^0.0.14",
     "@ewestern/events": "^1.0.24",
     "@fastify/cors": "^11.1.0",
     "@sinclair/typebox": "^0.34.38",
