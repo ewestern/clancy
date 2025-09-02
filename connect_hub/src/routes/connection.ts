@@ -13,13 +13,14 @@ import {
   FastifyRequestTypeBox,
   FastifyReplyTypeBox,
 } from "../types/fastify.js";
-import { Ref } from "../models/shared.js";
+import { ErrorSchema, Ref } from "../models/shared.js";
 import { getAuth } from "@clerk/fastify";
 
 
 export async function connectionRoutes(app: FastifyTypeBox) {
   app.addSchema(ConnectionStatusSchema);
   app.addSchema(ConnectionSchema);
+  app.addSchema(ErrorSchema);
 
   // List connections endpoint
   app.get(

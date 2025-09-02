@@ -6,9 +6,11 @@ import { OwnershipScopeSchema } from "../models/capabilities.js";
 import { ProviderKind } from "../models/providers.js";
 import { connections, tokens } from "../database/schema.js";
 import { eq, and, isNotNull } from "drizzle-orm";
+import { ErrorSchema } from "../models/shared.js";
 
 export async function proxyRoutes(app: FastifyTypeBox) {
   app.addSchema(OwnershipScopeSchema);
+  app.addSchema(ErrorSchema);
   app.post(
     `/proxy/:providerId/:capabilityId`,
     {

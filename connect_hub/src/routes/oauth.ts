@@ -18,7 +18,7 @@ import { registry } from "../integrations.js";
 import { connections, tokens, oauthTransactions } from "../database/schema.js";
 import { ConnectionStatus } from "../models/connection.js";
 import { OAuthContext } from "../providers/types.js";
-import { verifyToken } from "@clerk/fastify";
+import { verifyToken } from "@clerk/backend";
 import { Database } from "../plugins/database.js";
 import { publishEvents } from "../utils.js";
 import { EventType } from "@ewestern/events";

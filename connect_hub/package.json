@@ -28,7 +28,7 @@
     "@aws-sdk/s3-request-presigner": "^3.864.0",
     "@azure/identity": "^4.10.2",
     "@azure/msal-node": "^2.16.2",
-    "@clerk/fastify": "^2.4.15",
+    "@clerk/fastify": "2.4.5",
     "@ewestern/events": "^1.0.24",
     "@fastify/auth": "^5.0.2",
     "@fastify/cors": "^11.1.0",
@@ -76,7 +76,7 @@
     "drizzle-kit": "^0.30.1",
     "eslint": "^9.17.0",
     "orval": "^7.10.0",
-    "tsx": "^4.19.2",
+    "tsx": "^4.19.4",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   },
