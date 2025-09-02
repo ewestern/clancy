@@ -1,6 +1,12 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle, Shield, Settings, CheckCircle, XCircle } from "lucide-react";
+import {
+  AlertCircle,
+  Shield,
+  Settings,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 
 // Provider permission based on connections and capabilities
 interface ProviderPermission {
@@ -109,7 +115,8 @@ const PermissionsTab: React.FC<PermissionsTabProps> = ({
           <Shield className="w-5 h-5 text-blue-600" />
           <div>
             <p className="text-sm text-blue-800">
-              This view shows what capabilities this AI employee was designed to use and their current availability.
+              This view shows what capabilities this AI employee was designed to
+              use and their current availability.
             </p>
             <p className="text-xs text-blue-700 mt-1">
               Provider connections are managed globally on your{" "}
@@ -127,26 +134,31 @@ const PermissionsTab: React.FC<PermissionsTabProps> = ({
 
       {/* Capability Overview Summary */}
       <div className="bg-white border border-slate-200 rounded-lg p-4">
-        <h4 className="text-sm font-medium text-slate-800 mb-3">Capability Overview</h4>
+        <h4 className="text-sm font-medium text-slate-800 mb-3">
+          Capability Overview
+        </h4>
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-slate-800">
-              {permissions.reduce((total, provider) => total + provider.capabilities.length, 0)}
+              {permissions.reduce(
+                (total, provider) => total + provider.capabilities.length,
+                0,
+              )}
             </div>
             <div className="text-xs text-slate-600">Required</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-emerald-600">
-              {permissions.reduce((total, provider) => 
-                total + provider.capabilities.filter(c => c.granted).length, 0
+              {permissions.reduce(
+                (total, provider) =>
+                  total + provider.capabilities.filter((c) => c.granted).length,
+                0,
               )}
             </div>
             <div className="text-xs text-slate-600">Available</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-slate-400">
-              —
-            </div>
+            <div className="text-2xl font-bold text-slate-400">—</div>
             <div className="text-xs text-slate-600">Recently Used</div>
             <div className="text-xs text-slate-500 mt-1">(Coming soon)</div>
           </div>
@@ -178,11 +190,9 @@ const PermissionsTab: React.FC<PermissionsTabProps> = ({
                       {provider.provider}
                     </h4>
                     <p className="text-sm text-slate-600">
-                      Requires {provider.capabilities.length} capabilities • {
-                        provider.capabilities.filter(
-                          (c) => c.granted,
-                        ).length
-                      } available
+                      Requires {provider.capabilities.length} capabilities •{" "}
+                      {provider.capabilities.filter((c) => c.granted).length}{" "}
+                      available
                     </p>
                   </div>
                 </div>
@@ -195,9 +205,7 @@ const PermissionsTab: React.FC<PermissionsTabProps> = ({
                         : "bg-red-100 text-red-800"
                     }`}
                   >
-                    {provider.connected
-                      ? "Connected"
-                      : "Disconnected"}
+                    {provider.connected ? "Connected" : "Disconnected"}
                   </span>
                 </div>
               </div>
@@ -234,8 +242,9 @@ const PermissionsTab: React.FC<PermissionsTabProps> = ({
               {hasRequiredMissing && (
                 <div className="mt-3 p-3 bg-amber-100 rounded border border-amber-200">
                   <p className="text-sm text-amber-800">
-                    <strong>Missing capabilities:</strong> This AI employee cannot access some required capabilities. 
-                    Workflows may not function as expected.
+                    <strong>Missing capabilities:</strong> This AI employee
+                    cannot access some required capabilities. Workflows may not
+                    function as expected.
                   </p>
                   <button
                     onClick={() => navigate("/connections")}

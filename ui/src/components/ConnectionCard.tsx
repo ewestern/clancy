@@ -136,7 +136,8 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
 
         {/* Permissions list with Add permissions link */}
         {(connection.capabilityDisplayNames.length > 0 ||
-          (connection.triggerDisplayNames && connection.triggerDisplayNames.length > 0) ||
+          (connection.triggerDisplayNames &&
+            connection.triggerDisplayNames.length > 0) ||
           connection.status === ConnectionStatus.Active) && (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">

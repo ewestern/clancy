@@ -1,12 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import {
-  Bot,
-  TrendingUp,
-  AlertCircle,
-  Settings,
-  FileText,
-} from "lucide-react";
+import { Bot, TrendingUp, AlertCircle, Settings, FileText } from "lucide-react";
 import {
   EmployeesApi,
   RunsApi,
@@ -141,11 +135,11 @@ const AIEmployeeProfile: React.FC = () => {
 
     const agentsCoreConfig = getAgentsCoreClient();
 
-    setErrors(prev => ({ ...prev, [errorKey]: undefined }));
+    setErrors((prev) => ({ ...prev, [errorKey]: undefined }));
 
     switch (errorKey) {
-      case 'activity':
-        setLoadingStates(prev => ({ ...prev, activity: true }));
+      case "activity":
+        setLoadingStates((prev) => ({ ...prev, activity: true }));
         try {
           const runsApi = new RunsApi(agentsCoreConfig);
           const activityData = await runsApi.v1RunsEventsGet({
@@ -155,38 +149,47 @@ const AIEmployeeProfile: React.FC = () => {
           });
           setActivity(activityData);
         } catch {
-          setErrors(prev => ({ ...prev, activity: "Failed to load activity information." }));
+          setErrors((prev) => ({
+            ...prev,
+            activity: "Failed to load activity information.",
+          }));
         } finally {
-          setLoadingStates(prev => ({ ...prev, activity: false }));
+          setLoadingStates((prev) => ({ ...prev, activity: false }));
         }
         break;
 
-      case 'knowledge':
-        setLoadingStates(prev => ({ ...prev, knowledge: true }));
+      case "knowledge":
+        setLoadingStates((prev) => ({ ...prev, knowledge: true }));
         try {
           const knowledgeData = await getEmployeeKnowledge(id);
           setKnowledge(knowledgeData);
         } catch {
-          setErrors(prev => ({ ...prev, knowledge: "Failed to load knowledge information." }));
+          setErrors((prev) => ({
+            ...prev,
+            knowledge: "Failed to load knowledge information.",
+          }));
         } finally {
-          setLoadingStates(prev => ({ ...prev, knowledge: false }));
+          setLoadingStates((prev) => ({ ...prev, knowledge: false }));
         }
         break;
 
-      case 'health':
-        setLoadingStates(prev => ({ ...prev, health: true }));
+      case "health":
+        setLoadingStates((prev) => ({ ...prev, health: true }));
         try {
           const healthData = await getEmployeeHealth(id);
           setHealth(healthData);
         } catch {
-          setErrors(prev => ({ ...prev, health: "Failed to load health metrics." }));
+          setErrors((prev) => ({
+            ...prev,
+            health: "Failed to load health metrics.",
+          }));
         } finally {
-          setLoadingStates(prev => ({ ...prev, health: false }));
+          setLoadingStates((prev) => ({ ...prev, health: false }));
         }
         break;
 
-      case 'connections':
-      case 'capabilities':
+      case "connections":
+      case "capabilities":
         // Reload the entire page for connection/capability errors since they affect permissions
         window.location.reload();
         break;
@@ -207,10 +210,10 @@ const AIEmployeeProfile: React.FC = () => {
         const runsApi = new RunsApi(agentsCoreConfig);
 
         // Load employee data first - this is critical
-        setLoadingStates(prev => ({ ...prev, employee: true }));
+        setLoadingStates((prev) => ({ ...prev, employee: true }));
         const employeeData = await employeesApi.v1EmployeesIdGet({ id });
         setEmployee(employeeData);
-        setLoadingStates(prev => ({ ...prev, employee: false }));
+        setLoadingStates((prev) => ({ ...prev, employee: false }));
 
         // Load other data in parallel, handling failures gracefully
         const [
@@ -232,61 +235,88 @@ const AIEmployeeProfile: React.FC = () => {
         ]);
 
         // Handle connections
-        if (connectionsResult.status === 'fulfilled') {
-          setLoadingStates(prev => ({ ...prev, connections: false }));
-          setErrors(prev => ({ ...prev, connections: undefined }));
+        if (connectionsResult.status === "fulfilled") {
+          setLoadingStates((prev) => ({ ...prev, connections: false }));
+          setErrors((prev) => ({ ...prev, connections: undefined }));
         } else {
-          console.error("Failed to load connections:", connectionsResult.reason);
-          setErrors(prev => ({ ...prev, connections: "Failed to load connection information." }));
-          setLoadingStates(prev => ({ ...prev, connections: false }));
+          console.error(
+            "Failed to load connections:",
+            connectionsResult.reason,
+          );
+          setErrors((prev) => ({
+            ...prev,
+            connections: "Failed to load connection information.",
+          }));
+          setLoadingStates((prev) => ({ ...prev, connections: false }));
         }
 
         // Handle capabilities
-        if (capabilitiesResult.status === 'fulfilled') {
-          setLoadingStates(prev => ({ ...prev, capabilities: false }));
-          setErrors(prev => ({ ...prev, capabilities: undefined }));
+        if (capabilitiesResult.status === "fulfilled") {
+          setLoadingStates((prev) => ({ ...prev, capabilities: false }));
+          setErrors((prev) => ({ ...prev, capabilities: undefined }));
         } else {
-          console.error("Failed to load capabilities:", capabilitiesResult.reason);
-          setErrors(prev => ({ ...prev, capabilities: "Failed to load capability information." }));
-          setLoadingStates(prev => ({ ...prev, capabilities: false }));
+          console.error(
+            "Failed to load capabilities:",
+            capabilitiesResult.reason,
+          );
+          setErrors((prev) => ({
+            ...prev,
+            capabilities: "Failed to load capability information.",
+          }));
+          setLoadingStates((prev) => ({ ...prev, capabilities: false }));
         }
 
         // Handle activity
-        if (activityResult.status === 'fulfilled') {
+        if (activityResult.status === "fulfilled") {
           setActivity(activityResult.value);
-          setLoadingStates(prev => ({ ...prev, activity: false }));
-          setErrors(prev => ({ ...prev, activity: undefined }));
+          setLoadingStates((prev) => ({ ...prev, activity: false }));
+          setErrors((prev) => ({ ...prev, activity: undefined }));
         } else {
           console.error("Failed to load activity:", activityResult.reason);
-          setErrors(prev => ({ ...prev, activity: "Failed to load activity information." }));
-          setLoadingStates(prev => ({ ...prev, activity: false }));
+          setErrors((prev) => ({
+            ...prev,
+            activity: "Failed to load activity information.",
+          }));
+          setLoadingStates((prev) => ({ ...prev, activity: false }));
         }
 
         // Handle knowledge
-        if (knowledgeResult.status === 'fulfilled') {
+        if (knowledgeResult.status === "fulfilled") {
           setKnowledge(knowledgeResult.value);
-          setLoadingStates(prev => ({ ...prev, knowledge: false }));
-          setErrors(prev => ({ ...prev, knowledge: undefined }));
+          setLoadingStates((prev) => ({ ...prev, knowledge: false }));
+          setErrors((prev) => ({ ...prev, knowledge: undefined }));
         } else {
           console.error("Failed to load knowledge:", knowledgeResult.reason);
-          setErrors(prev => ({ ...prev, knowledge: "Failed to load knowledge information." }));
-          setLoadingStates(prev => ({ ...prev, knowledge: false }));
+          setErrors((prev) => ({
+            ...prev,
+            knowledge: "Failed to load knowledge information.",
+          }));
+          setLoadingStates((prev) => ({ ...prev, knowledge: false }));
         }
 
         // Handle health
-        if (healthResult.status === 'fulfilled') {
+        if (healthResult.status === "fulfilled") {
           setHealth(healthResult.value);
-          setLoadingStates(prev => ({ ...prev, health: false }));
-          setErrors(prev => ({ ...prev, health: undefined }));
+          setLoadingStates((prev) => ({ ...prev, health: false }));
+          setErrors((prev) => ({ ...prev, health: undefined }));
         } else {
           console.error("Failed to load health metrics:", healthResult.reason);
-          setErrors(prev => ({ ...prev, health: "Failed to load health metrics." }));
-          setLoadingStates(prev => ({ ...prev, health: false }));
+          setErrors((prev) => ({
+            ...prev,
+            health: "Failed to load health metrics.",
+          }));
+          setLoadingStates((prev) => ({ ...prev, health: false }));
         }
 
         // Process workflows and permissions
-        const connectionsData = connectionsResult.status === 'fulfilled' ? connectionsResult.value.data : [];
-        const capabilitiesData = capabilitiesResult.status === 'fulfilled' ? capabilitiesResult.value : [];
+        const connectionsData =
+          connectionsResult.status === "fulfilled"
+            ? connectionsResult.value.data
+            : [];
+        const capabilitiesData =
+          capabilitiesResult.status === "fulfilled"
+            ? capabilitiesResult.value
+            : [];
 
         // Transform agents into workflows
         const workflowSummaries: WorkflowSummary[] = employeeData.agents.map(
@@ -353,9 +383,10 @@ const AIEmployeeProfile: React.FC = () => {
               const capInfo = providerCapabilities?.capabilities?.find(
                 (cap) => cap.id === capId,
               );
-              const grantedByPermissions = connection?.permissions?.some(
-                (perm) => perm === `${providerId}/${capId}`,
-              ) || false;
+              const grantedByPermissions =
+                connection?.permissions?.some(
+                  (perm) => perm === `${providerId}/${capId}`,
+                ) || false;
 
               return {
                 id: capId,
@@ -375,21 +406,19 @@ const AIEmployeeProfile: React.FC = () => {
             };
           });
         setPermissions(permissionSummaries);
-
       } catch (error) {
         console.error("Failed to load employee:", error);
-        setErrors(prev => ({ ...prev, employee: "Failed to load employee information. Please try refreshing the page." }));
-        setLoadingStates(prev => ({ ...prev, employee: false }));
+        setErrors((prev) => ({
+          ...prev,
+          employee:
+            "Failed to load employee information. Please try refreshing the page.",
+        }));
+        setLoadingStates((prev) => ({ ...prev, employee: false }));
       }
     };
 
     loadEmployee();
-  }, [
-    id,
-    selectedWorkflow,
-    getAgentsCoreClient,
-    getConnectHubClient,
-  ]);
+  }, [id, selectedWorkflow, getAgentsCoreClient, getConnectHubClient]);
 
   const handleWorkflowFilter = (workflowId: string | null) => {
     setSelectedWorkflow(workflowId);
@@ -407,7 +436,9 @@ const AIEmployeeProfile: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-        <span className="ml-3 text-slate-600">Loading employee information...</span>
+        <span className="ml-3 text-slate-600">
+          Loading employee information...
+        </span>
       </div>
     );
   }
@@ -417,7 +448,9 @@ const AIEmployeeProfile: React.FC = () => {
       <div className="text-center py-8">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
           <AlertCircle className="w-8 h-8 text-red-600 mx-auto mb-3" />
-          <h3 className="text-lg font-medium text-red-800 mb-2">Unable to Load Employee</h3>
+          <h3 className="text-lg font-medium text-red-800 mb-2">
+            Unable to Load Employee
+          </h3>
           <p className="text-red-700 mb-4">{errors.employee}</p>
           <button
             onClick={() => window.location.reload()}
@@ -435,8 +468,12 @@ const AIEmployeeProfile: React.FC = () => {
       <div className="text-center py-8">
         <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 max-w-md mx-auto">
           <Bot className="w-8 h-8 text-slate-400 mx-auto mb-3" />
-          <h3 className="text-lg font-medium text-slate-800 mb-2">Employee Not Found</h3>
-          <p className="text-slate-600 mb-4">The requested employee could not be found.</p>
+          <h3 className="text-lg font-medium text-slate-800 mb-2">
+            Employee Not Found
+          </h3>
+          <p className="text-slate-600 mb-4">
+            The requested employee could not be found.
+          </p>
           <button
             onClick={() => navigate("/")}
             className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
@@ -499,7 +536,7 @@ const AIEmployeeProfile: React.FC = () => {
                   loading={loadingStates.activity}
                   error={errors.activity}
                   onWorkflowFilter={handleWorkflowFilter}
-                  onRetry={() => retryFailedCall('activity')}
+                  onRetry={() => retryFailedCall("activity")}
                 />
               )}
 
@@ -518,7 +555,7 @@ const AIEmployeeProfile: React.FC = () => {
                   knowledge={knowledge}
                   loading={loadingStates.knowledge}
                   error={errors.knowledge}
-                  onRetry={() => retryFailedCall('knowledge')}
+                  onRetry={() => retryFailedCall("knowledge")}
                 />
               )}
             </div>
@@ -532,7 +569,7 @@ const AIEmployeeProfile: React.FC = () => {
             health={health}
             loading={loadingStates.health}
             error={errors.health}
-            onRetry={() => retryFailedCall('health')}
+            onRetry={() => retryFailedCall("health")}
           />
         </div>
       </div>

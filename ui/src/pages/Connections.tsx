@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Shield, RefreshCw, Search, X } from "lucide-react";
+import { Shield, RefreshCw } from "lucide-react";
 import {
   ConnectionCard,
   type ConnectionCard as ConnectionCardType,
@@ -8,16 +8,15 @@ import {
   ConnectionApi,
   CapabilitiesApi,
   TriggersApi,
-  OAuthApi,
   Configuration as ConnectHubConfiguration,
   ConnectionStatus,
   type ProviderCapabilities,
   type Trigger,
-  type OauthAuditPostRequest,
   ProviderKind,
   ProviderAuth,
 } from "@ewestern/connect_hub_sdk";
 import { useAuth } from "@clerk/react-router";
+import PermissionsModal from "../components/PermissionsModal";
 
 const Connections: React.FC = () => {
   const { getToken } = useAuth();
@@ -36,20 +35,8 @@ const Connections: React.FC = () => {
   const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] =
     useState<ProviderCapabilities | null>(null);
-  const [selectedCapabilities, setSelectedCapabilities] = useState<Set<string>>(
-    new Set(),
-  );
-  const [selectedTriggers, setSelectedTriggers] = useState<Set<string>>(
-    new Set(),
-  );
-  const [existingCapabilities, setExistingCapabilities] = useState<Set<string>>(
-    new Set(),
-  );
   const [existingConnection, setExistingConnection] =
     useState<ConnectionCardType | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  console.log("Selected provider", selectedProvider?.capabilities);
 
   const getConnectHubClient = useCallback(() => {
     return new ConnectHubConfiguration({
@@ -70,9 +57,6 @@ const Connections: React.FC = () => {
         triggersApi.triggersGet(),
       ]);
 
-      // Build lookups:
-      //  - capability names by provider
-      //  - provider metadata (icon, display name)
       const capabilityNameByProvider: Record<
         string,
         Record<string, string>
@@ -166,30 +150,7 @@ const Connections: React.FC = () => {
     const provider = allProviders.find((p) => p.id === providerId);
     if (provider) {
       setSelectedProvider(provider);
-      setSearchTerm("");
-
-      if (connection) {
-        // For existing connections, pre-select existing capabilities from permissions
-        const providerCaps = new Set(
-          (provider?.capabilities || []).map((c) => c.id),
-        );
-        const existingCapIds = (connection.permissions || [])
-          .filter((perm) => perm.startsWith(`${provider.id}/`))
-          .map((perm) => perm.split("/")[1])
-          .filter((id) => providerCaps.has(id));
-        const existing = new Set<string>(existingCapIds);
-        setExistingCapabilities(existing);
-        setSelectedCapabilities(new Set(existingCapIds));
-        setSelectedTriggers(new Set()); // TODO: Get existing triggers from connection
-        setExistingConnection(connection);
-      } else {
-        // For new connections, start fresh
-        setExistingCapabilities(new Set());
-        setSelectedCapabilities(new Set());
-        setSelectedTriggers(new Set());
-        setExistingConnection(null);
-      }
-
+      setExistingConnection(connection || null);
       setIsPermissionsModalOpen(true);
     }
   };
@@ -197,108 +158,7 @@ const Connections: React.FC = () => {
   const handleCloseModal = () => {
     setIsPermissionsModalOpen(false);
     setSelectedProvider(null);
-    setSelectedCapabilities(new Set());
-    setSelectedTriggers(new Set());
-    setExistingCapabilities(new Set());
     setExistingConnection(null);
-    setSearchTerm("");
-    setIsConnecting(false);
-  };
-
-  const handleCapabilityToggle = (capabilityId: string) => {
-    // Don't allow toggling existing capabilities
-    if (existingCapabilities.has(capabilityId)) {
-      return;
-    }
-
-    const newSelected = new Set(selectedCapabilities);
-    if (newSelected.has(capabilityId)) {
-      newSelected.delete(capabilityId);
-    } else {
-      newSelected.add(capabilityId);
-    }
-    setSelectedCapabilities(newSelected);
-  };
-
-  const handleTriggerToggle = (triggerId: string) => {
-    const newSelected = new Set(selectedTriggers);
-    if (newSelected.has(triggerId)) {
-      newSelected.delete(triggerId);
-    } else {
-      newSelected.add(triggerId);
-    }
-    setSelectedTriggers(newSelected);
-  };
-
-  const handleSelectAll = () => {
-    if (!selectedProvider) return;
-    const allCapIds = selectedProvider.capabilities.map((cap) => cap.id);
-    const allTriggerIds = allTriggers
-      .filter((trigger) => trigger.providerId === selectedProvider.id)
-      .map((trigger) => trigger.id);
-    setSelectedCapabilities(new Set(allCapIds));
-    setSelectedTriggers(new Set(allTriggerIds));
-  };
-
-  const handleConnect = async () => {
-    if (!selectedProvider) return;
-
-    // For existing connections, only audit new capabilities
-    // For new connections, audit all selected capabilities
-    const capabilitiesToAudit = existingConnection
-      ? Array.from(selectedCapabilities).filter(
-          (capId) => !existingCapabilities.has(capId),
-        )
-      : Array.from(selectedCapabilities);
-
-    const triggersToAudit = Array.from(selectedTriggers);
-
-    if (capabilitiesToAudit.length === 0 && triggersToAudit.length === 0) return;
-
-    setIsConnecting(true);
-    try {
-      // Build unified permission strings provider/id
-      const permissions = [
-        ...capabilitiesToAudit.map((capId) => `${selectedProvider.id}/${capId}`),
-        ...triggersToAudit.map((trgId) => `${selectedProvider.id}/${trgId}`),
-      ];
-      // Use SDK unified audit with permissions
-      const oauthApi = new OAuthApi(getConnectHubClient());
-      const auditBody: OauthAuditPostRequest = { permissions };
-      const results = await oauthApi.oauthAuditPost({ oauthAuditPostRequest: auditBody });
-      const providerResult = results.find(
-        (r) => r.providerId === selectedProvider.id,
-      );
-
-      if (providerResult?.oauthUrl) {
-        // Get the Clerk token and append it to the OAuth URL
-        const token2 = await getToken();
-        if (!token2) {
-          console.error("No authentication token available");
-          // TODO: Show error message to user
-          return;
-        }
-
-        const url = new URL(providerResult.oauthUrl);
-        url.searchParams.set("token", token2);
-
-        // Open the authenticated OAuth URL in popup
-        window.open(
-          url.toString(),
-          "oauth_connect",
-          "width=500,height=700,noopener,noreferrer",
-        );
-        handleCloseModal();
-      } else {
-        console.error("No OAuth URL returned for provider");
-        // TODO: Show error message to user
-      }
-    } catch (error) {
-      console.error("Failed to start OAuth flow:", error);
-      // TODO: Show error message to user
-    } finally {
-      setIsConnecting(false);
-    }
   };
 
   if (loading) {
@@ -419,269 +279,13 @@ const Connections: React.FC = () => {
 
         {/* Permissions Selection Modal */}
         {isPermissionsModalOpen && selectedProvider && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              {/* Backdrop */}
-              <div
-                className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-                onClick={handleCloseModal}
-                aria-hidden="true"
-              ></div>
-
-              {/* Center modal */}
-              <span
-                className="hidden sm:inline-block sm:align-middle sm:h-screen"
-                aria-hidden="true"
-              >
-                &#8203;
-              </span>
-
-              {/* Modal panel */}
-              <div className="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                        {selectedProvider.icon ? (
-                          <img
-                            src={selectedProvider.icon}
-                            alt={selectedProvider.displayName}
-                            className="h-8 w-8"
-                          />
-                        ) : (
-                          <span className="text-lg font-semibold text-gray-600">
-                            {selectedProvider.displayName.charAt(0)}
-                          </span>
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-900">
-                          {existingConnection
-                            ? `Add permissions to ${selectedProvider.displayName}`
-                            : `Connect to ${selectedProvider.displayName}`}
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                          {existingConnection
-                            ? "Select additional permissions to add"
-                            : "Select the permissions you need"}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={handleCloseModal}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="h-6 w-6" />
-                    </button>
-                  </div>
-
-                  {/* Search */}
-                  <div className="mb-4">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search permissions..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-9 pr-3 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex justify-between items-center mb-4">
-                    <button
-                      onClick={handleSelectAll}
-                      className="text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      Select all ({selectedProvider.capabilities.length + allTriggers.filter(t => t.providerId === selectedProvider.id).length})
-                    </button>
-                    <span className="text-sm text-gray-500">
-                      {selectedCapabilities.size + selectedTriggers.size} selected
-                    </span>
-                  </div>
-
-                  {/* Permissions List */}
-                  <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-md">
-                    {(() => {
-                      const filteredCapabilities =
-                        selectedProvider.capabilities.filter(
-                          (cap) =>
-                            cap.displayName
-                              .toLowerCase()
-                              .includes(searchTerm.toLowerCase()) ||
-                            cap.description
-                              .toLowerCase()
-                              .includes(searchTerm.toLowerCase()),
-                        );
-
-                      const filteredTriggers = allTriggers
-                        .filter((trigger) => trigger.providerId === selectedProvider.id)
-                        .filter(
-                          (trigger) =>
-                            trigger.description
-                              .toLowerCase()
-                              .includes(searchTerm.toLowerCase()) ||
-                            trigger.id
-                              .toLowerCase()
-                              .includes(searchTerm.toLowerCase()),
-                        );
-
-                      const totalFiltered = filteredCapabilities.length + filteredTriggers.length;
-
-                      if (totalFiltered === 0) {
-                        return (
-                          <div className="p-4 text-center text-gray-500">
-                            {searchTerm
-                              ? "No permissions match your search"
-                              : "No permissions available"}
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <>
-                          {/* Capabilities Section */}
-                          {filteredCapabilities.length > 0 && (
-                            <>
-                              <div className="px-3 py-2 bg-gray-50 border-b border-gray-100">
-                                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                                  Capabilities
-                                </h4>
-                              </div>
-                              {filteredCapabilities.map((capability) => {
-                                const isExisting = existingCapabilities.has(
-                                  capability.id,
-                                );
-                                const isSelected = selectedCapabilities.has(
-                                  capability.id,
-                                );
-
-                                return (
-                                  <label
-                                    key={capability.id}
-                                    className={`flex items-start space-x-3 p-3 border-b border-gray-100 last:border-b-0 ${
-                                      isExisting
-                                        ? "bg-gray-50 cursor-default"
-                                        : "hover:bg-gray-50 cursor-pointer"
-                                    }`}
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelected}
-                                      onChange={() =>
-                                        handleCapabilityToggle(capability.id)
-                                      }
-                                      disabled={isExisting}
-                                      className={`mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${
-                                        isExisting
-                                          ? "opacity-50 cursor-not-allowed"
-                                          : ""
-                                      }`}
-                                    />
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center space-x-2">
-                                        <p
-                                          className={`text-sm font-medium ${isExisting ? "text-gray-600" : "text-gray-900"}`}
-                                        >
-                                          {capability.displayName}
-                                        </p>
-                                        {isExisting && (
-                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                            Connected
-                                          </span>
-                                        )}
-                                      </div>
-                                      <p
-                                        className={`text-xs mt-1 ${isExisting ? "text-gray-400" : "text-gray-500"}`}
-                                      >
-                                        {capability.description}
-                                      </p>
-                                    </div>
-                                  </label>
-                                );
-                              })}
-                            </>
-                          )}
-
-                          {/* Triggers Section */}
-                          {filteredTriggers.length > 0 && (
-                            <>
-                              <div className="px-3 py-2 bg-gray-50 border-b border-gray-100">
-                                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                                  Triggers
-                                </h4>
-                              </div>
-                              {filteredTriggers.map((trigger) => {
-                                const isSelected = selectedTriggers.has(trigger.id);
-
-                                return (
-                                  <label
-                                    key={trigger.id}
-                                    className="flex items-start space-x-3 p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 cursor-pointer"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelected}
-                                      onChange={() => handleTriggerToggle(trigger.id)}
-                                      className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                    />
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center space-x-2">
-                                        <p className="text-sm font-medium text-gray-900">
-                                          {trigger.id}
-                                        </p>
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                                          Trigger
-                                        </span>
-                                      </div>
-                                      <p className="text-xs mt-1 text-gray-500">
-                                        {trigger.description}
-                                      </p>
-                                    </div>
-                                  </label>
-                                );
-                              })}
-                            </>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                  <button
-                    onClick={handleConnect}
-                    disabled={
-                      isConnecting ||
-                      (existingConnection
-                        ? Array.from(selectedCapabilities).filter(
-                            (capId) => !existingCapabilities.has(capId),
-                          ).length === 0 && selectedTriggers.size === 0
-                        : selectedCapabilities.size === 0 && selectedTriggers.size === 0)
-                    }
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isConnecting
-                      ? existingConnection
-                        ? "Adding..."
-                        : "Connecting..."
-                      : existingConnection
-                        ? "Add Permissions"
-                        : "Connect"}
-                  </button>
-                  <button
-                    onClick={handleCloseModal}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <PermissionsModal
+            open={isPermissionsModalOpen}
+            provider={selectedProvider}
+            allTriggers={allTriggers}
+            existingConnection={existingConnection}
+            onClose={handleCloseModal}
+          />
         )}
       </div>
     </div>

@@ -254,9 +254,7 @@ export function HiringWizard({
             permissionSet.add(`${cap.providerId}/${cap.id}`);
           }
           // trigger
-          permissionSet.add(
-            `${agent.trigger.providerId}/${agent.trigger.id}`,
-          );
+          permissionSet.add(`${agent.trigger.providerId}/${agent.trigger.id}`);
         }
 
         const permissions = Array.from(permissionSet);
@@ -272,15 +270,21 @@ export function HiringWizard({
         // Convert audit results to provider cards for UI compatibility
         const providers: ProviderCard[] = auditResults.map((result) => {
           // Map missing permission strings to friendly names where possible
-          const providerCaps = providerCapabilities[result.providerId]?.capabilities || [];
-          const capNameById = providerCaps.reduce<Record<string, string>>((acc, cap) => {
-            acc[cap.id] = cap.displayName;
-            return acc;
-          }, {});
-          const missingDisplay = (result.missingPermissions || []).map((perm) => {
-            const [, itemId = ""] = perm.split("/");
-            return capNameById[itemId] || itemId;
-          });
+          const providerCaps =
+            providerCapabilities[result.providerId]?.capabilities || [];
+          const capNameById = providerCaps.reduce<Record<string, string>>(
+            (acc, cap) => {
+              acc[cap.id] = cap.displayName;
+              return acc;
+            },
+            {},
+          );
+          const missingDisplay = (result.missingPermissions || []).map(
+            (perm) => {
+              const [, itemId = ""] = perm.split("/");
+              return capNameById[itemId] || itemId;
+            },
+          );
 
           return {
             id: result.providerId,
