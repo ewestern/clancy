@@ -94,9 +94,11 @@ const Connections: React.FC = () => {
 
       const withNames: ConnectionCardType[] = data.map((conn) => {
         const nameMap = capabilityNameByProvider[conn.providerId] || {};
-        const capabilityDisplayNames = (conn.capabilities || []).map(
-          (capId) => nameMap[capId] || capId,
-        );
+        const capabilityDisplayNames = (conn.permissions || [])
+          .filter((perm) => perm.startsWith(`${conn.providerId}/`))
+          .map((perm) => perm.split("/")[1])
+          .filter((capId): capId is string => Boolean(capId))
+          .map((capId) => nameMap[capId] || capId);
         const meta = providerMetaById[conn.providerId] || {};
         return {
           ...conn,
@@ -167,10 +169,17 @@ const Connections: React.FC = () => {
       setSearchTerm("");
 
       if (connection) {
-        // For existing connections, pre-select existing capabilities
-        const existing = new Set(connection.capabilities || []);
+        // For existing connections, pre-select existing capabilities from permissions
+        const providerCaps = new Set(
+          (provider?.capabilities || []).map((c) => c.id),
+        );
+        const existingCapIds = (connection.permissions || [])
+          .filter((perm) => perm.startsWith(`${provider.id}/`))
+          .map((perm) => perm.split("/")[1])
+          .filter((id) => providerCaps.has(id));
+        const existing = new Set<string>(existingCapIds);
         setExistingCapabilities(existing);
-        setSelectedCapabilities(existing);
+        setSelectedCapabilities(new Set(existingCapIds));
         setSelectedTriggers(new Set()); // TODO: Get existing triggers from connection
         setExistingConnection(connection);
       } else {
@@ -248,38 +257,30 @@ const Connections: React.FC = () => {
 
     setIsConnecting(true);
     try {
-      const connectHubConfig = getConnectHubClient();
-      const oauthApi = new OAuthApi(connectHubConfig);
-
-      const auditBody: OauthAuditPostRequest = {
-        capabilities: capabilitiesToAudit.map((capabilityId) => ({
-          providerId: selectedProvider.id,
-          capabilityId,
-        })),
-        triggers: triggersToAudit.map((triggerId) => ({
-          providerId: selectedProvider.id,
-          triggerId,
-        })),
-      };
-
-      const results = await oauthApi.oauthAuditPost({
-        oauthAuditPostRequest: auditBody,
-      });
+      // Build unified permission strings provider/id
+      const permissions = [
+        ...capabilitiesToAudit.map((capId) => `${selectedProvider.id}/${capId}`),
+        ...triggersToAudit.map((trgId) => `${selectedProvider.id}/${trgId}`),
+      ];
+      // Use SDK unified audit with permissions
+      const oauthApi = new OAuthApi(getConnectHubClient());
+      const auditBody: OauthAuditPostRequest = { permissions };
+      const results = await oauthApi.oauthAuditPost({ oauthAuditPostRequest: auditBody });
       const providerResult = results.find(
         (r) => r.providerId === selectedProvider.id,
       );
 
       if (providerResult?.oauthUrl) {
         // Get the Clerk token and append it to the OAuth URL
-        const token = await getToken();
-        if (!token) {
+        const token2 = await getToken();
+        if (!token2) {
           console.error("No authentication token available");
           // TODO: Show error message to user
           return;
         }
 
         const url = new URL(providerResult.oauthUrl);
-        url.searchParams.set("token", token);
+        url.searchParams.set("token", token2);
 
         // Open the authenticated OAuth URL in popup
         window.open(

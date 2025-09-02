@@ -1,9 +1,15 @@
 import React from "react";
 import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
-import { ConnectionStatus, type Connection } from "@ewestern/connect_hub_sdk";
+import { ConnectionStatus } from "@ewestern/connect_hub_sdk";
 
-export type ConnectionCard = Connection & {
+export type ConnectionCard = {
+  id: string;
+  providerId: string;
+  displayName: string;
+  status: ConnectionStatus;
+  permissions: string[];
   capabilityDisplayNames: string[];
+  triggerDisplayNames?: string[];
   providerIcon?: string;
   providerDisplayName?: string;
 };
@@ -130,6 +136,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
 
         {/* Permissions list with Add permissions link */}
         {(connection.capabilityDisplayNames.length > 0 ||
+          (connection.triggerDisplayNames && connection.triggerDisplayNames.length > 0) ||
           connection.status === ConnectionStatus.Active) && (
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
@@ -144,19 +151,24 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
                 </button>
               )}
             </div>
-            {connection.capabilityDisplayNames.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {connection.capabilityDisplayNames.map((name) => (
-                  <span
-                    key={`${connection.id}-${name}`}
-                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                  >
-                    {name}
-                  </span>
-                ))}
-                {/* TODO: Add trigger display names here when available */}
-              </div>
-            )}
+            <div className="flex flex-wrap gap-2">
+              {connection.capabilityDisplayNames.map((name) => (
+                <span
+                  key={`${connection.id}-cap-${name}`}
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                >
+                  {name}
+                </span>
+              ))}
+              {(connection.triggerDisplayNames || []).map((name) => (
+                <span
+                  key={`${connection.id}-trg-${name}`}
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
           </div>
         )}
       </div>

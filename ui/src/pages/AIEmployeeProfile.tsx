@@ -353,14 +353,15 @@ const AIEmployeeProfile: React.FC = () => {
               const capInfo = providerCapabilities?.capabilities?.find(
                 (cap) => cap.id === capId,
               );
-              const isGranted =
-                connection?.capabilities?.includes(capId) || false;
+              const grantedByPermissions = connection?.permissions?.some(
+                (perm) => perm === `${providerId}/${capId}`,
+              ) || false;
 
               return {
                 id: capId,
                 displayName: capInfo?.displayName || capId,
                 description: capInfo?.description,
-                granted: isGranted,
+                granted: grantedByPermissions,
                 required: true,
               };
             });

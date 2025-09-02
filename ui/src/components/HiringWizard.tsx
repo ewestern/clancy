@@ -246,42 +246,52 @@ export function HiringWizard({
       }
 
       try {
-        // Prepare the audit request
-        const triggers = agents.map((agent) => ({
-          providerId: agent.trigger.providerId,
-          triggerId: agent.trigger.id,
-        }));
+        // Build unified permission strings providerId/itemId
+        const permissionSet = new Set<string>();
+        for (const agent of agents) {
+          // capabilities
+          for (const cap of agent.capabilities) {
+            permissionSet.add(`${cap.providerId}/${cap.id}`);
+          }
+          // trigger
+          permissionSet.add(
+            `${agent.trigger.providerId}/${agent.trigger.id}`,
+          );
+        }
 
-        const capabilities = agents.flatMap((agent) =>
-          agent.capabilities.map((cap) => ({
-            providerId: cap.providerId,
-            capabilityId: cap.id,
-          })),
-        );
-
-        const auditRequest = {
-          triggers,
-          capabilities,
-        };
+        const permissions = Array.from(permissionSet);
 
         const auditApi = getAuditApi();
         const auditResults = await auditApi.oauthAuditPost({
-          oauthAuditPostRequest: auditRequest,
+          oauthAuditPostRequest: { permissions },
         });
 
         console.log("OAuth audit results:", auditResults);
         setAuditResults(auditResults);
 
         // Convert audit results to provider cards for UI compatibility
-        const providers: ProviderCard[] = auditResults.map((result) => ({
-          id: result.providerId,
-          name: result.providerDisplayName,
-          logo: result.providerIcon,
-          connectionStatus:
-            result.status === "connected" ? "connected" : "disconnected",
-          requiredScopes: result.missingCapabilities || [], // Use missing capability display names
-          oauthUrl: result.oauthUrl,
-        }));
+        const providers: ProviderCard[] = auditResults.map((result) => {
+          // Map missing permission strings to friendly names where possible
+          const providerCaps = providerCapabilities[result.providerId]?.capabilities || [];
+          const capNameById = providerCaps.reduce<Record<string, string>>((acc, cap) => {
+            acc[cap.id] = cap.displayName;
+            return acc;
+          }, {});
+          const missingDisplay = (result.missingPermissions || []).map((perm) => {
+            const [, itemId = ""] = perm.split("/");
+            return capNameById[itemId] || itemId;
+          });
+
+          return {
+            id: result.providerId,
+            name: result.providerDisplayName,
+            logo: result.providerIcon,
+            connectionStatus:
+              result.status === "connected" ? "connected" : "disconnected",
+            requiredScopes: missingDisplay,
+            oauthUrl: result.oauthUrl,
+          };
+        });
 
         // Check if all providers are connected
         const allConnected =
