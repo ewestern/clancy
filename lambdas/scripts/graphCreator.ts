@@ -24,13 +24,6 @@ function getUserInput(question: string): Promise<string> {
 const JOB_DESCRIPTION = `
 We’re hiring a part-time AI Executive Assistant to remove two routine tasks from our COO’s plate.
 
-1. Daily email digest 
-   * pull all *unread* email received in the COO’s Gmail inbox since the last digest.  
-   * Generate a brief three-bullet summary.  
-   * Post that summary in the Slack channel #exec-updates.
-
-2. Daily social-media post
-   * Immediately after posting to Slack, publish the same summary as a tweet from our @ExampleCo Twitter account.
 `;
 
 const callbacks = {

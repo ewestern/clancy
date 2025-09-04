@@ -513,11 +513,14 @@ export async function documentsRoutes(app: FastifyTypeBox) {
               Key: s3Key,
             });
             await s3Client.send(deleteCommand);
-            app.log.info({
-              bucket: s3Bucket,
-              key: s3Key,
-              documentId,
-            }, "Successfully deleted document from S3");
+            app.log.info(
+              {
+                bucket: s3Bucket,
+                key: s3Key,
+                documentId,
+              },
+              "Successfully deleted document from S3",
+            );
           } catch (s3Error) {
             app.log.warn(
               {
@@ -531,10 +534,13 @@ export async function documentsRoutes(app: FastifyTypeBox) {
             // Continue - database deletion succeeded, which is more important
           }
         } else {
-          app.log.warn({
-            documentId,
-            documentUri: doc.documentUri,
-          }, "No valid S3 URI found for document");
+          app.log.warn(
+            {
+              documentId,
+              documentUri: doc.documentUri,
+            },
+            "No valid S3 URI found for document",
+          );
         }
 
         return reply.status(200).send({
@@ -633,10 +639,13 @@ export async function documentsRoutes(app: FastifyTypeBox) {
             inserted += rows.length;
           } catch (insertError) {
             // Handle constraint violations (duplicates)
-            app.log.warn({
-              documentId,
-              batchStart: i,
-            }, "Some snippets were duplicates:");
+            app.log.warn(
+              {
+                documentId,
+                batchStart: i,
+              },
+              "Some snippets were duplicates:",
+            );
             duplicates += rows.length;
           }
         }

@@ -16,7 +16,6 @@ import {
 import { ErrorSchema, Ref } from "../models/shared.js";
 import { getAuth } from "@clerk/fastify";
 
-
 export async function connectionRoutes(app: FastifyTypeBox) {
   app.addSchema(ConnectionStatusSchema);
   app.addSchema(ConnectionSchema);

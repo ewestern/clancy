@@ -433,6 +433,92 @@ export const gmailDraftsSendResultSchema = Type.Object({
 });
 
 // ---------------------------------------------------------------------------
+// Gmail History Schemas
+// ---------------------------------------------------------------------------
+
+export const gmailHistoryListParamsSchema = Type.Object({
+  startHistoryId: Type.String({
+    description:
+      "Returns history records after the specified startHistoryId; typically from a previous message or list response",
+  }),
+  historyTypes: Type.Optional(
+    Type.Array(
+      Type.Union([
+        Type.Literal("labelAdded"),
+        Type.Literal("labelRemoved"),
+        Type.Literal("messageAdded"),
+        Type.Literal("messageDeleted"),
+      ]),
+    ),
+  ),
+  labelId: Type.Optional(
+    Type.String({ description: "Only return messages matching this label ID" }),
+  ),
+  maxResults: Type.Optional(
+    Type.Number({
+      minimum: 1,
+      maximum: 500,
+      description: "Maximum number of history records to return (default 100)",
+    }),
+  ),
+  pageToken: Type.Optional(
+    Type.String({ description: "Page token to retrieve a specific page" }),
+  ),
+});
+
+const gmailHistoryMessageRefSchema = Type.Object({
+  id: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  threadId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+});
+
+export const gmailHistoryListResultSchema = Type.Object({
+  history: Type.Optional(
+    Type.Array(
+      Type.Object({
+        id: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+        labelsAdded: Type.Optional(
+          Type.Array(
+            Type.Object({
+              labelIds: Type.Optional(
+                Type.Union([Type.Array(Type.String()), Type.Null()]),
+              ),
+              message: Type.Optional(gmailHistoryMessageRefSchema),
+            }),
+          ),
+        ),
+        labelsRemoved: Type.Optional(
+          Type.Array(
+            Type.Object({
+              labelIds: Type.Optional(
+                Type.Union([Type.Array(Type.String()), Type.Null()]),
+              ),
+              message: Type.Optional(gmailHistoryMessageRefSchema),
+            }),
+          ),
+        ),
+        messages: Type.Optional(Type.Array(gmailHistoryMessageRefSchema)),
+        messagesAdded: Type.Optional(
+          Type.Array(
+            Type.Object({
+              message: Type.Optional(gmailHistoryMessageRefSchema),
+            }),
+          ),
+        ),
+        messagesDeleted: Type.Optional(
+          Type.Array(
+            Type.Object({
+              message: Type.Optional(gmailHistoryMessageRefSchema),
+            }),
+          ),
+        ),
+      }),
+    ),
+  ),
+  historyId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  nextPageToken: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+});
+
+// ---------------------------------------------------------------------------
 // Type definitions (TypeBox Static pattern)
 // ---------------------------------------------------------------------------
 
@@ -478,6 +564,13 @@ export type GmailDraftsGetParams = Static<typeof gmailDraftsGetParamsSchema>;
 export type GmailDraftsGetResult = Static<typeof gmailDraftsGetResultSchema>;
 export type GmailDraftsSendParams = Static<typeof gmailDraftsSendParamsSchema>;
 export type GmailDraftsSendResult = Static<typeof gmailDraftsSendResultSchema>;
+
+export type GmailHistoryListParams = Static<
+  typeof gmailHistoryListParamsSchema
+>;
+export type GmailHistoryListResult = Static<
+  typeof gmailHistoryListResultSchema
+>;
 
 // ---------------------------------------------------------------------------
 // Gmail Functions
@@ -757,5 +850,35 @@ export async function gmailDraftsSend(
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
     throw new Error(`Gmail drafts send error: ${error.message}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Gmail History Functions
+// ---------------------------------------------------------------------------
+
+export async function gmailHistoryList(
+  params: GmailHistoryListParams,
+  ctx: ExecutionContext,
+): Promise<GmailHistoryListResult> {
+  const gmail = createGmailClient(ctx);
+
+  try {
+    const response = await gmail.users.history.list({
+      userId: "me",
+      startHistoryId: params.startHistoryId,
+      historyTypes: params.historyTypes,
+      labelId: params.labelId,
+      maxResults: params.maxResults,
+      pageToken: params.pageToken,
+    });
+
+    return response.data as GmailHistoryListResult;
+  } catch (error: any) {
+    if (error.code === 429) {
+      const retryAfter = error.response?.headers?.["retry-after"] ?? "60";
+      throw new Error(`Rate limited; retry after ${retryAfter}s`);
+    }
+    throw new Error(`Gmail history list error: ${error.message}`);
   }
 }

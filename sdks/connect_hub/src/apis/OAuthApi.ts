@@ -15,31 +15,15 @@
 
 import * as runtime from '../runtime.js';
 import type {
-  OauthAuditPost200ResponseInner,
-  OauthAuditPost400Response,
-  OauthAuditPostRequest,
   OauthCallbackProviderGet200Response,
   OauthLaunchProviderGet302Response,
-  OauthLaunchProviderGet400Response,
 } from '../models/index.js';
 import {
-    OauthAuditPost200ResponseInnerFromJSON,
-    OauthAuditPost200ResponseInnerToJSON,
-    OauthAuditPost400ResponseFromJSON,
-    OauthAuditPost400ResponseToJSON,
-    OauthAuditPostRequestFromJSON,
-    OauthAuditPostRequestToJSON,
     OauthCallbackProviderGet200ResponseFromJSON,
     OauthCallbackProviderGet200ResponseToJSON,
     OauthLaunchProviderGet302ResponseFromJSON,
     OauthLaunchProviderGet302ResponseToJSON,
-    OauthLaunchProviderGet400ResponseFromJSON,
-    OauthLaunchProviderGet400ResponseToJSON,
 } from '../models/index.js';
-
-export interface OauthAuditPostOperationRequest {
-    oauthAuditPostRequest: OauthAuditPostRequest;
-}
 
 export interface OauthCallbackProviderGetRequest {
     code: string;
@@ -51,7 +35,7 @@ export interface OauthCallbackProviderGetRequest {
 }
 
 export interface OauthLaunchProviderGetRequest {
-    scopes: Array<string>;
+    permissions: Array<string>;
     token: string;
     provider: string;
 }
@@ -60,48 +44,6 @@ export interface OauthLaunchProviderGetRequest {
  * 
  */
 export class OAuthApi extends runtime.BaseAPI {
-
-    /**
-     */
-    async oauthAuditPostRaw(requestParameters: OauthAuditPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<OauthAuditPost200ResponseInner>>> {
-        if (requestParameters['oauthAuditPostRequest'] == null) {
-            throw new runtime.RequiredError(
-                'oauthAuditPostRequest',
-                'Required parameter "oauthAuditPostRequest" was null or undefined when calling oauthAuditPost().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearerAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/oauth/audit`,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: OauthAuditPostRequestToJSON(requestParameters['oauthAuditPostRequest']),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(OauthAuditPost200ResponseInnerFromJSON));
-    }
-
-    /**
-     */
-    async oauthAuditPost(requestParameters: OauthAuditPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<OauthAuditPost200ResponseInner>> {
-        const response = await this.oauthAuditPostRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
 
     /**
      * Handle OAuth callback from provider
@@ -174,10 +116,10 @@ export class OAuthApi extends runtime.BaseAPI {
      * Launch OAuth authorization flow
      */
     async oauthLaunchProviderGetRaw(requestParameters: OauthLaunchProviderGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters['scopes'] == null) {
+        if (requestParameters['permissions'] == null) {
             throw new runtime.RequiredError(
-                'scopes',
-                'Required parameter "scopes" was null or undefined when calling oauthLaunchProviderGet().'
+                'permissions',
+                'Required parameter "permissions" was null or undefined when calling oauthLaunchProviderGet().'
             );
         }
 
@@ -197,8 +139,8 @@ export class OAuthApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
-        if (requestParameters['scopes'] != null) {
-            queryParameters['scopes'] = requestParameters['scopes'];
+        if (requestParameters['permissions'] != null) {
+            queryParameters['permissions'] = requestParameters['permissions'];
         }
 
         if (requestParameters['token'] != null) {

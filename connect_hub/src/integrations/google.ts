@@ -42,6 +42,7 @@ import {
   gmailDraftsList,
   gmailDraftsGet,
   gmailDraftsSend,
+  gmailHistoryList,
   gmailDraftsCreateParamsSchema,
   gmailDraftsCreateResultSchema,
   gmailDraftsListParamsSchema,
@@ -50,6 +51,8 @@ import {
   gmailDraftsGetResultSchema,
   gmailDraftsSendParamsSchema,
   gmailDraftsSendResultSchema,
+  gmailHistoryListParamsSchema,
+  gmailHistoryListResultSchema,
 } from "./google/gmail.js";
 
 // Import Calendar functions and schemas
@@ -99,12 +102,28 @@ import {
   driveCommentsCreateResultSchema,
 } from "./google/drive.js";
 import { OwnershipScope } from "../models/shared.js";
-import { GoogleWebhook, GoogleWebhookEvent } from "./google/webhooks.js";
+// import { GoogleWebhook, GoogleWebhookEvent } from "./google/webhooks.js";
 import {
   gmailMessageReceivedTrigger,
   driveFileChangeTrigger,
   calendarEventsChangeTrigger,
 } from "./google/triggers.js";
+import { FastifyRequestTypeBox } from "../types/fastify.js";
+import { Type } from "@sinclair/typebox";
+
+export const GoogleWebhookSchema = {
+  headers: Type.Any(),
+  body: Type.Any(),
+};
+
+export interface GoogleWebhookEvent {
+  message: {
+    data: string;
+    messageId: string;
+  };
+  subscription: string;
+  kind?: string;
+}
 
 // Gmail capability factory functions
 function createGmailSendCapability(): Capability {
@@ -285,6 +304,23 @@ function createGmailDraftsSendCapability(): Capability {
     risk: CapabilityRisk.HIGH,
   };
   return { meta, execute: gmailDraftsSend };
+}
+
+function createGmailHistoryListCapability(): Capability {
+  const meta: CapabilityMeta = {
+    id: "gmail.history.list",
+    displayName: "List Gmail History",
+    description:
+      "List mailbox history changes after a given historyId to discover message events",
+    docsUrl:
+      "https://developers.google.com/gmail/api/reference/rest/v1/users.history/list",
+    paramsSchema: gmailHistoryListParamsSchema,
+    resultSchema: gmailHistoryListResultSchema,
+    requiredScopes: ["https://www.googleapis.com/auth/gmail.readonly"],
+    ownershipScope: OwnershipScope.User,
+    risk: CapabilityRisk.LOW,
+  };
+  return { meta, execute: gmailHistoryList };
 }
 
 // Calendar capabilities - User scope (accessing personal calendar)
@@ -652,11 +688,19 @@ export class GoogleProvider extends BaseProvider<any, GoogleWebhookEvent> {
   constructor() {
     const triggers = [
       gmailMessageReceivedTrigger,
-      driveFileChangeTrigger,
+      //driveFileChangeTrigger,
       calendarEventsChangeTrigger,
     ];
 
-    const webhook = new GoogleWebhook(triggers);
+    const webhook = {
+      eventSchema: GoogleWebhookSchema,
+      validateRequest: async (
+        request: FastifyRequestTypeBox<typeof GoogleWebhookSchema>,
+      ) => {
+        return true;
+      },
+      triggers,
+    };
 
     super({
       metadata: {
@@ -681,6 +725,7 @@ export class GoogleProvider extends BaseProvider<any, GoogleWebhookEvent> {
         "gmail.drafts.list": createGmailDraftsListCapability,
         "gmail.drafts.get": createGmailDraftsGetCapability,
         "gmail.drafts.send": createGmailDraftsSendCapability,
+        "gmail.history.list": createGmailHistoryListCapability,
         // Calendar capabilities
         "calendar.events.create": createCalendarEventsCreateCapability,
         "calendar.events.list": createCalendarEventsListCapability,
@@ -710,6 +755,8 @@ export class GoogleProvider extends BaseProvider<any, GoogleWebhookEvent> {
       triggers,
       webhooks: [webhook],
       links: [
+        // need to grant permission for the service account to publish to the topic
+        "https://developers.google.com/workspace/gmail/api/guides/push",
         "https://console.cloud.google.com/auth/clients/650222929087-s1f2qid234aa7ajs6mtlccovlvl0ghmb.apps.googleusercontent.com?inv=1&invt=Ab5ZBQ&project=clancy-464816",
         "https://developers.google.com/workspace/gmail/api/reference/rest/v1/users/watch",
       ],

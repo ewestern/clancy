@@ -15,18 +15,37 @@
 
 import * as runtime from '../runtime.js';
 import type {
+  ErrorResponse,
   Trigger,
   TriggerRegistration,
+  TriggerRegistrationsPost400Response,
+  TriggersParamOptionsGet200Response,
 } from '../models/index.js';
 import {
+    ErrorResponseFromJSON,
+    ErrorResponseToJSON,
     TriggerFromJSON,
     TriggerToJSON,
     TriggerRegistrationFromJSON,
     TriggerRegistrationToJSON,
+    TriggerRegistrationsPost400ResponseFromJSON,
+    TriggerRegistrationsPost400ResponseToJSON,
+    TriggersParamOptionsGet200ResponseFromJSON,
+    TriggersParamOptionsGet200ResponseToJSON,
 } from '../models/index.js';
 
 export interface TriggerRegistrationsPostRequest {
     triggerRegistration?: Omit<TriggerRegistration, 'id'|'createdAt'|'updatedAt'>;
+}
+
+export interface TriggersParamOptionsGetRequest {
+    providerId: string;
+    triggerId: string;
+}
+
+export interface TriggersProviderIdTriggerIdGetRequest {
+    providerId: string;
+    triggerId: string;
 }
 
 /**
@@ -98,6 +117,98 @@ export class TriggersApi extends runtime.BaseAPI {
      */
     async triggersGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Trigger>> {
         const response = await this.triggersGetRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     */
+    async triggersParamOptionsGetRaw(requestParameters: TriggersParamOptionsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TriggersParamOptionsGet200Response>> {
+        if (requestParameters['providerId'] == null) {
+            throw new runtime.RequiredError(
+                'providerId',
+                'Required parameter "providerId" was null or undefined when calling triggersParamOptionsGet().'
+            );
+        }
+
+        if (requestParameters['triggerId'] == null) {
+            throw new runtime.RequiredError(
+                'triggerId',
+                'Required parameter "triggerId" was null or undefined when calling triggersParamOptionsGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/triggers/param-options`.replace(`{${"providerId"}}`, encodeURIComponent(String(requestParameters['providerId']))).replace(`{${"triggerId"}}`, encodeURIComponent(String(requestParameters['triggerId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => TriggersParamOptionsGet200ResponseFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async triggersParamOptionsGet(requestParameters: TriggersParamOptionsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TriggersParamOptionsGet200Response> {
+        const response = await this.triggersParamOptionsGetRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     */
+    async triggersProviderIdTriggerIdGetRaw(requestParameters: TriggersProviderIdTriggerIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Trigger>> {
+        if (requestParameters['providerId'] == null) {
+            throw new runtime.RequiredError(
+                'providerId',
+                'Required parameter "providerId" was null or undefined when calling triggersProviderIdTriggerIdGet().'
+            );
+        }
+
+        if (requestParameters['triggerId'] == null) {
+            throw new runtime.RequiredError(
+                'triggerId',
+                'Required parameter "triggerId" was null or undefined when calling triggersProviderIdTriggerIdGet().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/triggers/{providerId}/{triggerId}`.replace(`{${"providerId"}}`, encodeURIComponent(String(requestParameters['providerId']))).replace(`{${"triggerId"}}`, encodeURIComponent(String(requestParameters['triggerId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => TriggerFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async triggersProviderIdTriggerIdGet(requestParameters: TriggersProviderIdTriggerIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Trigger> {
+        const response = await this.triggersProviderIdTriggerIdGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

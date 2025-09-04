@@ -161,7 +161,9 @@ export const EmployeeStateUpdateEventSchema = Type.Object({
     phase: Type.Optional(Type.Union([
         Type.Literal("workflows"),
         Type.Literal("connect"),
+        Type.Literal("resolved"),
         Type.Literal("ready"),
+
     ])),
     workflows: Type.Array(WorkflowSchema),
     unsatisfiedWorkflows: Type.Array(Type.Object({

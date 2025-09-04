@@ -13,13 +13,6 @@
  */
 
 import { mapValues } from '../runtime.js';
-import type { HealthGet200ResponseDependencies } from './HealthGet200ResponseDependencies.js';
-import {
-    HealthGet200ResponseDependenciesFromJSON,
-    HealthGet200ResponseDependenciesFromJSONTyped,
-    HealthGet200ResponseDependenciesToJSON,
-    HealthGet200ResponseDependenciesToJSONTyped,
-} from './HealthGet200ResponseDependencies.js';
 import type { HealthGet200ResponseStatus } from './HealthGet200ResponseStatus.js';
 import {
     HealthGet200ResponseStatusFromJSON,
@@ -40,30 +33,6 @@ export interface HealthGet200Response {
      * @memberof HealthGet200Response
      */
     status: HealthGet200ResponseStatus;
-    /**
-     * 
-     * @type {Date}
-     * @memberof HealthGet200Response
-     */
-    timestamp: Date;
-    /**
-     * 
-     * @type {string}
-     * @memberof HealthGet200Response
-     */
-    version: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof HealthGet200Response
-     */
-    uptime: number;
-    /**
-     * 
-     * @type {HealthGet200ResponseDependencies}
-     * @memberof HealthGet200Response
-     */
-    dependencies: HealthGet200ResponseDependencies;
 }
 
 /**
@@ -71,10 +40,6 @@ export interface HealthGet200Response {
  */
 export function instanceOfHealthGet200Response(value: object): value is HealthGet200Response {
     if (!('status' in value) || value['status'] === undefined) return false;
-    if (!('timestamp' in value) || value['timestamp'] === undefined) return false;
-    if (!('version' in value) || value['version'] === undefined) return false;
-    if (!('uptime' in value) || value['uptime'] === undefined) return false;
-    if (!('dependencies' in value) || value['dependencies'] === undefined) return false;
     return true;
 }
 
@@ -89,10 +54,6 @@ export function HealthGet200ResponseFromJSONTyped(json: any, ignoreDiscriminator
     return {
         
         'status': HealthGet200ResponseStatusFromJSON(json['status']),
-        'timestamp': (new Date(json['timestamp'])),
-        'version': json['version'],
-        'uptime': json['uptime'],
-        'dependencies': HealthGet200ResponseDependenciesFromJSON(json['dependencies']),
     };
 }
 
@@ -108,10 +69,6 @@ export function HealthGet200ResponseToJSONTyped(value?: HealthGet200Response | n
     return {
         
         'status': HealthGet200ResponseStatusToJSON(value['status']),
-        'timestamp': ((value['timestamp']).toISOString()),
-        'version': value['version'],
-        'uptime': value['uptime'],
-        'dependencies': HealthGet200ResponseDependenciesToJSON(value['dependencies']),
     };
 }
 

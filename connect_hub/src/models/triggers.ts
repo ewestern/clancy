@@ -1,9 +1,13 @@
 import { Static, Type } from "@sinclair/typebox";
-import { Nullable, Ref } from "./shared.js";
+import { ErrorSchema, Nullable, Ref } from "./shared.js";
 
 const ParamsSchema = Type.Unknown({
   description:
     "JSON schema defining the parameters that should be used when registering a trigger.",
+});
+const OptionsRequestSchema = Type.Unknown({
+  description:
+    "JSON schema defining the parameters an agent may use when requesting options for a trigger.",
 });
 
 export const TriggerRegistrationSchema = Type.Object(
@@ -29,7 +33,7 @@ export const TriggerRegistrationSchema = Type.Object(
       ),
     ),
     params: Type.Record(Type.String(), Type.Any()),
-    expiresAt: Type.String(),
+    expiresAt: Type.Optional(Type.String()),
     createdAt: Type.ReadonlyOptional(Type.String({ readOnly: true })),
     updatedAt: Type.ReadonlyOptional(Type.String({ readOnly: true })),
   },
@@ -45,6 +49,8 @@ export const TriggerSchema = Type.Object(
     displayName: Type.String(),
     paramsSchema: ParamsSchema,
     description: Type.String(),
+    eventDetailsSchema: Type.Unknown(),
+    optionsRequestSchema: Type.Optional(OptionsRequestSchema),
   },
   {
     $id: "Trigger",
@@ -55,7 +61,21 @@ export const GetTriggersEndpoint = {
   tags: ["Triggers"],
   security: [{ bearerAuth: [] }],
   response: {
-    200: Type.Array(TriggerSchema),
+    200: Type.Array(Ref(TriggerSchema)),
+  },
+};
+
+export const GetTriggerEndpoint = {
+  tags: ["Triggers"],
+  security: [{ bearerAuth: [] }],
+  params: Type.Object({
+    providerId: Type.String(),
+    triggerId: Type.String(),
+  }),
+  response: {
+    200: Ref(TriggerSchema),
+    404: Ref(ErrorSchema),
+    400: Ref(ErrorSchema),
   },
 };
 
@@ -70,6 +90,37 @@ export const CreateTriggerRegistrationEndpoint = {
       message: Type.String(),
     }),
     401: Type.Object({
+      error: Type.String(),
+      message: Type.String(),
+    }),
+  },
+};
+export const GetTriggerParamOptionsEndpoint = {
+  tags: ["Triggers"],
+  security: [{ bearerAuth: [] }],
+  params: Type.Object({
+    providerId: Type.String(),
+    triggerId: Type.String(),
+  }),
+  response: {
+    200: Type.Object({
+      options: Type.Record(Type.String(), Type.Unknown()),
+    }),
+    401: Ref(ErrorSchema),
+    404: Ref(ErrorSchema),
+    400: Ref(ErrorSchema)
+  },
+};
+
+export const SubscribeTriggerRegistrationEndpoint = {
+  security: [{ bearerAuth: [] }],
+  params: Type.Object({
+    id: Type.String(),
+  }),
+  body: Ref(TriggerRegistrationSchema),
+  response: {
+    200: Type.Object({ status: Type.Literal("ok") }),
+    400: Type.Object({
       error: Type.String(),
       message: Type.String(),
     }),

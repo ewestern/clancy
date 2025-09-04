@@ -15,20 +15,20 @@
 
 import * as runtime from '../runtime.js';
 import type {
-  CapabilitiesProviderIdCapabilityIdGet404Response,
   ConnectionsGet200Response,
   ConnectionsIdPatch200Response,
   ConnectionsIdPatchRequest,
+  ErrorResponse,
 } from '../models/index.js';
 import {
-    CapabilitiesProviderIdCapabilityIdGet404ResponseFromJSON,
-    CapabilitiesProviderIdCapabilityIdGet404ResponseToJSON,
     ConnectionsGet200ResponseFromJSON,
     ConnectionsGet200ResponseToJSON,
     ConnectionsIdPatch200ResponseFromJSON,
     ConnectionsIdPatch200ResponseToJSON,
     ConnectionsIdPatchRequestFromJSON,
     ConnectionsIdPatchRequestToJSON,
+    ErrorResponseFromJSON,
+    ErrorResponseToJSON,
 } from '../models/index.js';
 
 export interface ConnectionsIdPatchOperationRequest {

@@ -5,22 +5,28 @@ import {
 } from "../types/fastify.js";
 import {
   CreateTriggerRegistrationEndpoint,
+  GetTriggerEndpoint,
+  GetTriggerParamOptionsEndpoint,
   GetTriggersEndpoint,
+  SubscribeTriggerRegistrationEndpoint,
   TriggerRegistrationSchema,
+  TriggerSchema,
 } from "../models/triggers.js";
 import { connections, triggerRegistrations } from "../database/schema.js";
 import { registry } from "../integrations.js";
 import { FastifyReply } from "fastify";
 import { validateInput } from "../providers/utils.js";
-import { eq } from "drizzle-orm";
-import { and } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { ConnectionStatus } from "../models/connection.js";
 import { ProviderKind } from "../models/providers.js";
 import { getUnifiedAuth } from "../utils/auth.js";
 import { OAuthContext } from "../providers/types.js";
+import { ErrorSchema } from "../models/shared.js";
 
 export async function triggerRoutes(app: FastifyTypeBox) {
   app.addSchema(TriggerRegistrationSchema);
+  app.addSchema(TriggerSchema);
+  app.addSchema(ErrorSchema);
 
   app.get(
     "/triggers",
@@ -39,12 +45,151 @@ export async function triggerRoutes(app: FastifyTypeBox) {
             paramsSchema: trigger.paramsSchema,
             description: trigger.description,
             displayName: trigger.displayName,
+            eventDetailsSchema: trigger.eventDetailsSchema,
+            optionsRequestSchema: trigger.optionsRequestSchema,
           };
         });
       });
       reply.status(200).send(triggers);
     },
   );
+  app.get("/triggers/:providerId/:triggerId", {
+    schema: GetTriggerEndpoint,
+    handler: async (
+      request: FastifyRequestTypeBox<typeof GetTriggerEndpoint>,
+      reply: FastifyReplyTypeBox<typeof GetTriggerEndpoint>,
+    ) => {
+      const { providerId, triggerId } = request.params;
+      const provider = registry.getProvider(providerId);
+      const trigger = provider?.getTrigger?.(triggerId);
+      if (!trigger) {
+        return reply.status(404).send({
+          error: "Trigger not found",
+          message: "Trigger not found",
+          statusCode: 404,
+        });
+      }
+      return reply.status(200).send({
+        ...trigger,
+        providerId: providerId,
+      });
+    },
+  });
+
+
+  app.get("/triggers/param-options", {
+    schema: GetTriggerParamOptionsEndpoint,
+    handler: async (
+      request: FastifyRequestTypeBox<typeof GetTriggerParamOptionsEndpoint>,
+      reply: FastifyReplyTypeBox<typeof GetTriggerParamOptionsEndpoint>,
+    ) => {
+      const { providerId, triggerId } = request.params;
+      const provider = registry.getProvider(providerId);
+      const trigger = provider?.getTrigger?.(triggerId);
+      if (!trigger) {
+        return reply.status(404).send({
+          error: "Trigger not found",
+          message: "Trigger not found",
+          statusCode: 404,
+        });
+      }
+      if (!trigger.resolveTriggerParams) {
+        return reply.status(400).send({
+          error: "Trigger does not support parameter resolution",
+          message: "Trigger does not support parameter resolution",
+          statusCode: 400,
+        });
+      }
+      const { orgId, userId } = getUnifiedAuth(request);
+      if (!orgId || !userId) {
+        return reply.status(401).send({
+          error: "Unauthorized",
+          message: "Unauthorized",
+          statusCode: 401,
+        });
+      }
+      const options = await trigger.resolveTriggerParams(
+        request.server.db,
+        orgId!,
+        userId!,
+      );
+      return reply.status(200).send({ options });
+    },
+  });
+  // This is mostly for testing.
+  // It
+  app.post("/trigger-registrations/subscribe", {
+    schema: SubscribeTriggerRegistrationEndpoint,
+    handler: async (
+      request: FastifyRequestTypeBox<
+        typeof SubscribeTriggerRegistrationEndpoint
+      >,
+      reply: FastifyReplyTypeBox<typeof SubscribeTriggerRegistrationEndpoint>,
+    ) => {
+      const { orgId, userId } = getUnifiedAuth(request);
+      const { providerId, triggerId } = request.body;
+      const provider = registry.getProvider(providerId);
+
+      const trigger = provider?.getTrigger?.(triggerId);
+      if (trigger?.registerSubscription) {
+        const triggerRegistration =
+          await request.server.db.query.triggerRegistrations.findFirst({
+            where: and(
+              eq(triggerRegistrations.orgId, orgId!),
+              eq(triggerRegistrations.providerId, providerId!),
+              eq(triggerRegistrations.triggerId, triggerId!),
+            ),
+          });
+        if (!triggerRegistration) {
+          return reply.status(400).send({
+            error: "Trigger registration not found",
+            message: "Trigger registration not found",
+          });
+        }
+        const connection = await request.server.db.query.connections.findFirst({
+          where: and(
+            eq(connections.orgId, orgId!),
+            eq(connections.userId, userId!),
+            eq(connections.providerId, providerId!),
+            eq(connections.status, ConnectionStatus.Active),
+          ),
+        });
+        if (!connection) {
+          return reply.status(400).send({
+            error: "Connection not found",
+            message: "Connection not found",
+          });
+        }
+        const providerSecrets = await request.server.getProviderSecrets(
+          providerId!,
+        );
+        if (!providerSecrets) {
+          throw new Error("Provider secrets not found");
+        }
+        const { clientId, clientSecret, redirectUri } = providerSecrets;
+        const oauthContext: OAuthContext = {
+          orgId: orgId!,
+          provider: providerId!,
+          clientId: clientId!,
+          clientSecret: clientSecret!,
+          redirectUri: redirectUri!,
+        };
+        const result = await trigger.registerSubscription(
+          request.server.db,
+          connection.externalAccountMetadata,
+          triggerRegistration,
+          oauthContext,
+        );
+        request.log.info(result, "subscription result");
+      } else {
+        return reply.status(400).send({
+          error: "Trigger does not support subscriptions",
+          message: "Trigger does not support subscriptions",
+        });
+      }
+    },
+  });
+
 
   app.post("/trigger-registrations", {
     schema: CreateTriggerRegistrationEndpoint,
@@ -102,6 +247,7 @@ export async function triggerRoutes(app: FastifyTypeBox) {
           body.params,
         ])}`,
       );
+
       const triggerRegistration = await request.server.db.transaction(
         async (tx) => {
           const connection = await tx.query.connections.findFirst({
@@ -124,12 +270,12 @@ export async function triggerRoutes(app: FastifyTypeBox) {
           }
           const toInsert = {
             ...body,
+            expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
             connectionId: connection?.id,
-            expiresAt: new Date(body.expiresAt),
             createdAt: new Date(),
             updatedAt: new Date(),
           };
-          const [triggerRegistration] = await app.db
+          const [triggerRegistration] = await tx
             .insert(triggerRegistrations)
             .values(toInsert)
             .returning();
@@ -188,7 +334,7 @@ export async function triggerRoutes(app: FastifyTypeBox) {
         providerId: triggerRegistration.providerId,
         triggerId: triggerRegistration.triggerId,
         params: triggerRegistration.params,
-        expiresAt: triggerRegistration.expiresAt.toISOString(),
+        expiresAt: triggerRegistration.expiresAt?.toISOString(),
         createdAt: triggerRegistration.createdAt.toISOString(),
       });
     },

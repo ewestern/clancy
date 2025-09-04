@@ -7,14 +7,15 @@
     "watch": "tsc -w",
     "test": "NODE_ENV=test tap -t4 --disable-coverage",
     "clean": "rm -rf ./dist",
-    "execute": "tsx scripts/execute.ts"
+    "execute": "tsx scripts/execute.ts",
+    "create": "tsx scripts/graphCreator.ts"
   },
   "dependencies": {
     "@aws-sdk/client-kinesis": "^3.845.0",
     "@aws-sdk/client-s3": "^3.864.0",
     "@ewestern/agents_core_sdk": "^0.0.7",
-    "@ewestern/connect_hub_sdk": "^0.0.10",
-    "@ewestern/events": "^1.0.28",
+    "@ewestern/connect_hub_sdk": "^0.0.17",
+    "@ewestern/events": "^1.0.29",
     "@langchain/anthropic": "^0.3.25",
     "@langchain/core": "^0.3.66",
     "@langchain/langgraph": "^0.3.11",

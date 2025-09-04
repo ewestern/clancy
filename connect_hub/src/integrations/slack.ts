@@ -52,6 +52,7 @@ import {
 import { TriggerRegistration } from "../models/triggers.js";
 import { connections, triggerRegistrations } from "../database/schema.js";
 import { and, eq, sql } from "drizzle-orm";
+import { EventType } from "@ewestern/events";
 const __dirname = import.meta.dirname;
 
 const WebhookEventSchema = Type.Object({
@@ -59,9 +60,12 @@ const WebhookEventSchema = Type.Object({
 
   team_id: Type.String(),
   api_app_id: Type.String(),
-  event: Type.Object({
-    type: Type.String(),
-  }),
+  event: Type.Intersect([
+    Type.Object({
+      type: Type.String(),
+    }),
+    Type.Record(Type.String(), Type.Any()),
+  ]),
   type: Type.Literal("event_callback"),
   authorizations: Type.Array(
     Type.Object({
@@ -157,7 +161,12 @@ export const slackTriggers: Trigger<WebhookEvent>[] = [
     displayName: "Message Created",
     description: "A message was created",
     paramsSchema: messageCreatedParamsSchema,
-    eventSatisfies: (event: WebhookEvent | WebhookChallenge) => {
+    // TODO: remove uneeded info from event details schema
+    eventDetailsSchema: WebhookEventSchema,
+    renderTriggerDefinition: (trigger, triggerRegistration) => {
+      return "Triggered when a message is created in Slack";
+    },
+    eventSatisfies: (event: WebhookEvent | WebhookChallenge, headers) => {
       if (event.type === "url_verification") {
         return false;
       }
@@ -208,18 +217,27 @@ export const slackTriggers: Trigger<WebhookEvent>[] = [
         },
         triggerId: r.triggerRegistration.triggerId,
         params: r.triggerRegistration.params,
-        expiresAt: r.triggerRegistration.expiresAt.toISOString(),
+        expiresAt: r.triggerRegistration.expiresAt?.toISOString(),
         createdAt: r.triggerRegistration.createdAt.toISOString(),
         updatedAt: r.triggerRegistration.updatedAt?.toISOString(),
       }));
     },
     createEvents: async (
       event: WebhookEvent,
+      headers: Record<string, any>,
       triggerRegistration: TriggerRegistration,
     ) => {
       return [
         {
-          event: event,
+          event: {
+            type: EventType.RunIntent,
+            timestamp: new Date().toISOString(),
+            orgId: triggerRegistration.orgId,
+            agentId: triggerRegistration.agentId,
+            executionId: `exec-slack.message-${new Date().toISOString()}`,
+            userId: triggerRegistration.connection?.userId!,
+            details: event.event,
+          },
           partitionKey: triggerRegistration.id!,
         },
       ];

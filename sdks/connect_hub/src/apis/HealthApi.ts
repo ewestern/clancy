@@ -54,33 +54,7 @@ export class HealthApi extends runtime.BaseAPI {
     }
 
     /**
-     * Service information
-     */
-    async infoGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<HealthGet200Response>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        const response = await this.request({
-            path: `/info`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => HealthGet200ResponseFromJSON(jsonValue));
-    }
-
-    /**
-     * Service information
-     */
-    async infoGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<HealthGet200Response> {
-        const response = await this.infoGetRaw(initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Kubernetes liveness probe
+     * Comprehensive health check with dependencies
      */
     async liveGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<HealthGet200Response>> {
         const queryParameters: any = {};
@@ -98,36 +72,10 @@ export class HealthApi extends runtime.BaseAPI {
     }
 
     /**
-     * Kubernetes liveness probe
+     * Comprehensive health check with dependencies
      */
     async liveGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<HealthGet200Response> {
         const response = await this.liveGetRaw(initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Kubernetes readiness probe
-     */
-    async readyGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<HealthGet200Response>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        const response = await this.request({
-            path: `/ready`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => HealthGet200ResponseFromJSON(jsonValue));
-    }
-
-    /**
-     * Kubernetes readiness probe
-     */
-    async readyGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<HealthGet200Response> {
-        const response = await this.readyGetRaw(initOverrides);
         return await response.value();
     }
 

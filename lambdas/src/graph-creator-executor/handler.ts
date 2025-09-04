@@ -92,8 +92,8 @@ export const lambdaHandler = async (
         unsatisfiedWorkflows: [],
       };
       await publishToKinesis(updateEvent, event.executionId);
-    } else if (chunk[graphCreator.JOIN]) {
-      const { agents, unsatisfiedWorkflows } = chunk[graphCreator.JOIN];
+    } else if (chunk[graphCreator.JOIN_ONE]) {
+      const { agents, unsatisfiedWorkflows } = chunk[graphCreator.JOIN_ONE];
       const updateEvent: EmployeeStateUpdateEvent = {
         type: EventType.EmployeeStateUpdate,
         orgId: event.orgId,
@@ -104,24 +104,41 @@ export const lambdaHandler = async (
         unsatisfiedWorkflows: unsatisfiedWorkflows,
       };
       await publishToKinesis(updateEvent, event.executionId);
+    } else if (chunk[graphCreator.JOIN_TWO]) {
+      const { agents, unsatisfiedWorkflows } = chunk[graphCreator.JOIN_TWO];
+      const updateEvent: EmployeeStateUpdateEvent = {
+        type: EventType.EmployeeStateUpdate,
+        orgId: event.orgId,
+        timestamp: new Date().toISOString(),
+        phase: "resolved",
+        agents: agents,
+        workflows: [],
+        unsatisfiedWorkflows: unsatisfiedWorkflows,
+      };
+      await publishToKinesis(updateEvent, event.executionId);
     }
     if (isInterrupted(chunk)) {
       const interrupt = chunk[INTERRUPT][0] as Interrupt<{
-        question: string;
+        type: "human_input";
+        input?: {
+          question: string;
+        }
       }>;
-      const question = interrupt.value?.question;
-      const feedbackEvent: RequestHumanFeedbackEvent = {
-        type: EventType.RequestHumanFeedback,
-        userId: event.userId,
-        orgId: event.orgId,
-        timestamp: new Date().toISOString(),
-        executionId: event.executionId,
-        request: {
-          type: "text",
-          text: question || "",
-        },
-      };
-      await publishToKinesis(feedbackEvent, event.executionId);
+      if (interrupt.value?.type === "human_input") {
+        const question = interrupt.value?.input?.question;
+        const feedbackEvent: RequestHumanFeedbackEvent = {
+          type: EventType.RequestHumanFeedback,
+          userId: event.userId,
+          orgId: event.orgId,
+          timestamp: new Date().toISOString(),
+          executionId: event.executionId,
+          request: {
+            type: "text",
+            text: question || "",
+          },
+        };
+        await publishToKinesis(feedbackEvent, event.executionId);
+      }
       break;
     }
   }

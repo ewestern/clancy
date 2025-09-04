@@ -1,5 +1,10 @@
 import { Static, Type } from "@sinclair/typebox";
-import { Ref, PaginatedResponseSchema, StringEnum, ErrorSchema } from "./shared.js";
+import {
+  Ref,
+  PaginatedResponseSchema,
+  StringEnum,
+  ErrorSchema,
+} from "./shared.js";
 
 export enum ConnectionStatus {
   Active = "active",

@@ -51,6 +51,7 @@ export const cronTrigger: Trigger<Record<string, any>> = {
   description: "Executes a workflow on a schedule",
   displayName: "Scheduled Workflow",
   paramsSchema: cronTriggerParamsSchema,
+  eventDetailsSchema: Type.Record(Type.String(), Type.Any()),
   renderTriggerDefinition: (trigger, triggerRegistration) => {
     const cronExpression = CronExpressionParser.parse(
       triggerRegistration.params.schedule,
@@ -62,6 +63,7 @@ export const cronTrigger: Trigger<Record<string, any>> = {
     db: Database,
     triggerId: string,
     event: Record<string, any>,
+    headers: Record<string, any>,
   ) => {
     const registrations = await db
       .select()
@@ -69,13 +71,14 @@ export const cronTrigger: Trigger<Record<string, any>> = {
       .where(eq(triggerRegistrations.triggerId, triggerId));
     return registrations.map((registration) => ({
       ...registration,
-      expiresAt: registration.expiresAt.toISOString(),
+      expiresAt: registration.expiresAt?.toISOString(),
       createdAt: registration.createdAt.toISOString(),
       updatedAt: registration.updatedAt.toISOString(),
     }));
   },
   createEvents: async (
     event: Record<string, any>,
+    headers: Record<string, any>,
     triggerRegistration: TriggerRegistration,
   ) => {
     const metadata = triggerRegistration.params.schedule;
@@ -96,6 +99,8 @@ export const cronTrigger: Trigger<Record<string, any>> = {
             orgId: triggerRegistration.orgId,
             agentId: triggerRegistration.agentId,
             executionId: `exec-internal.cron-${new Date().toISOString()}`,
+            userId: triggerRegistration.connection?.userId!,
+            details: event,
           },
           partitionKey: triggerRegistration.id!,
         },
@@ -105,7 +110,7 @@ export const cronTrigger: Trigger<Record<string, any>> = {
       return [];
     }
   },
-  eventSatisfies: (event: Record<string, any>) => {
+  eventSatisfies: (event: Record<string, any>, headers) => {
     if (event["detail-type"] === "Scheduled Event") {
       return true;
     }

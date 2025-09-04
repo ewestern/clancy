@@ -100,6 +100,7 @@ export interface CollaborativeWizardData {
     | "job_description"
     | "workflows"
     | "connect"
+    | "resolved"
     | "naming"
     | "ready"
     | "completed"; // Updated: changed "mapping" to "connect", added "naming"

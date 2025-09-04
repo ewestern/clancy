@@ -15,6 +15,7 @@ import {
 import { TriggerRegistration } from "../models/triggers.js";
 import { OwnershipScopeType } from "../models/shared.js";
 import { FastifyBaseLogger } from "fastify";
+import { Event, RunIntentEvent } from "@ewestern/events";
 
 /**
  * Risk level assessment for capabilities.
@@ -142,9 +143,25 @@ export interface Trigger<E = unknown> {
   id: string;
   requiredScopes?: string[];
   /**
+   * JSON schema defining the details that will be sent on the RunIntent event.
+   */
+  eventDetailsSchema: TSchema;
+  /**
    * JSON schema defining the parameters required when registering this trigger.
    */
   paramsSchema: TSchema;
+
+  optionsRequestSchema?: TSchema;
+
+  /**
+   * When trigger parameters can not be deduced from user input, 
+   * this function can be used to return options to the agent.
+   */
+  resolveTriggerParams?: (
+    db: Database,
+    orgId: string,
+    userId: string,
+  ) => Promise<Record<string, unknown[]>>;
   /**
    * Retrieve trigger registrations applicable for the incoming event.
    */
@@ -152,6 +169,7 @@ export interface Trigger<E = unknown> {
     db: Database,
     triggerId: string,
     event: E,
+    headers: Record<string, any>,
   ) => Promise<TriggerRegistration[]>;
 
   registerSubscription?: (
@@ -169,22 +187,23 @@ export interface Trigger<E = unknown> {
    */
   createEvents: (
     event: E,
+    headers: Record<string, any>,
     triggerRegistration: TriggerRegistration,
   ) => Promise<
     {
-      event: Record<string, unknown>;
+      event: RunIntentEvent;
       partitionKey: string;
     }[]
   >;
-  renderTriggerDefinition?: (
+  renderTriggerDefinition: (
     trigger: Trigger<E>,
-    triggerRegistration: TriggerRegistration,
+    triggerRegistration: typeof triggerRegistrations.$inferSelect,
   ) => string;
 
   description: string;
   displayName: string;
 
-  eventSatisfies: (event: E) => boolean;
+  eventSatisfies: (event: E, headers: Record<string, any>) => boolean;
 }
 
 export interface Webhook<S extends FastifySchema = FastifySchema, E = unknown> {
@@ -192,6 +211,9 @@ export interface Webhook<S extends FastifySchema = FastifySchema, E = unknown> {
    * Fastify route schema describing the webhook endpoint.
    */
   eventSchema: S;
+  /**
+   * Validate the request.
+   */
   validateRequest: (request: FastifyRequestTypeBox<S>) => Promise<boolean>;
   /**
    * Optional hook to modify the reply before it is sent to the client.

@@ -55,40 +55,6 @@ export function HiringWizard({
   onClose,
   onComplete,
 }: HiringWizardProps) {
-  //const mockAgents: AgentPrototype[] = [
-  //  {
-  //    id: "agent-1",
-  //    name: "Invoice Processing Agent",
-  //    description: "Monthly Invoice Processing",
-  //    trigger: {
-  //      id: "cron",
-  //      providerId: "internal",
-  //      triggerParams: {},
-  //    },
-  //    capabilities: [
-  //      { id: "drive.drives.list", providerId: "google" },
-  //      { id: "gmail.messages.list", providerId: "google" },
-  //    ],
-  //    prompt:
-  //      "You are an invoice processing assistant that handles monthly billing tasks.",
-  //  },
-  //  {
-  //    id: "agent-2",
-  //    name: "Meeting Coordination Agent",
-  //    description: "Meeting Coordination Assistant",
-  //    trigger: {
-  //      id: "message.created",
-  //      providerId: "slack",
-  //      triggerParams: {},
-  //    },
-  //    capabilities: [
-  //      { id: "chat.post", providerId: "slack" },
-  //      { id: "gmail.messages.list", providerId: "google" },
-  //    ],
-  //    prompt:
-  //      "You are a meeting coordination assistant that helps manage calendars and meetings.",
-  //  },
-  //];
 
   const [wizardData, setWizardData] = useState<CollaborativeWizardData>({
     jobDescription: "",
@@ -122,6 +88,7 @@ export function HiringWizard({
   const { send, subscribe } = useWebSocketCtx();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isFinalizing, setIsFinalizing] = useState(false);
   // Track whether the AI assistant has requested feedback from the user
   const [feedbackRequested, setFeedbackRequested] = useState(false);
 
@@ -213,6 +180,7 @@ export function HiringWizard({
       setAgents([]);
       setUnsatisfiedWorkflows([]);
       setFeedbackRequested(false);
+      setIsFinalizing(false);
     }
   }, [isOpen]);
   // Build provider cards from agents' requested permissions
@@ -258,7 +226,6 @@ export function HiringWizard({
       setWizardData((prev) => ({
         ...prev,
         availableProviders: providers,
-        phase: providers.length === 0 ? "naming" : prev.phase,
       }));
     }
   }, [agents, wizardData.phase, providerCapabilities, triggers]);
@@ -284,13 +251,20 @@ export function HiringWizard({
           phase: "workflows",
         }));
       } else if (event.phase === "connect") {
-        // For connect phase (backend may still send "mapping"), handle workflow configs and unsatisfied workflows
         setAgents(event.agents);
         setUnsatisfiedWorkflows(event.unsatisfiedWorkflows);
         setWizardData((prev) => ({
           ...prev,
           phase: "connect",
         }));
+        setIsFinalizing(false);
+      } else if (event.phase === "resolved") {
+        // All trigger parameters resolved, move to naming
+        setWizardData((prev) => ({
+          ...prev,
+          phase: "naming",
+        }));
+        setIsFinalizing(false);
       } else {
         console.error("Event should never be in phase:", event.phase);
       }
@@ -315,10 +289,27 @@ export function HiringWizard({
               : p,
           );
           const allConnected = updated.every((p) => p.connectionStatus === "connected");
+          if (allConnected) {
+            send({
+              type: "event",
+              timestamp: new Date().toISOString(),
+              event: {
+                userId: user?.id,
+                type: EventType.ResumeIntent,
+                orgId: organization?.id,
+                timestamp: new Date().toISOString(),
+                agentId: "graph-creator",
+                executionId: wizardData.executionId,
+                resume: {},
+              } as ResumeIntentEvent,
+            });
+            // Wait for "resolved" event to advance to naming
+            setIsFinalizing(true);
+          }
           return {
             ...prev,
             availableProviders: updated,
-            phase: allConnected ? "naming" : prev.phase,
+            phase: prev.phase,
           };
         });
       } else {
@@ -827,14 +818,27 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
                           />
                         </svg>
                       </div>
-                      <h3 className="text-lg font-medium text-green-800 mb-2">
-                        All Integrations Ready!
-                      </h3>
-                      <p className="text-green-700">
-                        No additional OAuth connections are required for your AI
-                        employee. All necessary integrations are already in
-                        place.
-                      </p>
+                      {isFinalizing ? (
+                        <>
+                          <h3 className="text-lg font-medium text-green-800 mb-2">
+                            Finalizing agent setup…
+                          </h3>
+                          <p className="text-green-700">
+                            The system is resolving any remaining configuration.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <h3 className="text-lg font-medium text-green-800 mb-2">
+                            All Integrations Ready!
+                          </h3>
+                          <p className="text-green-700">
+                            No additional OAuth connections are required for your AI
+                            employee. All necessary integrations are already in
+                            place.
+                          </p>
+                        </>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -854,6 +858,14 @@ We need an AI assistant to handle our monthly invoicing process. This includes g
                           onConnectProvider={handleConnectProvider}
                           onDisconnectProvider={handleDisconnectProvider}
                         />
+                        {wizardData.availableProviders.every((p) => p.connectionStatus === "connected") && (
+                          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div className="flex items-center">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mr-2"></div>
+                              <span className="text-blue-700 text-sm">Finalizing agent setup…</span>
+                            </div>
+                          </div>
+                        )}
                         <div className="mb-8"></div>
                       </>
                     )}
