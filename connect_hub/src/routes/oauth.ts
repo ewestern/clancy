@@ -12,42 +12,56 @@ import {
   OAuthErrorResponseSchema,
   OauthStatus,
   OAuthCallbackQuery,
-  OAuthAuditEndpointSchema,
-  OauthConnectionStatus,
   OauthConnectionStatusSchema,
 } from "../models/oauth.js";
 import { registry } from "../integrations.js";
 import { connections, tokens, oauthTransactions } from "../database/schema.js";
 import { ConnectionStatus } from "../models/connection.js";
 import { OAuthContext } from "../providers/types.js";
-import { getAuth, verifyToken } from "@clerk/fastify";
+import { verifyToken } from "@clerk/backend";
 import { Database } from "../plugins/database.js";
 import { publishEvents } from "../utils.js";
 import { EventType } from "@ewestern/events";
 import { OwnershipScope } from "../models/shared.js";
-import { ProviderKind } from "../models/providers.js";
 import { ProviderRuntime } from "../providers/types.js";
 
-// Helper function to resolve provider scopes from capabilities and triggers
-function resolveProviderScopes(
-  capabilities: string[],
-  triggers: string[],
+function parsePermission(permission: string): {
+  providerId: string;
+  itemId: string;
+} {
+  const [providerIdRaw, ...rest] = permission.split("/");
+  const providerId = providerIdRaw ?? "";
+  const itemId = rest.join("/");
+  return { providerId, itemId };
+}
+
+function resolveScopesForPermission(
+  permission: string,
   provider: ProviderRuntime,
 ): string[] {
-  // Get scopes from capabilities
-  const capabilityScopes = capabilities.flatMap((capability) => {
-    const mappedScopes = provider.scopeMapping[capability];
-    return mappedScopes || []; // fallback to empty if no mapping exists
-  });
+  const { itemId } = parsePermission(permission);
+  // If this itemId is a capability, map via scopeMapping
+  const capScopes = provider.scopeMapping[itemId];
+  if (capScopes && capScopes.length > 0) return capScopes;
+  // Else check trigger
+  const trigger = provider.getTrigger?.(itemId);
+  if (trigger?.requiredScopes) return trigger.requiredScopes;
+  return [];
+}
 
-  // Get scopes from triggers
-  const triggerScopes = triggers.flatMap((triggerId) => {
-    const trigger = provider.getTrigger?.(triggerId);
-    return trigger?.requiredScopes || [];
-  });
-
-  // Union and deduplicate
-  return [...new Set([...capabilityScopes, ...triggerScopes])];
+function resolveProviderScopesFromPermissions(
+  permissions: string[],
+  providerId: string,
+  provider: ProviderRuntime,
+): string[] {
+  const providerPermissions = permissions
+    .map(parsePermission)
+    .filter((p) => p.providerId === providerId)
+    .map((p) => `${p.providerId}/${p.itemId}`);
+  const scopes = providerPermissions.flatMap((perm) =>
+    resolveScopesForPermission(perm, provider),
+  );
+  return [...new Set(scopes)];
 }
 
 // Helper function to validate OAuth callback and get transaction
@@ -115,7 +129,11 @@ async function updateOrCreateConnection(
     if (existingConnection) {
       // Merge scopes with any existing token to avoid losing previously granted permissions
       const existingTokenRows = await tx
-        .select({ id: tokens.id, scopes: tokens.scopes, tokenPayload: tokens.tokenPayload })
+        .select({
+          id: tokens.id,
+          scopes: tokens.scopes,
+          tokenPayload: tokens.tokenPayload,
+        })
         .from(tokens)
         .where(
           and(
@@ -155,7 +173,7 @@ async function updateOrCreateConnection(
       await tx
         .update(connections)
         .set({
-          capabilities: oauthTransaction.capabilities,
+          permissions: oauthTransaction.requestedPermissions,
           externalAccountMetadata: externalAccountMetadata,
           status: ConnectionStatus.Active,
           updatedAt: new Date(),
@@ -174,7 +192,7 @@ async function updateOrCreateConnection(
         .insert(connections)
         .values({
           userId: oauthTransaction.userId,
-          capabilities: oauthTransaction.capabilities,
+          permissions: oauthTransaction.requestedPermissions,
           externalAccountMetadata: externalAccountMetadata,
           orgId: oauthTransaction.orgId,
           providerId: providerId,
@@ -254,7 +272,6 @@ export async function oauthRoutes(app: FastifyTypeBox) {
   // Register schemas
   app.addSchema(OAuthSuccessResponseSchema);
   app.addSchema(OAuthErrorResponseSchema);
-  app.addSchema(OAuthAuditEndpointSchema.response["200"]);
   app.addSchema(OauthConnectionStatusSchema);
 
   // OAuth Launch - Generate authorization URL and redirect
@@ -267,11 +284,8 @@ export async function oauthRoutes(app: FastifyTypeBox) {
       request: FastifyRequestTypeBox<typeof OAuthLaunchEndpointSchema>,
       reply: FastifyReplyTypeBox<typeof OAuthLaunchEndpointSchema>,
     ) => {
-      const { token } = request.query;
-      const capabilities = request.query.scopes;
-      const triggers = request.query.triggers || [];
+      const { token, permissions } = request.query;
       const { provider: providerId } = request.params;
-      const baseUrl = process.env.REDIRECT_BASE_URL!;
 
       const payload = await verifyToken(token, {
         secretKey: process.env.CLERK_SECRET_KEY!,
@@ -298,10 +312,28 @@ export async function oauthRoutes(app: FastifyTypeBox) {
             status: OauthStatus.Failed,
           });
         }
-        // Resolve provider scopes from both capabilities and triggers
-        const uniqueProviderScopes = resolveProviderScopes(capabilities, triggers, provider);
+        const existingConnections = await app.db.query.connections.findFirst({
+          where: and(
+            eq(connections.orgId, orgId),
+            eq(connections.userId, userId),
+            eq(connections.status, ConnectionStatus.Active),
+            eq(connections.providerId, providerId),
+          ),
+        });
 
-        const providerSecrets = await request.server.getProviderSecrets(providerId);
+        const allPermissions = new Set([
+          ...permissions,
+          ...(existingConnections?.permissions || []),
+        ]);
+        // Resolve provider scopes from unified permissions for this provider
+        const uniqueProviderScopes = resolveProviderScopesFromPermissions(
+          Array.from(allPermissions),
+          providerId,
+          provider,
+        );
+
+        const providerSecrets =
+          await request.server.getProviderSecrets(providerId);
 
         if (!providerSecrets) {
           return reply.status(400).send({
@@ -318,13 +350,13 @@ export async function oauthRoutes(app: FastifyTypeBox) {
           userId: userId,
           state: state,
           provider: providerId,
-          capabilities: capabilities,
+          requestedPermissions: (permissions || []).filter(
+            (perm) => parsePermission(perm).providerId === providerId,
+          ),
           requestedScopes: uniqueProviderScopes,
           redirectUri: redirectUri,
           status: OauthStatus.Pending,
         });
-
-
 
         const oauthContext: OAuthContext = {
           orgId: orgId,
@@ -341,7 +373,7 @@ export async function oauthRoutes(app: FastifyTypeBox) {
         // Redirect to provider's authorization URL
         return reply.redirect(authUrl);
       } catch (error) {
-        app.log.error("OAuth launch failed:", error);
+        app.log.error(error);
         return reply.status(400).send({
           error: "oauth_launch_failed",
           errorDescription:
@@ -435,207 +467,6 @@ export async function oauthRoutes(app: FastifyTypeBox) {
           `/public/oauth/error.html?error=${errorType}&error_description=${errorDescription}`,
         );
       }
-    },
-  );
-
-  // OAuth Audit - Evaluate required vs granted scopes per provider for the current user
-  app.post(
-    "/oauth/audit",
-    {
-      schema: OAuthAuditEndpointSchema,
-    },
-    async (
-      request: FastifyRequestTypeBox<typeof OAuthAuditEndpointSchema>,
-      reply: FastifyReplyTypeBox<typeof OAuthAuditEndpointSchema>,
-    ) => {
-      const { userId, orgId } = getAuth(request);
-      const { capabilities, triggers } = request.body;
-      if (!userId || !orgId) {
-        return reply.status(401).send({
-          error: "unauthorized",
-          message: "Missing user or organization in auth context",
-        } as any);
-      }
-
-      // Group requested capabilities and triggers by provider
-      const requestedCapabilitiesByProvider = capabilities.reduce(
-        (acc, item) => {
-          if (!acc.has(item.providerId)) {
-            acc.set(item.providerId, new Set());
-          }
-          acc.get(item.providerId)!.add(item.capabilityId);
-          return acc;
-        },
-        new Map<string, Set<string>>(),
-      );
-
-      const requestedTriggersByProvider = triggers.reduce(
-        (acc, item) => {
-          if (!acc.has(item.providerId)) {
-            acc.set(item.providerId, new Set());
-          }
-          acc.get(item.providerId)!.add(item.triggerId);
-          return acc;
-        },
-        new Map<string, Set<string>>(),
-      );
-
-      // Combine providers from both capabilities and triggers
-      const allProviderIds = new Set([
-        ...requestedCapabilitiesByProvider.keys(),
-        ...requestedTriggersByProvider.keys(),
-      ]);
-
-      const providerConnections =
-        await request.server.db.query.connections.findMany({
-          where: and(
-            eq(connections.orgId, orgId),
-            eq(connections.userId, userId),
-            eq(connections.status, ConnectionStatus.Active),
-            inArray(
-              connections.providerId,
-              Array.from(allProviderIds),
-            ),
-          ),
-        });
-      // Get user tokens for scope comparison
-      const connectionIds = providerConnections.map(conn => conn.id);
-      const userTokens = connectionIds.length > 0 ? await request.server.db.query.tokens.findMany({
-        where: and(
-          inArray(tokens.connectionId, connectionIds),
-          eq(tokens.ownershipScope, OwnershipScope.User),
-          eq(tokens.ownerId, userId),
-        ),
-      }) : [];
-
-      const tokensByConnectionId = new Map(
-        userTokens.map(token => [token.connectionId, token])
-      );
-
-      const existingProviderScopeSummary = providerConnections.reduce(
-        (acc, connection) => {
-          const providerId = connection.providerId;
-          const provider = registry.getProvider(providerId);
-          if (!provider) return acc;
-
-          const requestedCapabilities = requestedCapabilitiesByProvider.get(providerId) || new Set();
-          const requestedTriggers = requestedTriggersByProvider.get(providerId) || new Set();
-          
-          // Get required provider scopes for this provider
-          const requiredScopes = resolveProviderScopes(
-            Array.from(requestedCapabilities),
-            Array.from(requestedTriggers),
-            provider
-          );
-
-          // Get granted scopes from the user's token
-          const userToken = tokensByConnectionId.get(connection.id);
-          const grantedScopes = new Set(userToken?.scopes || []);
-          
-          const missingScopes = requiredScopes.filter(scope => !grantedScopes.has(scope));
-
-          return acc.set(providerId, {
-            grantedScopes,
-            missingScopes,
-            requestedCapabilities,
-            requestedTriggers,
-          });
-        },
-        new Map<
-          string,
-          { 
-            grantedScopes: Set<string>; 
-            missingScopes: string[];
-            requestedCapabilities: Set<string>;
-            requestedTriggers: Set<string>;
-          }
-        >(),
-      );
-
-      const results = Array.from(allProviderIds).flatMap((providerId) => {
-        const provider = registry.getProvider(providerId);
-        if (provider?.metadata.kind === ProviderKind.Internal) {
-          return [];
-        }
-
-        const requestedCapabilities = requestedCapabilitiesByProvider.get(providerId) || new Set();
-        const requestedTriggers = requestedTriggersByProvider.get(providerId) || new Set();
-        const summary = existingProviderScopeSummary.get(providerId);
-        
-        const baseUrl = process.env.REDIRECT_BASE_URL!;
-        const launchUrl = new URL(`${baseUrl}/oauth/launch/${providerId}`);
-        
-        // Add capabilities and triggers to OAuth URL
-        for (const capabilityId of Array.from(requestedCapabilities)) {
-          launchUrl.searchParams.append("scopes", capabilityId);
-        }
-        for (const triggerId of Array.from(requestedTriggers)) {
-          launchUrl.searchParams.append("triggers", triggerId);
-        }
-
-        if (!summary) {
-          // No existing connection for this provider
-          const missingCapabilitiesDisplay = Array.from(requestedCapabilities).map((capability) => {
-            const capabilityMeta = provider?.getCapability(capability).meta;
-            return capabilityMeta?.displayName || capability;
-          });
-          const missingTriggersDisplay = Array.from(requestedTriggers).map((triggerId) => {
-            const trigger = provider?.getTrigger?.(triggerId);
-            return trigger?.description || triggerId;
-          });
-          
-          return [
-            {
-              providerId: providerId,
-              providerDisplayName: provider?.metadata.displayName || "",
-              providerIcon: provider?.metadata.icon || "",
-              status: OauthConnectionStatus.NeedsAuth,
-              grantedCapabilities: [],
-              missingCapabilities: [...missingCapabilitiesDisplay, ...missingTriggersDisplay],
-              oauthUrl: launchUrl.toString(),
-            },
-          ];
-        }
-
-        const { missingScopes } = summary;
-        
-        if (missingScopes.length === 0) {
-          return [
-            {
-              providerId: providerId,
-              providerDisplayName: provider?.metadata.displayName || "",
-              providerIcon: provider?.metadata.icon || "",
-              status: OauthConnectionStatus.Connected,
-              grantedCapabilities: [],
-              missingCapabilities: [],
-              oauthUrl: "",
-            },
-          ];
-        } else {
-          // Build display names for missing permissions
-          const missingCapabilitiesDisplay = Array.from(requestedCapabilities).map((capability) => {
-            const capabilityMeta = provider?.getCapability(capability).meta;
-            return capabilityMeta?.displayName || capability;
-          });
-          const missingTriggersDisplay = Array.from(requestedTriggers).map((triggerId) => {
-            const trigger = provider?.getTrigger?.(triggerId);
-            return trigger?.description || triggerId;
-          });
-
-          return [
-            {
-              providerId: providerId,
-              providerDisplayName: provider?.metadata.displayName || "",
-              providerIcon: provider?.metadata.icon || "",
-              status: OauthConnectionStatus.NeedsScopeUpgrade,
-              grantedCapabilities: [],
-              missingCapabilities: [...missingCapabilitiesDisplay, ...missingTriggersDisplay],
-              oauthUrl: launchUrl.toString(),
-            },
-          ];
-        }
-      });
-      return reply.status(200).send(results);
     },
   );
 }

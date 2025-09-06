@@ -1,6 +1,7 @@
 import { Static, Type } from "@sinclair/typebox";
 
 export enum EventType {
+    UnsatisfiedWorkflow = "unsatisfiedworkflow",
     LLMUsage = "llmusage",
     RequestApproval = "requestapproval",
     RequestHumanFeedback = "requesthumanfeedback",
@@ -161,7 +162,9 @@ export const EmployeeStateUpdateEventSchema = Type.Object({
     phase: Type.Optional(Type.Union([
         Type.Literal("workflows"),
         Type.Literal("connect"),
+        Type.Literal("resolved"),
         Type.Literal("ready"),
+
     ])),
     workflows: Type.Array(WorkflowSchema),
     unsatisfiedWorkflows: Type.Array(Type.Object({
@@ -224,6 +227,18 @@ export const ActionCompletedEventSchema = Type.Object({
     executionId: Type.String(),
     result: Type.Record(Type.String(), Type.Any()),
     status: Type.Union([Type.Literal("success"), Type.Literal("error")]),
+    usage: Type.Optional(Type.Number()),
+    usageType: Type.Optional(Type.String()),
+})
+
+
+export const UnsatisfiedWorkflowEventSchema = Type.Object({
+    type: Type.Literal(EventType.UnsatisfiedWorkflow),
+    orgId: Type.String(),
+    userId: Type.String(),
+    timestamp: Type.String(),
+    description: Type.String(),
+    explanation: Type.String(),
 })
 
 export const EventSchema = Type.Union([
@@ -243,6 +258,7 @@ export const EventSchema = Type.Union([
     RunCompletedEventSchema,
     ActionInitiatedEventSchema,
     ActionCompletedEventSchema,
+    UnsatisfiedWorkflowEventSchema,
 ])
 
 
@@ -260,3 +276,4 @@ export type RequestApprovalEvent = Static<typeof RequestApprovalEventSchema>
 export type RunCompletedEvent = Static<typeof RunCompletedEventSchema>
 export type ActionInitiatedEvent = Static<typeof ActionInitiatedEventSchema>
 export type ActionCompletedEvent = Static<typeof ActionCompletedEventSchema>
+export type UnsatisfiedWorkflowEvent = Static<typeof UnsatisfiedWorkflowEventSchema>

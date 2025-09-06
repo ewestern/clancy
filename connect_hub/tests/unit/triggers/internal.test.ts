@@ -31,7 +31,11 @@ describe("Internal Provider - Cron Trigger", () => {
         time: now.toISOString(),
       };
 
-      const result = await cronTrigger.createEvents(event, triggerRegistration);
+      const result = await cronTrigger.createEvents(
+        event,
+        {},
+        triggerRegistration,
+      );
 
       expect(result).toHaveLength(1);
 
@@ -60,7 +64,11 @@ describe("Internal Provider - Cron Trigger", () => {
         time: new Date().toISOString(),
       };
 
-      const result = await cronTrigger.createEvents(event, triggerRegistration);
+      const result = await cronTrigger.createEvents(
+        event,
+        {},
+        triggerRegistration,
+      );
 
       expect(result).toHaveLength(0);
     });
@@ -79,7 +87,11 @@ describe("Internal Provider - Cron Trigger", () => {
         time: new Date().toISOString(),
       };
 
-      const result = await cronTrigger.createEvents(event, triggerRegistration);
+      const result = await cronTrigger.createEvents(
+        event,
+        {},
+        triggerRegistration,
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0].partitionKey).toBe("wildcard-cron-123");
@@ -97,7 +109,11 @@ describe("Internal Provider - Cron Trigger", () => {
         time: new Date().toISOString(),
       };
 
-      const result = await cronTrigger.createEvents(event, triggerRegistration);
+      const result = await cronTrigger.createEvents(
+        event,
+        {},
+        triggerRegistration,
+      );
 
       expect(result).toHaveLength(0);
     });
@@ -112,7 +128,11 @@ describe("Internal Provider - Cron Trigger", () => {
         time: new Date().toISOString(),
       };
 
-      const result = await cronTrigger.createEvents(event, triggerRegistration);
+      const result = await cronTrigger.createEvents(
+        event,
+        {},
+        triggerRegistration,
+      );
 
       // When schedule is undefined, the cron parser may either error out (returning [])
       // or create a wildcard pattern that matches. Let's just check it doesn't crash.
@@ -131,7 +151,11 @@ describe("Internal Provider - Cron Trigger", () => {
         time: new Date().toISOString(),
       };
 
-      const result = await cronTrigger.createEvents(event, triggerRegistration);
+      const result = await cronTrigger.createEvents(
+        event,
+        {},
+        triggerRegistration,
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0].event.executionId).toMatch(

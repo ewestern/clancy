@@ -154,6 +154,59 @@ export const calendarEventsListResultSchema = Type.Object({
   nextSyncToken: Type.Optional(Type.Union([Type.String(), Type.Null()])),
 });
 
+export const calendarEventUpdateParamsSchema = Type.Object({
+  calendarId: Type.Optional(
+    Type.String({ description: "Calendar identifier" }),
+  ),
+  eventId: Type.String({ description: "The ID of the event to update" }),
+  summary: Type.Optional(Type.String()),
+  description: Type.Optional(Type.String()),
+  start: Type.Optional(
+    Type.Object({
+      dateTime: Type.Optional(Type.String()),
+      date: Type.Optional(Type.String()),
+      timeZone: Type.Optional(Type.String()),
+    }),
+  ),
+  end: Type.Optional(
+    Type.Object({
+      dateTime: Type.Optional(Type.String()),
+      date: Type.Optional(Type.String()),
+      timeZone: Type.Optional(Type.String()),
+    }),
+  ),
+  attendees: Type.Optional(
+    Type.Array(
+      Type.Object({
+        email: Type.Optional(Type.String()),
+        responseStatus: Type.Optional(Type.String()),
+      }),
+    ),
+  ),
+  sendNotifications: Type.Optional(
+    Type.Boolean({
+      description:
+        "Whether to send notifications about the update of the event",
+    }),
+  ),
+  sendUpdates: Type.Optional(
+    Type.String({
+      description:
+        "Guests who should receive notifications about the update of the event",
+    }),
+  ),
+});
+
+export const calendarEventUpdateResultSchema = Type.Object({
+  id: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  htmlLink: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  status: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  created: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  updated: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  summary: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  description: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+});
+
 export type CalendarEventCreateParams = Static<
   typeof calendarEventCreateParamsSchema
 >;
@@ -165,6 +218,13 @@ export type CalendarEventsListParams = Static<
 >;
 export type CalendarEventsListResult = Static<
   typeof calendarEventsListResultSchema
+>;
+
+export type CalendarEventUpdateParams = Static<
+  typeof calendarEventUpdateParamsSchema
+>;
+export type CalendarEventUpdateResult = Static<
+  typeof calendarEventUpdateResultSchema
 >;
 
 // ---------------------------------------------------------------------------
@@ -223,5 +283,38 @@ export async function calendarEventsList(
       throw new Error(`Rate limited; retry after ${retryAfter}s`);
     }
     throw new Error(`Calendar events list error: ${error.message}`);
+  }
+}
+
+export async function calendarEventUpdate(
+  params: CalendarEventUpdateParams,
+  ctx: ExecutionContext,
+): Promise<CalendarEventUpdateResult> {
+  const calendar = createCalendarClient(ctx);
+
+  try {
+    const {
+      calendarId = "primary",
+      eventId,
+      sendNotifications,
+      sendUpdates,
+      ...eventData
+    } = params;
+
+    const response = await calendar.events.update({
+      calendarId,
+      eventId,
+      sendNotifications,
+      sendUpdates,
+      requestBody: eventData,
+    });
+
+    return response.data;
+  } catch (error: any) {
+    if (error.code === 429) {
+      const retryAfter = error.response?.headers?.["retry-after"] ?? "60";
+      throw new Error(`Rate limited; retry after ${retryAfter}s`);
+    }
+    throw new Error(`Calendar event update error: ${error.message}`);
   }
 }

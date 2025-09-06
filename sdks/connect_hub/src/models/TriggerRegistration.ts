@@ -74,7 +74,7 @@ export interface TriggerRegistration {
      * @type {string}
      * @memberof TriggerRegistration
      */
-    expiresAt: string;
+    expiresAt?: string;
     /**
      * 
      * @type {string}
@@ -98,7 +98,6 @@ export function instanceOfTriggerRegistration(value: object): value is TriggerRe
     if (!('providerId' in value) || value['providerId'] === undefined) return false;
     if (!('triggerId' in value) || value['triggerId'] === undefined) return false;
     if (!('params' in value) || value['params'] === undefined) return false;
-    if (!('expiresAt' in value) || value['expiresAt'] === undefined) return false;
     return true;
 }
 
@@ -119,7 +118,7 @@ export function TriggerRegistrationFromJSONTyped(json: any, ignoreDiscriminator:
         'triggerId': json['triggerId'],
         'connection': json['connection'] == null ? undefined : TriggerRegistrationConnectionFromJSON(json['connection']),
         'params': json['params'],
-        'expiresAt': json['expiresAt'],
+        'expiresAt': json['expiresAt'] == null ? undefined : json['expiresAt'],
         'createdAt': json['createdAt'] == null ? undefined : json['createdAt'],
         'updatedAt': json['updatedAt'] == null ? undefined : json['updatedAt'],
     };

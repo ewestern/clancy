@@ -5,6 +5,7 @@ import {
   assertEventStructure,
 } from "./test-utils.js";
 import type { WebhookEvent } from "../../../src/integrations/slack.js";
+import { EventType } from "@ewestern/events";
 
 describe("Slack Provider - Message Created Trigger", () => {
   const messageCreatedTrigger = slackTriggers.find(
@@ -48,6 +49,7 @@ describe("Slack Provider - Message Created Trigger", () => {
 
       const result = await messageCreatedTrigger.createEvents(
         slackEvent,
+        {},
         triggerRegistration,
       );
 
@@ -56,8 +58,11 @@ describe("Slack Provider - Message Created Trigger", () => {
       const createdEvent = result[0];
       assertEventStructure(createdEvent, "slack-trigger-123");
 
-      // The event should be the original Slack event
-      expect(createdEvent.event).toEqual(slackEvent);
+      // The event should be a RunIntent event with Slack event details
+      expect(createdEvent.event).toMatchObject({
+        type: EventType.RunIntent,
+        details: slackEvent.event,
+      });
     });
 
     test("should create event for message with attachments", async () => {
@@ -99,11 +104,15 @@ describe("Slack Provider - Message Created Trigger", () => {
 
       const result = await messageCreatedTrigger.createEvents(
         slackEvent,
+        {},
         triggerRegistration,
       );
 
       expect(result).toHaveLength(1);
-      expect(result[0].event).toEqual(slackEvent);
+      expect(result[0].event).toMatchObject({
+        type: EventType.RunIntent,
+        details: slackEvent.event,
+      });
       expect(result[0].partitionKey).toBe("slack-trigger-456");
     });
 
@@ -139,11 +148,15 @@ describe("Slack Provider - Message Created Trigger", () => {
 
       const result = await messageCreatedTrigger.createEvents(
         slackEvent,
+        {},
         triggerRegistration,
       );
 
       expect(result).toHaveLength(1);
-      expect(result[0].event).toEqual(slackEvent);
+      expect(result[0].event).toMatchObject({
+        type: EventType.RunIntent,
+        details: slackEvent.event,
+      });
     });
 
     test("should create event for message with mentions", async () => {
@@ -177,11 +190,15 @@ describe("Slack Provider - Message Created Trigger", () => {
 
       const result = await messageCreatedTrigger.createEvents(
         slackEvent,
+        {},
         triggerRegistration,
       );
 
       expect(result).toHaveLength(1);
-      expect(result[0].event).toEqual(slackEvent);
+      expect(result[0].event).toMatchObject({
+        type: EventType.RunIntent,
+        details: slackEvent.event,
+      });
     });
 
     test("should create event for bot message", async () => {
@@ -216,11 +233,15 @@ describe("Slack Provider - Message Created Trigger", () => {
 
       const result = await messageCreatedTrigger.createEvents(
         slackEvent,
+        {},
         triggerRegistration,
       );
 
       expect(result).toHaveLength(1);
-      expect(result[0].event).toEqual(slackEvent);
+      expect(result[0].event).toMatchObject({
+        type: EventType.RunIntent,
+        details: slackEvent.event,
+      });
     });
 
     test("should preserve all event properties in created event", async () => {
@@ -266,20 +287,24 @@ describe("Slack Provider - Message Created Trigger", () => {
 
       const result = await messageCreatedTrigger.createEvents(
         slackEvent,
+        {},
         triggerRegistration,
       );
 
       expect(result).toHaveLength(1);
 
-      // Verify the entire Slack event is preserved
-      expect(result[0].event).toEqual(slackEvent);
+      // Verify the event is a RunIntent event with Slack event details
+      expect(result[0].event).toMatchObject({
+        type: EventType.RunIntent,
+        details: slackEvent.event,
+      });
 
-      // Verify specific complex properties are preserved
-      expect((result[0].event as any).event.edited).toEqual({
+      // Verify specific complex properties are preserved in details
+      expect((result[0].event as any).details.edited).toEqual({
         user: "U123456",
         ts: "1234567891.123456",
       });
-      expect((result[0].event as any).event.reactions).toEqual([
+      expect((result[0].event as any).details.reactions).toEqual([
         {
           name: "thumbsup",
           count: 2,
@@ -316,11 +341,15 @@ describe("Slack Provider - Message Created Trigger", () => {
 
       const result = await messageCreatedTrigger.createEvents(
         slackEvent,
+        {},
         triggerRegistration,
       );
 
       expect(result).toHaveLength(1);
-      expect(result[0].event).toEqual(slackEvent);
+      expect(result[0].event).toMatchObject({
+        type: EventType.RunIntent,
+        details: slackEvent.event,
+      });
     });
   });
 });

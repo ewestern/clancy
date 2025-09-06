@@ -1,5 +1,10 @@
 import { Static, Type } from "@sinclair/typebox";
-import { Ref, PaginatedResponseSchema, StringEnum } from "./shared.js";
+import {
+  Ref,
+  PaginatedResponseSchema,
+  StringEnum,
+  ErrorSchema,
+} from "./shared.js";
 
 export enum ConnectionStatus {
   Active = "active",
@@ -21,7 +26,7 @@ export const ConnectionSchema = Type.Object(
     userId: Type.String(),
     providerId: Type.String(),
     displayName: Type.String(),
-    capabilities: Type.Array(Type.String()),
+    permissions: Type.Array(Type.String()),
     status: Ref(ConnectionStatusSchema),
     metadata: Type.Record(Type.String(), Type.Any()),
   },
@@ -36,8 +41,27 @@ export const ConnectionListEndpoint = {
   security: [{ bearerAuth: [] }],
   response: {
     200: PaginatedResponseSchema(Ref(ConnectionSchema)),
-    500: Type.Object({
-      error: Type.String(),
-    }),
+    500: Ref(ErrorSchema),
+  },
+};
+
+// Schema for connection update (only status allowed)
+export const ConnectionUpdateSchema = Type.Object({
+  status: Type.Optional(Ref(ConnectionStatusSchema)),
+  employeeId: Type.Optional(Type.String()),
+});
+
+export const ConnectionUpdateEndpoint = {
+  tags: ["Connection"],
+  description: "Update connection status",
+  params: Type.Object({
+    id: Type.String({ format: "uuid" }),
+  }),
+  body: ConnectionUpdateSchema,
+  response: {
+    200: ConnectionSchema,
+    401: Ref(ErrorSchema),
+    404: Ref(ErrorSchema),
+    500: Ref(ErrorSchema),
   },
 };

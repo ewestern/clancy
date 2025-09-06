@@ -1,6 +1,6 @@
 set -eux
 
-find src/* -delete
+find src/* -delete || true
 openapi-generator generate \
   -i "http://localhost:3001/openapi.json" \
   -g typescript-fetch \

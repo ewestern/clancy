@@ -52,9 +52,7 @@ const ActivityTab: React.FC<ActivityTabProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-slate-800">
-          Recent Activity
-        </h3>
+        <h3 className="text-lg font-medium text-slate-800">Recent Activity</h3>
         {loading ? (
           <div className="flex items-center space-x-2">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
@@ -130,8 +128,7 @@ const ActivityTab: React.FC<ActivityTabProps> = ({
           </div>
         ) : !error ? (
           activity.map((event) => {
-            const isHighlighted =
-              filterRunId && event.runId === filterRunId;
+            const isHighlighted = filterRunId && event.runId === filterRunId;
             return (
               <div
                 key={event.id}
@@ -157,14 +154,11 @@ const ActivityTab: React.FC<ActivityTabProps> = ({
                       {new Date(event.timestamp).toLocaleString()}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-600 mt-1">
-                    {event.message}
-                  </p>
+                  <p className="text-sm text-slate-600 mt-1">{event.message}</p>
                   <div className="flex items-center justify-between mt-2">
                     {event.durationMs && (
                       <span className="text-xs text-slate-400">
-                        Completed in{" "}
-                        {(event.durationMs / 1000).toFixed(1)}s
+                        Completed in {(event.durationMs / 1000).toFixed(1)}s
                       </span>
                     )}
                     {event.runId && (

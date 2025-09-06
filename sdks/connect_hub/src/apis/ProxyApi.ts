@@ -15,12 +15,12 @@
 
 import * as runtime from '../runtime.js';
 import type {
-  OauthAuditPost400Response,
+  ErrorResponse,
   ProxyProviderIdCapabilityIdPostRequest,
 } from '../models/index.js';
 import {
-    OauthAuditPost400ResponseFromJSON,
-    OauthAuditPost400ResponseToJSON,
+    ErrorResponseFromJSON,
+    ErrorResponseToJSON,
     ProxyProviderIdCapabilityIdPostRequestFromJSON,
     ProxyProviderIdCapabilityIdPostRequestToJSON,
 } from '../models/index.js';

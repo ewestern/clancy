@@ -62,7 +62,7 @@ export interface ConnectionsIdPatch200Response {
      * @type {Array<string>}
      * @memberof ConnectionsIdPatch200Response
      */
-    capabilities: Array<string>;
+    permissions: Array<string>;
     /**
      * 
      * @type {ConnectionStatus}
@@ -88,7 +88,7 @@ export function instanceOfConnectionsIdPatch200Response(value: object): value is
     if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('providerId' in value) || value['providerId'] === undefined) return false;
     if (!('displayName' in value) || value['displayName'] === undefined) return false;
-    if (!('capabilities' in value) || value['capabilities'] === undefined) return false;
+    if (!('permissions' in value) || value['permissions'] === undefined) return false;
     if (!('status' in value) || value['status'] === undefined) return false;
     if (!('metadata' in value) || value['metadata'] === undefined) return false;
     return true;
@@ -109,7 +109,7 @@ export function ConnectionsIdPatch200ResponseFromJSONTyped(json: any, ignoreDisc
         'userId': json['userId'],
         'providerId': json['providerId'],
         'displayName': json['displayName'],
-        'capabilities': json['capabilities'],
+        'permissions': json['permissions'],
         'status': ConnectionStatusFromJSON(json['status']),
         'metadata': json['metadata'],
     };
@@ -131,7 +131,7 @@ export function ConnectionsIdPatch200ResponseToJSONTyped(value?: ConnectionsIdPa
         'userId': value['userId'],
         'providerId': value['providerId'],
         'displayName': value['displayName'],
-        'capabilities': value['capabilities'],
+        'permissions': value['permissions'],
         'status': ConnectionStatusToJSON(value['status']),
         'metadata': value['metadata'],
     };

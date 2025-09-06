@@ -26,6 +26,8 @@ export const TagsListEndpoint = {
   response: {
     200: PaginatedResponseSchema(Ref(TagSchema)),
     400: Ref(ErrorSchema),
+    401: Ref(ErrorSchema),
+    404: Ref(ErrorSchema),
     500: Ref(ErrorSchema),
   },
   security: [{ bearerAuth: [] }],
@@ -42,6 +44,8 @@ export const TagCreateEndpoint = {
   response: {
     200: TagSchema,
     400: Ref(ErrorSchema),
+    401: Ref(ErrorSchema),
+    404: Ref(ErrorSchema),
     500: Ref(ErrorSchema),
   },
   security: [{ bearerAuth: [] }],
@@ -59,6 +63,7 @@ export const DocumentTagAttachEndpoint = {
   response: {
     200: Type.Object({ status: Type.Literal("ok") }),
     400: Ref(ErrorSchema),
+    401: Ref(ErrorSchema),
     404: Ref(ErrorSchema),
     500: Ref(ErrorSchema),
   },
@@ -75,6 +80,7 @@ export const DocumentTagDetachEndpoint = {
   response: {
     200: Type.Object({ status: Type.Literal("ok") }),
     400: Ref(ErrorSchema),
+    401: Ref(ErrorSchema),
     404: Ref(ErrorSchema),
     500: Ref(ErrorSchema),
   },

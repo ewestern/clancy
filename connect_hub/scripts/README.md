@@ -5,11 +5,13 @@ This script manages OAuth provider secrets in AWS Secrets Manager for the Clancy
 ## Usage
 
 ### Using npm script (recommended)
+
 ```bash
 npm run oauth:manage -- --help
 ```
 
 ### Direct execution
+
 ```bash
 tsx scripts/manage-oauth-secrets.ts --help
 ```
@@ -17,6 +19,7 @@ tsx scripts/manage-oauth-secrets.ts --help
 ## Examples
 
 ### Create/Update a Google OAuth secret
+
 ```bash
 npm run oauth:manage -- \
   --provider-id google \
@@ -26,6 +29,7 @@ npm run oauth:manage -- \
 ```
 
 ### Create/Update a Slack OAuth secret with signing secret
+
 ```bash
 npm run oauth:manage -- \
   --provider-id slack \
@@ -36,6 +40,7 @@ npm run oauth:manage -- \
 ```
 
 ### Specify environment
+
 ```bash
 npm run oauth:manage -- \
   --provider-id microsoft \
@@ -48,23 +53,27 @@ npm run oauth:manage -- \
 ## Arguments
 
 ### Required
+
 - `--provider-id, -p`: Provider ID (e.g., google, slack, microsoft)
 - `--client-id, -c`: OAuth client ID
-- `--client-secret, -s`: OAuth client secret  
+- `--client-secret, -s`: OAuth client secret
 - `--redirect-uri, -r`: OAuth redirect URI
 
 ### Optional
+
 - `--signing-secret, -S`: Optional signing secret (required for some providers like Slack)
 - `--environment, -e`: Environment (defaults to ENVIRONMENT env var or 'staging')
 
 ## Secret Path Pattern
 
 Secrets are stored in AWS Secrets Manager using the pattern:
+
 ```
 clancy/oauth/{environment}/{providerId}
 ```
 
 For example:
+
 - `clancy/oauth/staging/google`
 - `clancy/oauth/production/slack`
 

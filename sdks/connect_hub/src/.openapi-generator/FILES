@@ -38,8 +38,6 @@ models/DocumentsPresignPostRequest.ts
 models/DocumentsPresignPostRequestOwnershipScope.ts
 models/ErrorResponse.ts
 models/HealthGet200Response.ts
-models/HealthGet200ResponseDependencies.ts
-models/HealthGet200ResponseDependenciesDatabase.ts
 models/HealthGet200ResponseStatus.ts
 models/KnowledgeSnippet.ts
 models/KnowledgeSnippetOrigin.ts
@@ -50,15 +48,9 @@ models/KnowledgeSnippetsBulkPostRequestSnippetsInner.ts
 models/KnowledgeSnippetsGet200Response.ts
 models/OAuthErrorResponse.ts
 models/OAuthSuccessResponse.ts
-models/OauthAuditPost200ResponseInner.ts
-models/OauthAuditPost400Response.ts
-models/OauthAuditPostRequest.ts
-models/OauthAuditPostRequestCapabilitiesInner.ts
-models/OauthAuditPostRequestTriggersInner.ts
 models/OauthCallbackProviderGet200Response.ts
 models/OauthConnectionStatus.ts
 models/OauthLaunchProviderGet302Response.ts
-models/OauthLaunchProviderGet400Response.ts
 models/OwnershipScope.ts
 models/PromptSpec.ts
 models/Provider.ts
@@ -74,6 +66,8 @@ models/TagsPostRequest.ts
 models/Trigger.ts
 models/TriggerRegistration.ts
 models/TriggerRegistrationConnection.ts
+models/TriggerRegistrationsPost400Response.ts
+models/TriggersParamOptionsProviderIdTriggerIdGet200Response.ts
 models/WebhooksSlackPostRequest.ts
 models/WebhooksSlackPostRequestOneOf.ts
 models/WebhooksSlackPostRequestOneOf1.ts

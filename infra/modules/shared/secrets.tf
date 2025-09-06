@@ -16,6 +16,14 @@ resource "aws_secretsmanager_secret" "anthropic_api_key" {
   name = "clancy/${var.environment}/anthropic"
   description = "Anthropic API key for Clancy services"
 }
+resource "aws_secretsmanager_secret" "tavily_api_key" {
+  name = "clancy/${var.environment}/tavily"
+  description = "Tavily API key for Clancy services"
+}
+resource "aws_secretsmanager_secret" "twilio_secrets" {
+  name = "clancy/${var.environment}/twilio"
+  description = "Twilio secrets for Clancy services"
+}
 
 data "aws_secretsmanager_secret_version" "clerk_secrets" {
   secret_id = aws_secretsmanager_secret.clerk_secrets.id

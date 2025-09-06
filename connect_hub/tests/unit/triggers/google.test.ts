@@ -8,7 +8,8 @@ import {
   createMockTriggerRegistration,
   assertEventStructure,
 } from "./test-utils.js";
-import type { GoogleWebhookEvent } from "../../../src/integrations/google/webhooks.js";
+import type { GoogleWebhookEvent } from "../../../src/integrations/google.js";
+import { EventType } from "@ewestern/events";
 
 describe("Google Provider - Triggers", () => {
   beforeEach(() => {
@@ -25,36 +26,35 @@ describe("Google Provider - Triggers", () => {
         });
 
         const gmailEvent: GoogleWebhookEvent = {
-          type: "gmail_message",
-          pubsubMessage: {
+          message: {
             data: Buffer.from(
               JSON.stringify({
-                messageId: "msg123456789",
                 historyId: "hist987654321",
                 emailAddress: "user@example.com",
               }),
             ).toString("base64"),
             messageId: "pubsub-msg-123",
-            publishTime: "2024-01-15T10:30:00Z",
           },
+          subscription: "test-subscription",
         };
 
         const result = await gmailMessageReceivedTrigger.createEvents(
           gmailEvent,
+          {},
           triggerRegistration,
         );
 
         expect(result).toHaveLength(1);
 
         const createdEvent = result[0];
-        assertEventStructure(createdEvent, "gmail-agent-456");
+        assertEventStructure(createdEvent, "gmail-trigger-123");
 
         expect(createdEvent.event).toMatchObject({
-          type: "gmail_message_received",
-          messageId: "msg123456789",
-          historyId: "hist987654321",
-          emailAddress: "user@example.com",
-          triggerRegistrationId: "gmail-trigger-123",
+          type: EventType.RunIntent,
+          details: {
+            historyId: "hist987654321",
+            emailAddress: "user@example.com",
+          },
         });
       });
 
@@ -64,14 +64,16 @@ describe("Google Provider - Triggers", () => {
         });
 
         const nonGmailEvent: GoogleWebhookEvent = {
-          type: "drive_change",
-          channelId: "channel123",
-          resourceId: "resource456",
-          resourceState: "sync",
+          message: {
+            data: "invalid-data",
+            messageId: "test-message-id",
+          },
+          subscription: "test-subscription",
         };
 
         const result = await gmailMessageReceivedTrigger.createEvents(
           nonGmailEvent,
+          {},
           triggerRegistration,
         );
 
@@ -84,12 +86,16 @@ describe("Google Provider - Triggers", () => {
         });
 
         const incompleteEvent: GoogleWebhookEvent = {
-          type: "gmail_message",
-          // Missing pubsubMessage
+          message: {
+            data: "incomplete-data",
+            messageId: "test-message-id",
+          },
+          subscription: "test-subscription",
         };
 
         const result = await gmailMessageReceivedTrigger.createEvents(
           incompleteEvent,
+          {},
           triggerRegistration,
         );
 
@@ -113,28 +119,28 @@ describe("Google Provider - Triggers", () => {
         };
 
         const gmailEvent: GoogleWebhookEvent = {
-          type: "gmail_message",
-          pubsubMessage: {
+          message: {
             data: Buffer.from(JSON.stringify(complexMessageData)).toString(
               "base64",
             ),
             messageId: "pubsub-msg-456",
-            publishTime: "2024-01-15T10:30:00Z",
           },
+          subscription: "test-subscription",
         };
 
         const result = await gmailMessageReceivedTrigger.createEvents(
           gmailEvent,
+          {},
           triggerRegistration,
         );
 
         expect(result).toHaveLength(1);
         expect(result[0].event).toMatchObject({
-          type: "gmail_message_received",
-          messageId: "msg123456789",
-          historyId: "hist987654321",
-          emailAddress: "user@example.com",
-          triggerRegistrationId: "gmail-trigger-complex",
+          type: EventType.RunIntent,
+          details: {
+            historyId: "hist987654321",
+            emailAddress: "user@example.com",
+          },
         });
       });
     });
@@ -150,15 +156,21 @@ describe("Google Provider - Triggers", () => {
         });
 
         const driveEvent: GoogleWebhookEvent = {
-          type: "drive_change",
-          channelId: "channel123456",
-          resourceId: "resource789012",
-          resourceState: "update",
-          resourceUri: "https://www.googleapis.com/drive/v3/files/file123",
+          message: {
+            data: "drive-webhook-data",
+            messageId: "drive-message-id",
+          },
+          subscription: "test-subscription",
         };
 
         const result = await driveFileChangeTrigger.createEvents(
           driveEvent,
+          {
+            "x-goog-channel-id": "channel123456",
+            "x-goog-resource-id": "resource789012",
+            "x-goog-resource-uri":
+              "https://www.googleapis.com/drive/v3/files/file123",
+          },
           triggerRegistration,
         );
 
@@ -168,11 +180,11 @@ describe("Google Provider - Triggers", () => {
         assertEventStructure(createdEvent, "drive-agent-456");
 
         expect(createdEvent.event).toMatchObject({
-          type: "drive_file_changed",
-          channelId: "channel123456",
-          resourceId: "resource789012",
-          resourceState: "update",
-          triggerRegistrationId: "drive-trigger-123",
+          type: EventType.RunIntent,
+          details: {
+            resourceId: "resource789012",
+            resourceUri: "https://www.googleapis.com/drive/v3/files/file123",
+          },
         });
       });
 
@@ -184,24 +196,31 @@ describe("Google Provider - Triggers", () => {
         });
 
         const driveEvent: GoogleWebhookEvent = {
-          type: "drive_change",
-          channelId: "channel789",
-          resourceId: "resource456",
-          resourceState: "sync",
+          message: {
+            data: "drive-webhook-data-2",
+            messageId: "drive-message-id-2",
+          },
+          subscription: "test-subscription",
         };
 
         const result = await driveFileChangeTrigger.createEvents(
           driveEvent,
+          {
+            "x-goog-channel-id": "channel789",
+            "x-goog-resource-id": "resource456",
+            "x-goog-resource-uri":
+              "https://www.googleapis.com/drive/v3/files/file456",
+          },
           triggerRegistration,
         );
 
         expect(result).toHaveLength(1);
         expect(result[0].event).toMatchObject({
-          type: "drive_file_changed",
-          channelId: "channel789",
-          resourceId: "resource456",
-          resourceState: "sync",
-          triggerRegistrationId: "drive-trigger-create",
+          type: EventType.RunIntent,
+          details: {
+            resourceId: "resource456",
+            resourceUri: "https://www.googleapis.com/drive/v3/files/file456",
+          },
         });
       });
 
@@ -211,14 +230,16 @@ describe("Google Provider - Triggers", () => {
         });
 
         const nonDriveEvent: GoogleWebhookEvent = {
-          type: "calendar_change",
-          channelId: "calendar123",
-          resourceId: "calendar456",
-          resourceState: "sync",
+          message: {
+            data: "non-drive-data",
+            messageId: "non-drive-message-id",
+          },
+          subscription: "test-subscription",
         };
 
         const result = await driveFileChangeTrigger.createEvents(
           nonDriveEvent,
+          {},
           triggerRegistration,
         );
 
@@ -237,16 +258,20 @@ describe("Google Provider - Triggers", () => {
         });
 
         const calendarEvent: GoogleWebhookEvent = {
-          type: "calendar_change",
-          channelId: "calendar-channel123",
-          resourceId: "calendar-resource456",
-          resourceState: "exists",
-          resourceUri:
-            "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+          message: {
+            data: "calendar-webhook-data",
+            messageId: "calendar-message-id",
+          },
+          subscription: "test-subscription",
         };
 
         const result = await calendarEventsChangeTrigger.createEvents(
           calendarEvent,
+          {
+            "x-goog-channel-id": "calendar-channel123",
+            "x-goog-resource-id": "calendar-resource456",
+            "x-goog-resource-state": "exists",
+          },
           triggerRegistration,
         );
 
@@ -256,11 +281,12 @@ describe("Google Provider - Triggers", () => {
         assertEventStructure(createdEvent, "calendar-agent-456");
 
         expect(createdEvent.event).toMatchObject({
-          type: "calendar_event_changed",
-          channelId: "calendar-channel123",
-          resourceId: "calendar-resource456",
-          resourceState: "exists",
-          triggerRegistrationId: "calendar-trigger-123",
+          type: EventType.RunIntent,
+          details: {
+            channelId: "calendar-channel123",
+            resourceId: "calendar-resource456",
+            resourceState: "exists",
+          },
         });
       });
 
@@ -272,24 +298,31 @@ describe("Google Provider - Triggers", () => {
         });
 
         const calendarEvent: GoogleWebhookEvent = {
-          type: "calendar_change",
-          channelId: "calendar-channel789",
-          resourceId: "calendar-resource012",
-          resourceState: "not_exists",
+          message: {
+            data: "calendar-delete-data",
+            messageId: "calendar-delete-message-id",
+          },
+          subscription: "test-subscription",
         };
 
         const result = await calendarEventsChangeTrigger.createEvents(
           calendarEvent,
+          {
+            "x-goog-channel-id": "calendar-channel789",
+            "x-goog-resource-id": "calendar-resource012",
+            "x-goog-resource-state": "not_exists",
+          },
           triggerRegistration,
         );
 
         expect(result).toHaveLength(1);
         expect(result[0].event).toMatchObject({
-          type: "calendar_event_changed",
-          channelId: "calendar-channel789",
-          resourceId: "calendar-resource012",
-          resourceState: "not_exists",
-          triggerRegistrationId: "calendar-trigger-delete",
+          type: EventType.RunIntent,
+          details: {
+            channelId: "calendar-channel789",
+            resourceId: "calendar-resource012",
+            resourceState: "not_exists",
+          },
         });
       });
 
@@ -299,14 +332,16 @@ describe("Google Provider - Triggers", () => {
         });
 
         const nonCalendarEvent: GoogleWebhookEvent = {
-          type: "drive_change",
-          channelId: "drive123",
-          resourceId: "drive456",
-          resourceState: "sync",
+          message: {
+            data: "non-calendar-data",
+            messageId: "non-calendar-message-id",
+          },
+          subscription: "test-subscription",
         };
 
         const result = await calendarEventsChangeTrigger.createEvents(
           nonCalendarEvent,
+          {},
           triggerRegistration,
         );
 
@@ -321,26 +356,31 @@ describe("Google Provider - Triggers", () => {
         });
 
         const calendarEvent: GoogleWebhookEvent = {
-          type: "calendar_change",
-          channelId: "calendar-sync-123",
-          resourceId: "calendar-sync-456",
-          resourceState: "sync",
-          resourceUri:
-            "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+          message: {
+            data: "calendar-sync-data",
+            messageId: "calendar-sync-message-id",
+          },
+          subscription: "test-subscription",
         };
 
         const result = await calendarEventsChangeTrigger.createEvents(
           calendarEvent,
+          {
+            "x-goog-channel-id": "calendar-sync-123",
+            "x-goog-resource-id": "calendar-sync-456",
+            "x-goog-resource-state": "sync",
+          },
           triggerRegistration,
         );
 
         expect(result).toHaveLength(1);
         expect(result[0].event).toMatchObject({
-          type: "calendar_event_changed",
-          channelId: "calendar-sync-123",
-          resourceId: "calendar-sync-456",
-          resourceState: "sync",
-          triggerRegistrationId: "calendar-trigger-sync",
+          type: EventType.RunIntent,
+          details: {
+            channelId: "calendar-sync-123",
+            resourceId: "calendar-sync-456",
+            resourceState: "sync",
+          },
         });
       });
     });

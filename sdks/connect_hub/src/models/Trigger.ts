@@ -32,6 +32,12 @@ export interface Trigger {
      */
     providerId: string;
     /**
+     * 
+     * @type {string}
+     * @memberof Trigger
+     */
+    displayName: string;
+    /**
      * JSON schema defining the parameters that should be used when registering a trigger.
      * @type {any}
      * @memberof Trigger
@@ -43,6 +49,18 @@ export interface Trigger {
      * @memberof Trigger
      */
     description: string;
+    /**
+     * 
+     * @type {any}
+     * @memberof Trigger
+     */
+    eventDetailsSchema: any | null;
+    /**
+     * JSON schema defining the parameters an agent may use when requesting options for a trigger.
+     * @type {any}
+     * @memberof Trigger
+     */
+    optionsRequestSchema?: any | null;
 }
 
 /**
@@ -51,8 +69,10 @@ export interface Trigger {
 export function instanceOfTrigger(value: object): value is Trigger {
     if (!('id' in value) || value['id'] === undefined) return false;
     if (!('providerId' in value) || value['providerId'] === undefined) return false;
+    if (!('displayName' in value) || value['displayName'] === undefined) return false;
     if (!('paramsSchema' in value) || value['paramsSchema'] === undefined) return false;
     if (!('description' in value) || value['description'] === undefined) return false;
+    if (!('eventDetailsSchema' in value) || value['eventDetailsSchema'] === undefined) return false;
     return true;
 }
 
@@ -68,8 +88,11 @@ export function TriggerFromJSONTyped(json: any, ignoreDiscriminator: boolean): T
         
         'id': json['id'],
         'providerId': json['providerId'],
+        'displayName': json['displayName'],
         'paramsSchema': json['paramsSchema'],
         'description': json['description'],
+        'eventDetailsSchema': json['eventDetailsSchema'],
+        'optionsRequestSchema': json['optionsRequestSchema'] == null ? undefined : json['optionsRequestSchema'],
     };
 }
 
@@ -86,8 +109,11 @@ export function TriggerToJSONTyped(value?: Trigger | null, ignoreDiscriminator: 
         
         'id': value['id'],
         'providerId': value['providerId'],
+        'displayName': value['displayName'],
         'paramsSchema': value['paramsSchema'],
         'description': value['description'],
+        'eventDetailsSchema': value['eventDetailsSchema'],
+        'optionsRequestSchema': value['optionsRequestSchema'],
     };
 }
 

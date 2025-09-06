@@ -1,9 +1,16 @@
 import { LLMResult } from "@langchain/core/outputs";
 import { GraphCreator } from "../src/shared/graphCreator";
 import dotenv from "dotenv";
+
 import { Type } from "@sinclair/typebox";
-import { isInterrupted, INTERRUPT, Command } from "@langchain/langgraph";
+import {
+  isInterrupted,
+  INTERRUPT,
+  Command,
+  Interrupt,
+} from "@langchain/langgraph";
 import * as readline from "readline";
+import { Serialized } from "@langchain/core/load/serializable";
 
 dotenv.config();
 
@@ -22,15 +29,8 @@ function getUserInput(question: string): Promise<string> {
   });
 }
 const JOB_DESCRIPTION = `
-We’re hiring a part-time AI Executive Assistant to remove two routine tasks from our COO’s plate.
-
-1. Daily email digest 
-   * pull all *unread* email received in the COO’s Gmail inbox since the last digest.  
-   * Generate a brief three-bullet summary.  
-   * Post that summary in the Slack channel #exec-updates.
-
-2. Daily social-media post
-   * Immediately after posting to Slack, publish the same summary as a tweet from our @ExampleCo Twitter account.
+I need an agent to watch for new calendar events on my google calendar, and then add any information 
+from the knowledge base or web that is relevant to the event to the event description.
 `;
 
 const callbacks = {
@@ -43,6 +43,14 @@ const callbacks = {
     console.log("LLM END");
     //console.log(JSON.stringify(output, null, 2));
   },
+    handleToolEnd(output: any, runId: string, parentRunId?: string, tags?: string[]) {
+      console.log("TOOL END");
+      console.log(JSON.stringify({output, runId, parentRunId, tags}, null, 2));
+    },
+    handleToolStart(tool: Serialized, input: string, runId: string, parentRunId?: string, tags?: string[], metadata?: Record<string, unknown>, runName?: string) {
+      console.log("TOOL START");
+      console.log(JSON.stringify({tool, input, runId, parentRunId, tags, metadata, runName}, null, 2));
+    },
 };
 
 async function processStream(
@@ -53,11 +61,16 @@ async function processStream(
   for await (const chunk of stream) {
     console.log("CHUNK");
     console.log(JSON.stringify(chunk, null, 2));
-
-    // Check if this chunk contains an interrupt
+    console.log("IS INTERRUPTED", isInterrupted(chunk));
     if (isInterrupted(chunk)) {
-      const interrupt = chunk[INTERRUPT][0];
-      const question = (interrupt.value as any)?.question;
+      const interrupt = chunk[INTERRUPT][0] as Interrupt<{
+        type: "human_input";
+        input?: {
+          question: string;
+        };
+      }>;
+      console.log("INTERRUPT", interrupt);
+      const question = interrupt.value?.input?.question;
 
       if (question) {
         console.log("\n🚨 INTERRUPT: The GraphCreator needs your input!");
@@ -94,7 +107,7 @@ async function main() {
   const config = {
     callbacks: [callbacks],
     configurable: {
-      connectHubApiUrl: process.env.CONNECT_HUB_API_URL,
+      connectHubApiUrl: process.env.CONNECT_HUB_BASE_URL,
       orgId: "123",
       thread_id: crypto.randomUUID(),
     },

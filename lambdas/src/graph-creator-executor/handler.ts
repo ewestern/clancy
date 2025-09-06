@@ -14,8 +14,11 @@ import {
   EmployeeStateUpdateEvent,
   RunIntentEvent,
   ResumeIntentEvent,
+  UnsatisfiedWorkflowEvent,
 } from "@ewestern/events";
 import { LLMResult } from "@langchain/core/outputs.js";
+import { CallbackHandlerMethods } from "@langchain/core/dist/callbacks/base.js";
+import { Serialized } from "@langchain/core/load/serializable.js";
 
 interface LambdaEvent {
   detail: {
@@ -32,7 +35,15 @@ export const lambdaHandler = async (
     "GraphCreatorExecutor lambda triggered:",
     JSON.stringify(event, null, 2)
   );
-  const callbacks = {
+  const callbacks: CallbackHandlerMethods = {
+    handleToolEnd(output: any, runId: string, parentRunId?: string, tags?: string[]) {
+      console.log("TOOL END");
+      console.log(JSON.stringify({output, runId, parentRunId, tags}, null, 2));
+    },
+    handleToolStart(tool: Serialized, input: string, runId: string, parentRunId?: string, tags?: string[], metadata?: Record<string, unknown>, runName?: string) {
+      console.log("TOOL START");
+      console.log(JSON.stringify({tool, input, runId, parentRunId, tags, metadata, runName}, null, 2));
+    },
     handleLLMEnd: async (
       output: LLMResult,
       runId: string,
@@ -92,8 +103,8 @@ export const lambdaHandler = async (
         unsatisfiedWorkflows: [],
       };
       await publishToKinesis(updateEvent, event.executionId);
-    } else if (chunk[graphCreator.JOIN]) {
-      const { agents, unsatisfiedWorkflows } = chunk[graphCreator.JOIN];
+    } else if (chunk[graphCreator.JOIN_ONE]) {
+      const { agents, unsatisfiedWorkflows } = chunk[graphCreator.JOIN_ONE];
       const updateEvent: EmployeeStateUpdateEvent = {
         type: EventType.EmployeeStateUpdate,
         orgId: event.orgId,
@@ -104,24 +115,58 @@ export const lambdaHandler = async (
         unsatisfiedWorkflows: unsatisfiedWorkflows,
       };
       await publishToKinesis(updateEvent, event.executionId);
+      const unsatisfiedWorkflowEvents = unsatisfiedWorkflows.map(
+        async (unsatisfiedWorkflow: {
+          description: string;
+          explanation: string;
+        }) => {
+          const unsatisfiedWorkflowEvent: UnsatisfiedWorkflowEvent = {
+            type: EventType.UnsatisfiedWorkflow,
+            userId: event.userId,
+            orgId: event.orgId,
+            timestamp: new Date().toISOString(),
+            description: unsatisfiedWorkflow.description,
+            explanation: unsatisfiedWorkflow.explanation,
+          };
+          return publishToKinesis(unsatisfiedWorkflowEvent, event.executionId);
+        }
+      );
+      await Promise.all(unsatisfiedWorkflowEvents);
+    } else if (chunk[graphCreator.JOIN_TWO]) {
+      const { agents, unsatisfiedWorkflows } = chunk[graphCreator.JOIN_TWO];
+      const updateEvent: EmployeeStateUpdateEvent = {
+        type: EventType.EmployeeStateUpdate,
+        orgId: event.orgId,
+        timestamp: new Date().toISOString(),
+        phase: "resolved",
+        agents: agents,
+        workflows: [],
+        unsatisfiedWorkflows: unsatisfiedWorkflows,
+      };
+      await publishToKinesis(updateEvent, event.executionId);
     }
     if (isInterrupted(chunk)) {
       const interrupt = chunk[INTERRUPT][0] as Interrupt<{
-        question: string;
+        type: "human_input";
+        input?: {
+          question: string;
+        };
       }>;
-      const question = interrupt.value?.question;
-      const feedbackEvent: RequestHumanFeedbackEvent = {
-        type: EventType.RequestHumanFeedback,
-        userId: event.userId,
-        orgId: event.orgId,
-        timestamp: new Date().toISOString(),
-        executionId: event.executionId,
-        request: {
-          type: "text",
-          text: question || "",
-        },
-      };
-      await publishToKinesis(feedbackEvent, event.executionId);
+      if (interrupt.value?.type === "human_input") {
+        const question = interrupt.value?.input?.question;
+        const feedbackEvent: RequestHumanFeedbackEvent = {
+          type: EventType.RequestHumanFeedback,
+          userId: event.userId,
+          orgId: event.orgId,
+          timestamp: new Date().toISOString(),
+          executionId: event.executionId,
+          request: {
+            type: "text",
+            text: question || "",
+          },
+        };
+        await publishToKinesis(feedbackEvent, event.executionId);
+      }
       break;
     }
   }

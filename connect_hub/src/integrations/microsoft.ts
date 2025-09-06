@@ -231,10 +231,7 @@ export class MicrosoftProvider extends BaseProvider {
     const authority = `https://login.microsoftonline.com/${ctx.tenantId}`;
     const authUrl = new URL(`${authority}/adminconsent`);
 
-    authUrl.searchParams.append(
-      "client_id",
-      ctx.clientId,
-    );
+    authUrl.searchParams.append("client_id", ctx.clientId);
     authUrl.searchParams.append("state", params.state);
     authUrl.searchParams.append("redirect_uri", ctx.redirectUri);
 

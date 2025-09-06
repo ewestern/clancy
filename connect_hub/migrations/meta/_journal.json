@@ -43,6 +43,13 @@
       "when": 1755454459136,
       "tag": "0005_slimy_phil_sheldon",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1756759432867,
+      "tag": "0006_yellow_lyja",
+      "breakpoints": true
     }
   ]
 }

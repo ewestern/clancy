@@ -41,8 +41,7 @@ export const OAuthNeedsResponseSchema = Type.Array(
 
 // OAuth Launch Request Schema
 export const OAuthLaunchQuerySchema = Type.Object({
-  scopes: Type.Array(Type.String()),
-  triggers: Type.Optional(Type.Array(Type.String())),
+  permissions: Type.Array(Type.String()), // canonical permission strings providerId/itemId
   token: Type.String(),
 });
 
@@ -51,16 +50,13 @@ export const OAuthCallbackParamsSchema = Type.Object({
   provider: Type.String(),
 });
 
-export const OAuthCallbackQuerySchema = Type.Intersect([
-  Type.Object({
-    code: Type.String(),
-    state: Type.String(),
-    error: Type.Optional(Type.String()),
-    errorDescription: Type.Optional(Type.String()),
-    errorUri: Type.Optional(Type.String()),
-  }),
-  Type.Record(Type.String(), Type.Any()),
-]);
+export const OAuthCallbackQuerySchema = Type.Object({
+  code: Type.String(),
+  state: Type.String(),
+  error: Type.Optional(Type.String()),
+  errorDescription: Type.Optional(Type.String()),
+  errorUri: Type.Optional(Type.String()),
+});
 
 export enum OauthStatus {
   Pending = "pending",
@@ -110,6 +106,7 @@ export const OAuthTransactionSchema = Type.Object({
   id: Type.String(),
   orgId: Type.String(),
   provider: Type.String(),
+  requestedPermissions: Type.Array(Type.String()),
   requestedScopes: Type.Array(Type.String()),
   state: Type.String(),
   codeVerifier: Type.Optional(Type.String()),
@@ -147,7 +144,7 @@ export const OAuthLaunchEndpointSchema = {
     302: Type.Object({
       location: Type.String({ format: "uri" }),
     }),
-    400: OAuthErrorResponseSchema,
+    400: Type.Record(Type.String(), Type.Any()),
   },
 } as const;
 
@@ -161,7 +158,7 @@ export const OAuthCallbackEndpointSchema = {
       location: Type.String({ format: "uri" }),
     }),
     200: OAuthSuccessResponseSchema,
-    400: OAuthErrorResponseSchema,
+    400: Type.Record(Type.String(), Type.Any()),
   },
 };
 
@@ -177,18 +174,7 @@ export type OAuthTransaction = Static<typeof OAuthTransactionSchema>;
 
 // OAuth Audit Request/Response Schemas
 export const OAuthAuditRequestSchema = Type.Object({
-  capabilities: Type.Array(
-    Type.Object({
-      providerId: Type.String(),
-      capabilityId: Type.String(),
-    }),
-  ),
-  triggers: Type.Array(
-    Type.Object({
-      providerId: Type.String(),
-      triggerId: Type.String(),
-    }),
-  ),
+  permissions: Type.Array(Type.String()), // canonical permission strings providerId/itemId
 });
 export enum OauthConnectionStatus {
   Connected = "connected",
@@ -211,8 +197,8 @@ export const OAuthAuditProviderResultSchema = Type.Object({
   providerDisplayName: Type.String(),
   providerIcon: Type.String(),
   status: Ref(OauthConnectionStatusSchema),
-  grantedCapabilities: Type.Array(Type.String()),
-  missingCapabilities: Type.Array(Type.String()),
+  grantedPermissions: Type.Array(Type.String()),
+  missingPermissions: Type.Array(Type.String()),
   oauthUrl: Type.String(),
   message: Type.Optional(Type.String()),
 });

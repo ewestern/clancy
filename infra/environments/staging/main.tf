@@ -36,11 +36,10 @@ resource "google_pubsub_subscription" "clancy_connect_hub_staging" {
   name = "clancy-connect-hub-staging-subscription"
   topic = google_pubsub_topic.clancy_connect_hub_staging.name
   push_config {
-    push_endpoint = "${local.connect_hub_lb_endpoint}/webhooks/google"
-    #push_endpoint = "https://connect-hub.staging.clancy.systems/webhooks/google"
+    #push_endpoint = "${local.connect_hub_lb_endpoint}/webhooks/google"
+    push_endpoint = "https://27a1c1c2a871.ngrok-free.app/webhooks/google"
   }
 }
-
 
 resource "aws_ecr_repository" "connect_hub" {
   name                 = "clancy/connect-hub"
@@ -150,6 +149,7 @@ module "connect_hub" {
   openai_api_key = module.shared.openai_api_key
   hosted_zone_id = data.aws_route53_zone.clancy_domain.id
   kinesis_stream_name = module.events.kinesis_stream_name
+  google_pubsub_topic_name = google_pubsub_topic.clancy_connect_hub_staging.id
 }
 module "agents_core" {
   source = "../../modules/agents_core"

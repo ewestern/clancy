@@ -17,8 +17,11 @@ import {
   getMemoryUpdateCapability,
   getMemoryDeleteCapability,
 } from "./internal/memory.js";
+import { getWebSearchCapability } from "./internal/webSearch.js";
 import { FastifyRequestTypeBox } from "../types/fastify.js";
 import { getEmailSendCapability } from "./internal/emailSend.js";
+import { getSmsSendCapability, smsIncomingTrigger } from "./internal/twilioSms.js";
+import { getVoiceCallPlaceCapability, voiceIncomingTrigger } from "./internal/twilioVoice.js";
 //import { EventSchema, Event, RequestHumanFeedbackEvent, EventType } from "@clancy/events";
 import { EventSchema, Event, EventType } from "@ewestern/events";
 import { Database } from "../plugins/database.js";
@@ -49,7 +52,9 @@ const cronTriggerParamsSchema = Type.Object({
 export const cronTrigger: Trigger<Record<string, any>> = {
   id: "cron",
   description: "Executes a workflow on a schedule",
+  displayName: "Scheduled Workflow",
   paramsSchema: cronTriggerParamsSchema,
+  eventDetailsSchema: Type.Record(Type.String(), Type.Any()),
   renderTriggerDefinition: (trigger, triggerRegistration) => {
     const cronExpression = CronExpressionParser.parse(
       triggerRegistration.params.schedule,
@@ -61,6 +66,7 @@ export const cronTrigger: Trigger<Record<string, any>> = {
     db: Database,
     triggerId: string,
     event: Record<string, any>,
+    headers: Record<string, any>,
   ) => {
     const registrations = await db
       .select()
@@ -68,13 +74,14 @@ export const cronTrigger: Trigger<Record<string, any>> = {
       .where(eq(triggerRegistrations.triggerId, triggerId));
     return registrations.map((registration) => ({
       ...registration,
-      expiresAt: registration.expiresAt.toISOString(),
+      expiresAt: registration.expiresAt?.toISOString(),
       createdAt: registration.createdAt.toISOString(),
       updatedAt: registration.updatedAt.toISOString(),
     }));
   },
   createEvents: async (
     event: Record<string, any>,
+    headers: Record<string, any>,
     triggerRegistration: TriggerRegistration,
   ) => {
     const metadata = triggerRegistration.params.schedule;
@@ -95,6 +102,8 @@ export const cronTrigger: Trigger<Record<string, any>> = {
             orgId: triggerRegistration.orgId,
             agentId: triggerRegistration.agentId,
             executionId: `exec-internal.cron-${new Date().toISOString()}`,
+            userId: triggerRegistration.connection?.userId!,
+            details: event,
           },
           partitionKey: triggerRegistration.id!,
         },
@@ -104,19 +113,19 @@ export const cronTrigger: Trigger<Record<string, any>> = {
       return [];
     }
   },
-  eventSatisfies: (event: Record<string, any>) => {
+  eventSatisfies: (event: Record<string, any>, headers) => {
     if (event["detail-type"] === "Scheduled Event") {
       return true;
     }
     return false;
   },
 };
-const triggers = [cronTrigger];
+const triggers = [cronTrigger, smsIncomingTrigger, voiceIncomingTrigger];
 
 const webhooks = [
   {
     eventSchema: InternalWebhookEndpoint,
-    triggers: [cronTrigger],
+    triggers: [cronTrigger, smsIncomingTrigger, voiceIncomingTrigger],
     validateRequest: async (
       request: FastifyRequestTypeBox<typeof InternalWebhookEndpoint>,
     ) => {
@@ -145,6 +154,9 @@ export class InternalProvider extends BaseProvider<
       },
       capabilityFactories: {
         "email.send": getEmailSendCapability,
+        "sms.send": getSmsSendCapability,
+        "voice.call.place": getVoiceCallPlaceCapability,
+        "web.search": getWebSearchCapability,
         "knowledge.search": getKnowledgeSearchCapability,
         "knowledge.write": getKnowledgeWriteCapability,
         "memory.store": getMemoryStoreCapability,

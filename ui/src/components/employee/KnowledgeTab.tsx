@@ -25,9 +25,7 @@ const KnowledgeTab: React.FC<KnowledgeTabProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-slate-800">
-          Knowledge Base
-        </h3>
+        <h3 className="text-lg font-medium text-slate-800">Knowledge Base</h3>
         {loading ? (
           <div className="flex items-center space-x-2">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
@@ -97,7 +95,10 @@ const KnowledgeTab: React.FC<KnowledgeTabProps> = ({
             <tbody className="bg-white divide-y divide-slate-200">
               {knowledge.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
+                  <td
+                    colSpan={4}
+                    className="px-6 py-8 text-center text-slate-500"
+                  >
                     No knowledge items found
                   </td>
                 </tr>
