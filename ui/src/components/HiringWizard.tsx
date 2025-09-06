@@ -48,12 +48,14 @@ interface HiringWizardProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: (data: Employee) => void;
+  templateId?: string;
 }
 
 export function HiringWizard({
   isOpen,
   onClose,
   onComplete,
+  templateId,
 }: HiringWizardProps) {
 
   const [wizardData, setWizardData] = useState<CollaborativeWizardData>({
@@ -183,6 +185,50 @@ export function HiringWizard({
       setIsFinalizing(false);
     }
   }, [isOpen]);
+
+  // Load template (if provided) and optionally auto-start
+  useEffect(() => {
+    if (!isOpen || !templateId || wizardData.phase !== "job_description") return;
+
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const base = (import.meta.env.VITE_AGENTS_CORE_URL || "").replace(/\/$/, "");
+        const res = await fetch(`${base}/public/templates/${templateId}`);
+        if (!res.ok) return;
+        const tpl = await res.json();
+        if (cancelled) return;
+        setWizardData((prev) => ({ ...prev, jobDescription: tpl.jdSeed || "" }));
+        const jd: string = tpl.jdSeed || "";
+        if (jd.trim().length >= 20) {
+          // mirror handleJobDescriptionSubmit
+          setIsAnalyzing(true);
+          setIsProcessing(true);
+          const executionId = "exec-" + crypto.randomUUID();
+          setWizardData((prev) => ({ ...prev, phase: "workflows", executionId }));
+          send({
+            type: "event",
+            timestamp: new Date().toISOString(),
+            event: {
+              type: EventType.RunIntent,
+              orgId: organization?.id,
+              timestamp: new Date().toISOString(),
+              agentId: "graph-creator",
+              details: `[template:${templateId}]\n\n` + jd,
+              executionId,
+              userId: user?.id,
+            } as RunIntentEvent,
+          });
+        }
+      } catch (e) {
+        console.error("Failed to load template", e);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, templateId, wizardData.phase, send, organization?.id, user?.id]);
   // Build provider cards from agents' requested permissions
   useEffect(() => {
     if (agents.length > 0 && wizardData.phase === "connect") {

@@ -14,8 +14,11 @@ import {
   EmployeeStateUpdateEvent,
   RunIntentEvent,
   ResumeIntentEvent,
+  UnsatisfiedWorkflowEvent,
 } from "@ewestern/events";
 import { LLMResult } from "@langchain/core/outputs.js";
+import { CallbackHandlerMethods } from "@langchain/core/dist/callbacks/base.js";
+import { Serialized } from "@langchain/core/load/serializable.js";
 
 interface LambdaEvent {
   detail: {
@@ -32,7 +35,15 @@ export const lambdaHandler = async (
     "GraphCreatorExecutor lambda triggered:",
     JSON.stringify(event, null, 2)
   );
-  const callbacks = {
+  const callbacks: CallbackHandlerMethods = {
+    handleToolEnd(output: any, runId: string, parentRunId?: string, tags?: string[]) {
+      console.log("TOOL END");
+      console.log(JSON.stringify({output, runId, parentRunId, tags}, null, 2));
+    },
+    handleToolStart(tool: Serialized, input: string, runId: string, parentRunId?: string, tags?: string[], metadata?: Record<string, unknown>, runName?: string) {
+      console.log("TOOL START");
+      console.log(JSON.stringify({tool, input, runId, parentRunId, tags, metadata, runName}, null, 2));
+    },
     handleLLMEnd: async (
       output: LLMResult,
       runId: string,
@@ -104,6 +115,23 @@ export const lambdaHandler = async (
         unsatisfiedWorkflows: unsatisfiedWorkflows,
       };
       await publishToKinesis(updateEvent, event.executionId);
+      const unsatisfiedWorkflowEvents = unsatisfiedWorkflows.map(
+        async (unsatisfiedWorkflow: {
+          description: string;
+          explanation: string;
+        }) => {
+          const unsatisfiedWorkflowEvent: UnsatisfiedWorkflowEvent = {
+            type: EventType.UnsatisfiedWorkflow,
+            userId: event.userId,
+            orgId: event.orgId,
+            timestamp: new Date().toISOString(),
+            description: unsatisfiedWorkflow.description,
+            explanation: unsatisfiedWorkflow.explanation,
+          };
+          return publishToKinesis(unsatisfiedWorkflowEvent, event.executionId);
+        }
+      );
+      await Promise.all(unsatisfiedWorkflowEvents);
     } else if (chunk[graphCreator.JOIN_TWO]) {
       const { agents, unsatisfiedWorkflows } = chunk[graphCreator.JOIN_TWO];
       const updateEvent: EmployeeStateUpdateEvent = {
@@ -122,7 +150,7 @@ export const lambdaHandler = async (
         type: "human_input";
         input?: {
           question: string;
-        }
+        };
       }>;
       if (interrupt.value?.type === "human_input") {
         const question = interrupt.value?.input?.question;

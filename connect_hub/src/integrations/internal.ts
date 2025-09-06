@@ -17,8 +17,11 @@ import {
   getMemoryUpdateCapability,
   getMemoryDeleteCapability,
 } from "./internal/memory.js";
+import { getWebSearchCapability } from "./internal/webSearch.js";
 import { FastifyRequestTypeBox } from "../types/fastify.js";
 import { getEmailSendCapability } from "./internal/emailSend.js";
+import { getSmsSendCapability, smsIncomingTrigger } from "./internal/twilioSms.js";
+import { getVoiceCallPlaceCapability, voiceIncomingTrigger } from "./internal/twilioVoice.js";
 //import { EventSchema, Event, RequestHumanFeedbackEvent, EventType } from "@clancy/events";
 import { EventSchema, Event, EventType } from "@ewestern/events";
 import { Database } from "../plugins/database.js";
@@ -117,12 +120,12 @@ export const cronTrigger: Trigger<Record<string, any>> = {
     return false;
   },
 };
-const triggers = [cronTrigger];
+const triggers = [cronTrigger, smsIncomingTrigger, voiceIncomingTrigger];
 
 const webhooks = [
   {
     eventSchema: InternalWebhookEndpoint,
-    triggers: [cronTrigger],
+    triggers: [cronTrigger, smsIncomingTrigger, voiceIncomingTrigger],
     validateRequest: async (
       request: FastifyRequestTypeBox<typeof InternalWebhookEndpoint>,
     ) => {
@@ -151,6 +154,9 @@ export class InternalProvider extends BaseProvider<
       },
       capabilityFactories: {
         "email.send": getEmailSendCapability,
+        "sms.send": getSmsSendCapability,
+        "voice.call.place": getVoiceCallPlaceCapability,
+        "web.search": getWebSearchCapability,
         "knowledge.search": getKnowledgeSearchCapability,
         "knowledge.write": getKnowledgeWriteCapability,
         "memory.store": getMemoryStoreCapability,

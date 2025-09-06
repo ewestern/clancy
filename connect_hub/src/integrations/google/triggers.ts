@@ -60,7 +60,7 @@ export const gmailMessageReceivedTrigger: Trigger<GoogleWebhookEvent> = {
     const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
     // Generate verification token
-    const verificationToken = randomUUID();
+    ///const verificationToken = randomUUID();
     const {
       data: { emailAddress },
     } = await gmail.users.getProfile({
@@ -88,8 +88,6 @@ export const gmailMessageReceivedTrigger: Trigger<GoogleWebhookEvent> = {
         emailAddress,
         historyId,
         expiration,
-        verificationToken,
-        topicName: process.env.GOOGLE_PUBSUB_TOPIC_NAME,
         labelIds: triggerRegistration.params.labelIds,
         query: triggerRegistration.params.query,
       },
@@ -99,7 +97,6 @@ export const gmailMessageReceivedTrigger: Trigger<GoogleWebhookEvent> = {
   async getTriggerRegistrations(db, triggerId, event, headers) {
     // Find registrations for Gmail triggers
     //base64 decode the data
-    console.log("event", event);
     const { data } = event.message;
     try {
       const { emailAddress, historyId } = JSON.parse(
@@ -345,15 +342,13 @@ export const calendarEventsChangeTrigger: Trigger<GoogleWebhookEvent> = {
     "Triggered when calendar events are created, modified, or deleted",
   displayName: "Calendar Events Change",
   requiredScopes: ["https://www.googleapis.com/auth/calendar.readonly"],
-  paramsSchema: Type.Object({
-    calendarId: Type.String({ default: "primary" }),
-    eventTypes: Type.Optional(Type.Array(CalendarEventTypes)),
-  }),
+
   eventDetailsSchema: Type.Object(
     {
       channelId: Type.String({ description: "The ID of the channel" }),
       resourceId: Type.String({ description: "The ID of the resource" }),
       resourceState: Type.String({ description: "The state of the resource" }),
+      resourceUri: Type.String({ description: "The URI of the resource" }),
     },
     {
       description:
@@ -366,6 +361,19 @@ export const calendarEventsChangeTrigger: Trigger<GoogleWebhookEvent> = {
     return `Triggered when calendar events change in calendar: ${calendarId}`;
   },
 
+  paramsSchema: Type.Object({
+    calendarId: Type.String({ default: "primary" }),
+    eventTypes: Type.Optional(Type.Array(CalendarEventTypes)),
+    q: Type.Optional(
+      Type.String({
+        description: `Free text search terms to find events that match these terms in the following fields: 
+        summary, description, location, attendee's displayName, attendee's email, organizer's displayName, organizer's email, 
+        workingLocationProperties.officeLocation.buildingId, workingLocationProperties.officeLocation.deskId, workingLocationProperties.officeLocation.label, 
+        workingLocationProperties.customLocation.label. These search terms also match predefined keywords against all display title translations of working 
+        location, out-of-office, and focus-time events. For example, searching for \"Office\" or \"Bureau\" returns working location events of type officeLocation, 
+        whereas searching for \"Out of office\" or \"Abwesend\" returns out-of-office events.`})
+    ),
+  }),
   async registerSubscription(db, connectionMetadata, triggerRegistration) {
     const token = await db.query.tokens.findFirst({
       where: eq(tokens.connectionId, triggerRegistration.connectionId!),
@@ -381,13 +389,17 @@ export const calendarEventsChangeTrigger: Trigger<GoogleWebhookEvent> = {
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
     const calendarId = triggerRegistration.params.calendarId || "primary";
+    const verificationToken = randomUUID();
 
     const watchResponse = await calendar.events.watch({
       calendarId,
+      eventTypes: triggerRegistration.params.eventTypes,
       requestBody: {
         address: process.env.GOOGLE_PUBSUB_TOPIC_NAME,
+        token: verificationToken,
       },
     });
+
 
     const expiresAt = new Date(parseInt(watchResponse.data.expiration!));
 
@@ -397,6 +409,7 @@ export const calendarEventsChangeTrigger: Trigger<GoogleWebhookEvent> = {
         channelId: watchResponse.data.id,
         resourceId: watchResponse.data.resourceId,
         resourceUri: watchResponse.data.resourceUri,
+        token: verificationToken,
         calendarId,
         timeMin: triggerRegistration.params.timeMin,
         timeMax: triggerRegistration.params.timeMax,
@@ -428,6 +441,7 @@ export const calendarEventsChangeTrigger: Trigger<GoogleWebhookEvent> = {
     const channelId = headers["x-goog-channel-id"];
     const resourceId = headers["x-goog-resource-id"];
     const resourceState = headers["x-goog-resource-state"];
+    const resourceUri = headers["x-goog-resource-uri"];
 
     if (!channelId) return [];
 
@@ -444,6 +458,7 @@ export const calendarEventsChangeTrigger: Trigger<GoogleWebhookEvent> = {
             channelId,
             resourceId,
             resourceState,
+            resourceUri,
           },
         },
         partitionKey: triggerRegistration.agentId,
@@ -452,8 +467,9 @@ export const calendarEventsChangeTrigger: Trigger<GoogleWebhookEvent> = {
   },
 
   eventSatisfies(event, headers) {
-    // Calendar events are identified by the presence of specific headers
-    // We'll check this in getTriggerRegistrations instead
-    return true;
+    const resourceUri = headers["x-goog-resource-uri"];
+    // regex to match Calendar URIS
+    const calendarUriRegex = /^https:\/\/www\.googleapis\.com\/calendar\/v3\/calendars\/[^/]+\/events\/[^/]+$/;
+    return calendarUriRegex.test(resourceUri)
   },
 };

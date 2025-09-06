@@ -19,7 +19,7 @@ import type {
   Trigger,
   TriggerRegistration,
   TriggerRegistrationsPost400Response,
-  TriggersParamOptionsGet200Response,
+  TriggersParamOptionsProviderIdTriggerIdGet200Response,
 } from '../models/index.js';
 import {
     ErrorResponseFromJSON,
@@ -30,15 +30,15 @@ import {
     TriggerRegistrationToJSON,
     TriggerRegistrationsPost400ResponseFromJSON,
     TriggerRegistrationsPost400ResponseToJSON,
-    TriggersParamOptionsGet200ResponseFromJSON,
-    TriggersParamOptionsGet200ResponseToJSON,
+    TriggersParamOptionsProviderIdTriggerIdGet200ResponseFromJSON,
+    TriggersParamOptionsProviderIdTriggerIdGet200ResponseToJSON,
 } from '../models/index.js';
 
 export interface TriggerRegistrationsPostRequest {
     triggerRegistration?: Omit<TriggerRegistration, 'id'|'createdAt'|'updatedAt'>;
 }
 
-export interface TriggersParamOptionsGetRequest {
+export interface TriggersParamOptionsProviderIdTriggerIdGetRequest {
     providerId: string;
     triggerId: string;
 }
@@ -122,18 +122,18 @@ export class TriggersApi extends runtime.BaseAPI {
 
     /**
      */
-    async triggersParamOptionsGetRaw(requestParameters: TriggersParamOptionsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TriggersParamOptionsGet200Response>> {
+    async triggersParamOptionsProviderIdTriggerIdGetRaw(requestParameters: TriggersParamOptionsProviderIdTriggerIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TriggersParamOptionsProviderIdTriggerIdGet200Response>> {
         if (requestParameters['providerId'] == null) {
             throw new runtime.RequiredError(
                 'providerId',
-                'Required parameter "providerId" was null or undefined when calling triggersParamOptionsGet().'
+                'Required parameter "providerId" was null or undefined when calling triggersParamOptionsProviderIdTriggerIdGet().'
             );
         }
 
         if (requestParameters['triggerId'] == null) {
             throw new runtime.RequiredError(
                 'triggerId',
-                'Required parameter "triggerId" was null or undefined when calling triggersParamOptionsGet().'
+                'Required parameter "triggerId" was null or undefined when calling triggersParamOptionsProviderIdTriggerIdGet().'
             );
         }
 
@@ -150,19 +150,19 @@ export class TriggersApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/triggers/param-options`.replace(`{${"providerId"}}`, encodeURIComponent(String(requestParameters['providerId']))).replace(`{${"triggerId"}}`, encodeURIComponent(String(requestParameters['triggerId']))),
+            path: `/triggers/param-options/{providerId}/{triggerId}`.replace(`{${"providerId"}}`, encodeURIComponent(String(requestParameters['providerId']))).replace(`{${"triggerId"}}`, encodeURIComponent(String(requestParameters['triggerId']))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => TriggersParamOptionsGet200ResponseFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => TriggersParamOptionsProviderIdTriggerIdGet200ResponseFromJSON(jsonValue));
     }
 
     /**
      */
-    async triggersParamOptionsGet(requestParameters: TriggersParamOptionsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TriggersParamOptionsGet200Response> {
-        const response = await this.triggersParamOptionsGetRaw(requestParameters, initOverrides);
+    async triggersParamOptionsProviderIdTriggerIdGet(requestParameters: TriggersParamOptionsProviderIdTriggerIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TriggersParamOptionsProviderIdTriggerIdGet200Response> {
+        const response = await this.triggersParamOptionsProviderIdTriggerIdGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

@@ -126,6 +126,10 @@ variable "openai_api_key" {
   type        = string
   description = "The API key for the OpenAI API"
 }
+variable "google_pubsub_topic_name" {
+  type        = string
+  description = "The name of the Google Pub/Sub topic to use for the service"
+}
 
 locals {
   lb_endpoint = "https://${aws_route53_record.connect_hub_service.fqdn}"

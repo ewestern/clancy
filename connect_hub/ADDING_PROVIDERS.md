@@ -30,7 +30,7 @@ If your provider exposes inbound webhooks (e.g. Slack Events API), implement the
 **Key Components:**
 
 - **Webhook Event Schemas**: TypeBox schemas defining incoming event structure
-- **Triggers**: Logic to determine which registered triggers should fire for an event
+- **Triggers**: Definitions that describe params, required scopes, how to detect relevant events, how to fetch registrations, and how to create agent events
 - **Trigger Registrations**: Database records linking triggers to specific agent workflows
 - **Event Creation**: Transform webhook events into agent-consumable events
 - **Webhook Verification**: Provider-specific signature verification for security
@@ -48,9 +48,12 @@ If your provider exposes inbound webhooks (e.g. Slack Events API), implement the
    - Route events to appropriate triggers
 
 3. **Define Triggers with Event Logic**
-   - Create trigger definitions with `eventSatisfies` logic
-   - Implement database queries to find matching trigger registrations
-   - Transform webhook events into standardized agent events
+   - Create trigger definitions with the following shape (see reference below)
+   - Implement `eventSatisfies` to cheaply filter irrelevant webhook events
+   - Implement `getTriggerRegistrations` to query matching registrations for the event
+   - Implement `createEvents` to transform webhook events into standardized run-intent events
+   - Optionally implement `renderTriggerDefinition` to display a human-readable summary
+   - Optionally implement `registerSubscription` for providers that require remote subscriptions (e.g. Google watch APIs)
 
 4. **Register Webhooks with Triggers**
    - Associate triggers with webhook endpoints
@@ -59,6 +62,137 @@ If your provider exposes inbound webhooks (e.g. Slack Events API), implement the
 5. **Provider Implementation**
    - Use generic types: `ProviderRuntime<WebhookSchema, EventType>`
    - Expose webhooks via `webhooks` property
+   - Expose triggers via `triggers` property
+
+### Trigger and Webhook Interfaces (current)
+
+The trigger and webhook interfaces define how incoming events are validated, matched to registrations, and converted into agent run-intent events.
+
+```typescript
+// Trigger<E> (from connect_hub/src/providers/types.ts)
+export interface Trigger<E = unknown> {
+  id: string;
+  requiredScopes?: string[];
+
+  // Defines the event payload delivered to agents on RunIntent
+  eventDetailsSchema: TSchema;
+
+  // Parameters accepted when registering this trigger
+  paramsSchema: TSchema;
+
+  // Optional: parameters/options discovery for UI flows
+  optionsRequestSchema?: TSchema;
+  resolveTriggerParams?: (
+    db: Database,
+    orgId: string,
+    userId: string,
+  ) => Promise<Record<string, unknown[]>>;
+
+  // Query DB for matching registrations for this incoming event
+  getTriggerRegistrations: (
+    db: Database,
+    triggerId: string,
+    event: E,
+    headers: Record<string, any>,
+  ) => Promise<TriggerRegistration[]>;
+
+  // Optional: create/refresh provider subscriptions and return metadata
+  registerSubscription?: (
+    db: Database,
+    connectionMetadata: Record<string, unknown>,
+    triggerRegistration: typeof triggerRegistrations.$inferSelect,
+    oauthContext: OAuthContext,
+  ) => Promise<{
+    expiresAt: Date;
+    subscriptionMetadata: Record<string, unknown>;
+  }>;
+
+  // Create standardized events for the agent runtime
+  createEvents: (
+    event: E,
+    headers: Record<string, any>,
+    triggerRegistration: TriggerRegistration,
+  ) => Promise<{
+    event: RunIntentEvent;
+    partitionKey: string;
+  }[]>;
+
+  // Human-readable description of a specific registration
+  renderTriggerDefinition: (
+    trigger: Trigger<E>,
+    triggerRegistration: typeof triggerRegistrations.$inferSelect,
+  ) => string;
+
+  description: string;
+  displayName: string;
+
+  // Cheap pre-filter for webhook events
+  eventSatisfies: (event: E, headers: Record<string, any>) => boolean;
+}
+
+// Webhook<S, E>
+export interface Webhook<S extends FastifySchema = FastifySchema, E = unknown> {
+  eventSchema: S; // Fastify route schema for the webhook endpoint
+  validateRequest: (request: FastifyRequestTypeBox<S>) => Promise<boolean>;
+  replyHook?: (
+    request: FastifyRequestTypeBox<S>,
+    reply: FastifyReplyTypeBox<S>,
+  ) => Promise<void>;
+  triggers: Trigger<E>[];
+}
+```
+
+#### Webhook Processing Flow
+
+The runtime processes incoming webhook requests as follows:
+
+- Validate the request via `validateRequest(request)`; reject on failure
+- For each `trigger` on the webhook:
+  - Call `eventSatisfies(event, headers)` to cheaply pre-filter
+  - Call `getTriggerRegistrations(db, trigger.id, event, headers)`
+  - For each registration, call `createEvents(event, headers, registration)`
+  - Publish all returned RunIntent events, using each item’s `partitionKey`
+- If a `replyHook` is defined, call it to shape the HTTP response; otherwise return `{ status: "ok" }`
+
+#### Optional Trigger Capabilities
+
+- **`requiredScopes`**: Minimal provider scopes required to register/use this trigger
+- **`resolveTriggerParams` + `optionsRequestSchema`**: Dynamically provide selectable options for registration params (used by UI flows)
+- **`registerSubscription`**: Create/refresh provider-side subscriptions and persist returned `subscriptionMetadata`/`expiresAt`
+
+#### Example: Slack `message.created` Trigger (simplified)
+
+```typescript
+export const slackMessageCreated: Trigger<WebhookEvent> = {
+  id: "message.created",
+  displayName: "Message Created",
+  description: "A message was created",
+  paramsSchema: messageCreatedParamsSchema,
+  eventDetailsSchema: WebhookEventSchema,
+
+  eventSatisfies: (event) => event.type !== "url_verification" && event.event.type === "message",
+
+  async getTriggerRegistrations(db, triggerId, event) {
+    // Match on Slack team id stored in connection.externalAccountMetadata
+    // Return TriggerRegistration[] with ISO string timestamps as needed
+  },
+
+  async createEvents(event, headers, registration) {
+    return [{
+      event: {
+        type: EventType.RunIntent,
+        timestamp: new Date().toISOString(),
+        orgId: registration.orgId,
+        agentId: registration.agentId,
+        executionId: `exec-slack.message-${Date.now()}`,
+        userId: registration.connection?.userId!,
+        details: event.event,
+      },
+      partitionKey: registration.id!,
+    }];
+  },
+};
+```
 
 **Trigger Registration Pattern:**
 
@@ -69,6 +203,7 @@ If your provider exposes inbound webhooks (e.g. Slack Events API), implement the
 **Event Transformation:**
 
 - Convert provider webhook events into standardized agent event format
+- Always return an array of `{ event: RunIntentEvent, partitionKey: string }`
 - Include partition keys for proper event ordering and processing
 - Maintain correlation between webhook events and agent executions
 

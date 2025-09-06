@@ -77,7 +77,7 @@ export async function triggerRoutes(app: FastifyTypeBox) {
   });
 
 
-  app.get("/triggers/param-options", {
+  app.get("/triggers/param-options/:providerId/:triggerId", {
     schema: GetTriggerParamOptionsEndpoint,
     handler: async (
       request: FastifyRequestTypeBox<typeof GetTriggerParamOptionsEndpoint>,

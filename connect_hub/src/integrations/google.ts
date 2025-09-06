@@ -59,10 +59,13 @@ import {
 import {
   calendarEventCreate,
   calendarEventsList,
+  calendarEventUpdate,
   calendarEventCreateParamsSchema,
   calendarEventCreateResultSchema,
   calendarEventsListParamsSchema,
   calendarEventsListResultSchema,
+  calendarEventUpdateParamsSchema,
+  calendarEventUpdateResultSchema,
 } from "./google/calendar.js";
 
 // Import Drive functions and schemas
@@ -354,6 +357,22 @@ function createCalendarEventsListCapability(): Capability {
     risk: CapabilityRisk.LOW,
   };
   return { meta, execute: calendarEventsList };
+}
+
+function createCalendarEventsUpdateCapability(): Capability {
+  const meta: CapabilityMeta = {
+    id: "calendar.events.update",
+    displayName: "Update Calendar Event",
+    description: "Update an existing calendar event",
+    docsUrl:
+      "https://developers.google.com/calendar/api/v3/reference/events/update",
+    paramsSchema: calendarEventUpdateParamsSchema,
+    resultSchema: calendarEventUpdateResultSchema,
+    requiredScopes: ["https://www.googleapis.com/auth/calendar"],
+    ownershipScope: OwnershipScope.User,
+    risk: CapabilityRisk.HIGH,
+  };
+  return { meta, execute: calendarEventUpdate };
 }
 
 // Drive capabilities - Shared drives and organization-wide access
@@ -729,6 +748,7 @@ export class GoogleProvider extends BaseProvider<any, GoogleWebhookEvent> {
         // Calendar capabilities
         "calendar.events.create": createCalendarEventsCreateCapability,
         "calendar.events.list": createCalendarEventsListCapability,
+        "calendar.events.update": createCalendarEventsUpdateCapability,
         // Drive capabilities - Shared drives
         "drive.drives.list": createDriveDrivesListCapability,
         "drive.drives.get": createDriveDrivesGetCapability,

@@ -56,7 +56,7 @@ export * from './Trigger.js';
 export * from './TriggerRegistration.js';
 export * from './TriggerRegistrationConnection.js';
 export * from './TriggerRegistrationsPost400Response.js';
-export * from './TriggersParamOptionsGet200Response.js';
+export * from './TriggersParamOptionsProviderIdTriggerIdGet200Response.js';
 export * from './WebhooksSlackPostRequest.js';
 export * from './WebhooksSlackPostRequestOneOf.js';
 export * from './WebhooksSlackPostRequestOneOf1.js';

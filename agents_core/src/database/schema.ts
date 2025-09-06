@@ -15,6 +15,7 @@ import { ApprovalRequestStatus } from "../models/approvals.js";
 import { Agent, AgentStatus } from "../models/agents.js";
 import { EmployeeStatus } from "../models/employees.js";
 import { AgentActionStatus, AgentRunStatus } from "../models/runs.js";
+import { TemplateStatus } from "../models/templates.js";
 
 export const agentStatus = pgEnum("agent_status", [
   AgentStatus.Active,
@@ -181,3 +182,30 @@ export const agentRunActions = pgTable("agent_run_actions", {
     .default(AgentActionStatus.Running),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+
+
+export const templateStatus = pgEnum("template_status", [
+  TemplateStatus.Active,
+  TemplateStatus.Inactive,
+]);
+
+export const templates = pgTable(
+  "templates",
+  {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    status: templateStatus("status").notNull().default(TemplateStatus.Active),
+    headline: text("headline").notNull(),
+    promise: text("promise").notNull(),
+    category: varchar("category", { length: 255 }).notNull(),
+    integrations: jsonb("integrations").$type<string[]>().notNull().default([]),
+    jdSeed: text("jd_seed").notNull(),
+    icon: varchar("icon", { length: 255 }).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [index("templates_category_idx").on(table.category)],
+);

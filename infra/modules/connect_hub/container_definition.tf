@@ -48,6 +48,11 @@ locals {
           name  = "CLERK_SECRET_KEY"
           value = var.clerk_secret_key
         },
+        {
+          name = "GOOGLE_PUBSUB_TOPIC_NAME"
+          value = var.google_pubsub_topic_name
+
+        }
         #{
         #  name  = "OTEL_AWS_APPLICATION_SIGNALS_ENABLED"
         #  value = "true"

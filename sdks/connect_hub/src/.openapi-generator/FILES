@@ -67,7 +67,7 @@ models/Trigger.ts
 models/TriggerRegistration.ts
 models/TriggerRegistrationConnection.ts
 models/TriggerRegistrationsPost400Response.ts
-models/TriggersParamOptionsGet200Response.ts
+models/TriggersParamOptionsProviderIdTriggerIdGet200Response.ts
 models/WebhooksSlackPostRequest.ts
 models/WebhooksSlackPostRequestOneOf.ts
 models/WebhooksSlackPostRequestOneOf1.ts

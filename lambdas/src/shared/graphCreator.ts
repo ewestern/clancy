@@ -17,15 +17,16 @@ import { CompiledStateGraph } from "@langchain/langgraph";
 import { Static, Type } from "@sinclair/typebox";
 import { WorkflowSchema } from "@ewestern/events";
 import { ToolMessage } from "@langchain/core/messages";
-import { Run } from "langsmith";
 
 const WORKFLOW_BREAKDOWN_PROMPT = `
-You are an expert in breaking down job descriptions into a set of workflows capable of being performed by an AI agent.
+You are an expert in breaking down job descriptions into one or more workflows capable of being performed by an AI agent.
 You will be given a job description from a user that attempts to describe the work that an AI employee will be doing.
-Your job is to break down the job description into a set of workflows. A workflow is a simple set of closely related steps that can be performed by an agent.
+Your job is to break down the job description into one or more workflows. 
+A workflow is a simple set of closely related steps that can be performed by an agent.
 Also identify how the agent should be activated in order to successfully perform the workflows.
 You must return a list of workflows using the workflow schema. All workflows must define more than one step, and each step must have a requirement.
 You will match the workflows to capabilities in a future step. For now, our goal is to identify the workflows.
+Avoid creating workflows that are so similar that they would be redundant.
 `;
 
 //You can ask the user for clarification or feedback if needed.
@@ -56,7 +57,7 @@ const TRIGGER_PARAM_RESOLVER_PROMPT = `
 You are an expert in determining what information is needed to identify events that will trigger agents.
 You will be given an agent, along with a trigger that will be used to activate the agent.
 Use your tools to gather the information needed to identify the trigger parameters.
-`
+`;
 
 interface MessageInput {
   messages: {
@@ -79,10 +80,12 @@ export const AgentSchema = Type.Recursive((This) =>
     trigger: Type.Object({
       providerId: Type.String(),
       id: Type.String(),
-      triggerParams: Type.Optional(Type.Unknown({
-        description:
-          "Parameters for the trigger in the format specified by the get_triggers tool.",
-      })),
+      triggerParams: Type.Optional(
+        Type.Unknown({
+          description:
+            "Parameters for the trigger in the format specified by the get_triggers tool.",
+        })
+      ),
     }),
     prompt: Type.String(),
     //subagents: Type.Array(This),
@@ -232,7 +235,10 @@ export class GraphCreator {
   }
   fanOutTriggerResolution(state: typeof GraphState.State) {
     return state.agents.map((agent) => {
-      if (agent.trigger.triggerParams) {
+      if (
+        agent.trigger.triggerParams &&
+        Object.keys(agent.trigger.triggerParams).length > 0
+      ) {
         return this.JOIN_TWO;
       }
       return new Send(this.RESOLVE_TRIGGER_PARAMS, {
@@ -265,37 +271,57 @@ export class GraphCreator {
         this.workflowSubgraphNode.bind(this)
       )
       .addNode(this.JOIN_ONE, this.joiner.bind(this))
-      .addNode(this.RESOLVE_TRIGGER_PARAMS, this.resolveTriggerParams.bind(this))
+      .addNode(this.JOIN_TWO, this.joiner.bind(this))
+      .addNode(
+        this.RESOLVE_TRIGGER_PARAMS,
+        this.resolveTriggerParams.bind(this)
+      )
       .addEdge(START, this.WORKFLOW_BREAKDOWN_AGENT)
       .addConditionalEdges(
         this.WORKFLOW_BREAKDOWN_AGENT,
         this.fanOut.bind(this)
       )
       .addEdge(this.WORKFLOW_SUBGRAPH_AGENT, this.JOIN_ONE)
-      .addConditionalEdges(this.JOIN_ONE, this.fanOutTriggerResolution.bind(this))
+      .addConditionalEdges(
+        this.JOIN_ONE,
+        this.fanOutTriggerResolution.bind(this)
+      )
       .addEdge(this.RESOLVE_TRIGGER_PARAMS, this.JOIN_TWO)
-      .addEdge(this.JOIN_TWO, END)
+      .addEdge(this.JOIN_TWO, END);
 
     const agent = builder.compile({ checkpointer: this.checkpointer });
 
     return agent;
   }
-  async resolveTriggerParams(state: typeof ParamResolverState.State, config: RunnableConfig) {
-    const paramResolverTool = await this.getTriggerParamOptionsTool(state.agent.trigger, config);
+  async resolveTriggerParams(
+    state: typeof ParamResolverState.State,
+    config: RunnableConfig
+  ) {
+    const paramResolverTool = await this.getTriggerParamOptionsTool(
+      state.agent.trigger,
+      config
+    );
     const llm = await this.getLLm();
     const agent = createReactAgent({
       name: this.RESOLVE_TRIGGER_PARAMS,
       llm: llm,
-      tools: [
-        this.getHumanInputTool(),
-        paramResolverTool
-      ],
+      tools: [this.getHumanInputTool(), paramResolverTool],
       prompt: TRIGGER_PARAM_RESOLVER_PROMPT,
       responseFormat: Type.Object({
         agent: AgentSchema,
       }),
     });
-    const result = await agent.invoke(state);
+    const result = await agent.invoke({
+      messages: [
+        {
+          role: "user",
+          content: JSON.stringify({
+            agent: state.agent,
+            humanFeedbackHistory: state.humanFeedbackHistory,
+          }),
+        },
+      ],
+    });
     return {
       agent: result.structuredResponse.agent,
     };
@@ -371,7 +397,7 @@ export class GraphCreator {
       name: this.WORKFLOW_MATCHER_AGENT,
       llm: llm,
       tools: [
-        //this.getHumanInputTool(),
+        this.getHumanInputTool(),
         this.getCapabilitiesTool(),
         this.getTriggersTool(),
       ],
@@ -410,9 +436,7 @@ export class GraphCreator {
     const agent = createReactAgent({
       name: this.WORKFLOW_AGENT_CREATOR_AGENT,
       llm: llm,
-      tools: [
-        //this.getHumanInputTool()
-      ],
+      tools: [this.getHumanInputTool()],
       prompt: AGENT_CREATOR_PROMPT,
       responseFormat: Type.Object({
         agent: AgentSchema,
@@ -494,18 +518,24 @@ export class GraphCreator {
           basePath: config.configurable?.connectHubApiUrl,
         });
         const capabilitiesApi = new CapabilitiesApi(connectHubConfig);
-        const capabilities = await capabilitiesApi.capabilitiesGet();
-        return {
-          capabilities: capabilities.flatMap((provider) => {
-            return provider.capabilities.map((capability) => {
-              return {
-                providerId: provider.id,
-                id: capability.id,
-                description: capability.description,
-              };
-            });
-          }),
-        };
+        try {
+          const capabilities = await capabilitiesApi.capabilitiesGet();
+          return {
+            capabilities: capabilities.flatMap((provider) => {
+              return provider.capabilities.map((capability) => {
+                return {
+                  providerId: provider.id,
+                  id: capability.id,
+                  description: capability.description,
+                };
+              });
+            }),
+          };
+        } catch (error) {
+          return {
+            capabilities: [],
+          };
+        }
       },
       {
         name: "get_capabilities",
@@ -521,17 +551,22 @@ export class GraphCreator {
   }
   // TODO: update this to take a list of selected triggers.
   // We then retrieve the triggers, along with the options request schema.
-  async getTriggerParamOptionsTool({providerId, id}: {providerId: string, id: string}, config: RunnableConfig) {
-    const triggersApi = new TriggersApi(new Configuration({
-      basePath: config.configurable?.connectHubApiUrl,
-    }));
+  async getTriggerParamOptionsTool(
+    { providerId, id }: { providerId: string; id: string },
+    config: RunnableConfig
+  ) {
+    const triggersApi = new TriggersApi(
+      new Configuration({
+        basePath: config.configurable?.connectHubApiUrl,
+      })
+    );
     const trigger = await triggersApi.triggersProviderIdTriggerIdGet({
       providerId: providerId,
       triggerId: id,
     });
     return tool(
       async (input: any, config: RunnableConfig) => {
-        return triggersApi.triggersParamOptionsGet({
+        return triggersApi.triggersParamOptionsProviderIdTriggerIdGet({
           providerId: providerId,
           triggerId: id,
         });
@@ -541,9 +576,9 @@ export class GraphCreator {
         description: `
           Get options for identifying the parameters necessary to activate the trigger ${trigger.displayName}.
         `,
-        schema: trigger.optionsRequestSchema
+        schema: trigger.optionsRequestSchema,
       }
-    )
+    );
   }
   getTriggersTool() {
     return tool(
