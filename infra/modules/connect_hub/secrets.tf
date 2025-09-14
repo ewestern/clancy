@@ -4,13 +4,17 @@ resource "aws_secretsmanager_secret" "connect_hub_db_password" {
   description = "Password for connect hub database"
 }
 
+// generate random password
+resource "random_password" "connect_hub_db_password" {
+  length  = 16
+  special = false
+}
+
 resource "aws_secretsmanager_secret_version" "connect_hub_db_password" {
   secret_id     = aws_secretsmanager_secret.connect_hub_db_password.id
-  lifecycle {
-    ignore_changes = [
-      secret_string
-    ]
-  }
+  secret_string = jsonencode({
+    password = random_password.connect_hub_db_password.result
+  })
 }
 
 resource "aws_secretsmanager_secret" "oauth_microsoft_provider" {

@@ -1,5 +1,16 @@
 data "aws_region" "current" {}
 
+resource "aws_ecr_repository" "agents_core" {
+  name                 = "clancy/agents-core-${var.environment}"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
+
+
 locals {
 
   container_definitions = jsonencode([
@@ -7,7 +18,7 @@ locals {
     //local.sidecar_container_definition,
     {
       name      = "web-application"
-      image     = var.image_uri
+      image     = "${aws_ecr_repository.agents_core.repository_url}:latest"
       essential = true
       //dependsOn = [
       //  {

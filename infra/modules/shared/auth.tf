@@ -19,6 +19,7 @@ resource "aws_cognito_user_pool_client" "clancy_user_pool_client" {
   user_pool_id                        = aws_cognito_user_pool.clancy_user_pool.id
   allowed_oauth_flows                 = ["client_credentials"]
   allowed_oauth_flows_user_pool_client = true
+  generate_secret                     = true
   allowed_oauth_scopes                = concat(["${aws_cognito_resource_server.clancy_resource_server.identifier}/all"], local.oauth_scopes_prefixed)
   depends_on                          = [aws_cognito_resource_server.clancy_resource_server]
 }

@@ -92,6 +92,75 @@ resource "aws_iam_role" "firehose_role" {
     ]
   }
 }
+
+# IAM policy document for Firehose permissions
+data "aws_iam_policy_document" "firehose_policy" {
+  # Kinesis stream permissions
+  statement {
+    effect = "Allow"
+    actions = [
+      "kinesis:DescribeStream",
+      "kinesis:GetShardIterator",
+      "kinesis:GetRecords",
+      "kinesis:ListShards"
+    ]
+    resources = [aws_kinesis_stream.clancy_stream.arn]
+  }
+
+  # S3 permissions
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:AbortMultipartUpload",
+      "s3:GetBucketLocation",
+      "s3:GetObject",
+      "s3:ListBucket",
+      "s3:ListBucketMultipartUploads",
+      "s3:PutObject"
+    ]
+    resources = [
+      aws_s3_bucket.clancy_events_bucket.arn,
+      "${aws_s3_bucket.clancy_events_bucket.arn}/*"
+    ]
+  }
+
+  # Glue permissions for dynamic partitioning
+  statement {
+    effect = "Allow"
+    actions = [
+      "glue:GetTable",
+      "glue:GetTableVersion",
+      "glue:GetTableVersions"
+    ]
+    resources = [
+      "arn:aws:glue:*:${data.aws_caller_identity.main.account_id}:catalog",
+      "arn:aws:glue:*:${data.aws_caller_identity.main.account_id}:database/${aws_glue_catalog_database.clancy_events_database.name}",
+      "arn:aws:glue:*:${data.aws_caller_identity.main.account_id}:table/${aws_glue_catalog_database.clancy_events_database.name}/*"
+    ]
+  }
+
+  # CloudWatch Logs permissions
+  statement {
+    effect = "Allow"
+    actions = [
+      "logs:PutLogEvents"
+    ]
+    resources = ["arn:aws:logs:*:${data.aws_caller_identity.main.account_id}:*"]
+  }
+}
+
+# IAM policy for Firehose
+resource "aws_iam_policy" "firehose_policy" {
+  name        = "firehose-policy-clancy-${var.environment}"
+  description = "Policy for Kinesis Firehose to access Kinesis stream and S3 bucket"
+  policy      = data.aws_iam_policy_document.firehose_policy.json
+}
+
+# Attach policy to Firehose role
+resource "aws_iam_role_policy_attachment" "firehose_policy_attachment" {
+  role       = aws_iam_role.firehose_role.name
+  policy_arn = aws_iam_policy.firehose_policy.arn
+}
 data "aws_caller_identity" "main" {}
 
 data "aws_iam_policy_document" "pipes_policy" {
@@ -107,13 +176,13 @@ data "aws_iam_policy_document" "pipes_policy" {
 }
 
 resource "aws_iam_policy" "pipes_policy" {
-  name        = "pipes-policy-clancy-staging"
-  description = "Pipes policy for clancy-staging"
+  name        = "pipes-policy-clancy-${var.environment}"
+  description = "Pipes policy for clancy-${var.environment}"
   policy      = data.aws_iam_policy_document.pipes_policy.json
 }
 
 resource "aws_iam_role" "pipes_role" {
-  name = "pipes-role-clancy-staging"
+  name = "pipes-role-clancy-${var.environment}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = {
@@ -137,11 +206,11 @@ resource "aws_iam_role_policy_attachment" "pipes_role_policy_attachment" {
 }
 
 resource "aws_cloudwatch_log_group" "pipes_log_group" {
-  name = "pipes-log-group-clancy-staging"
+  name = "pipes-log-group-clancy-${var.environment}"
 }
 
 resource "aws_pipes_pipe" "event_bus_pipe" {
-  name       = "clancy-eventbus-staging"
+  name       = "clancy-eventbus-${var.environment}"
   role_arn   = aws_iam_role.pipes_role.arn
   source     = aws_kinesis_stream.clancy_stream.arn
   target     = data.aws_cloudwatch_event_bus.default.arn
@@ -172,8 +241,8 @@ resource "aws_pipes_pipe" "event_bus_pipe" {
 
 
 resource "aws_cloudwatch_event_api_destination" "connect_hub" {
-  name                             = "connect-hub-staging"
-  description                      = "Connect Hub Staging"
+  name                             = "connect-hub-${var.environment}"
+  description                      = "Connect Hub ${title(var.environment)}"
   invocation_endpoint              = "${var.connect_hub_lb_endpoint}/*"
   http_method                      = "POST"
   invocation_rate_limit_per_second = 20
@@ -181,8 +250,8 @@ resource "aws_cloudwatch_event_api_destination" "connect_hub" {
 }
 
 resource "aws_cloudwatch_event_api_destination" "agents_core" {
-  name                             = "agents-core-staging"
-  description                      = "Agents Core Staging"
+  name                             = "agents-core-${var.environment}"
+  description                      = "Agents Core ${title(var.environment)}"
   invocation_endpoint              = "${var.agents_core_lb_endpoint}/*"
   http_method                      = "POST"
   invocation_rate_limit_per_second = 20

@@ -1,5 +1,14 @@
 data "aws_region" "current" {}
 
+resource "aws_ecr_repository" "connect_hub" {
+  name                 = "clancy/connect-hub-${var.environment}"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
 locals {
 
   container_definitions = jsonencode([
@@ -7,7 +16,7 @@ locals {
     #local.sidecar_container_definition,
     {
       name      = "web-application"
-      image     = var.image_uri
+      image     = "${aws_ecr_repository.connect_hub.repository_url}:latest"
       essential = true
       #dependsOn = [
       #  {

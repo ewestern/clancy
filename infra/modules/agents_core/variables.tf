@@ -12,10 +12,6 @@ variable "cluster_arn" {
   type        = string
   description = "The ARN of the cluster to deploy the service to"
 }
-variable "image_uri" {
-  type        = string
-  description = "The URI of the image to use for the service"
-}
 
 variable "vpc_id" {
   type        = string

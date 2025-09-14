@@ -10,7 +10,7 @@ terraform {
   backend "s3" {
     profile = "clancy"
     bucket = "clancy-terraform-state"
-    key    = "staging/main.tfstate"
+    key    = "production/main.tfstate"
     region = "us-east-1"
   }
 }
@@ -25,34 +25,43 @@ provider "google" {
   project     = "clancy-464816"
 }
 
-resource "google_pubsub_topic" "clancy_connect_hub_staging" {
+resource "google_pubsub_topic" "clancy_connect_hub_production" {
   provider = google.google
-  name = "clancy-connect-hub-staging"
+  name = "clancy-connect-hub-production"
 }
 
 
-resource "google_pubsub_subscription" "clancy_connect_hub_staging" {
+resource "google_pubsub_subscription" "clancy_connect_hub_production" {
   provider = google.google
-  name = "clancy-connect-hub-staging-subscription"
-  topic = google_pubsub_topic.clancy_connect_hub_staging.name
+  name = "clancy-connect-hub-production-subscription"
+  topic = google_pubsub_topic.clancy_connect_hub_production.name
   push_config {
-    #push_endpoint = "${local.connect_hub_lb_endpoint}/webhooks/google"
-    push_endpoint = "https://27a1c1c2a871.ngrok-free.app/webhooks/google"
+    push_endpoint = "${local.connect_hub_lb_endpoint}/webhooks/google"
   }
 }
+
+#resource "aws_ecr_repository" "connect_hub" {
+#  name                 = "clancy/connect-hub"
+#  image_tag_mutability = "MUTABLE"
+#
+#  image_scanning_configuration {
+#    scan_on_push = true
+#  }
+#}
+#
 
 data "aws_route53_zone" "clancy_domain" {
   name         = "clancy.systems."
   private_zone = false
 }
 data "aws_acm_certificate" "issued" {
-  domain   = "*.staging.clancy.systems"
+  domain   = "*.production.clancy.systems"
   statuses = ["ISSUED"]
 }
 
 module "shared" {
   source = "../../modules/shared"
-  environment = "staging"
+  environment = "production"
   certificate_arn = data.aws_acm_certificate.issued.arn
   
   # ALB needs minimum 2 AZs
@@ -82,14 +91,14 @@ module "shared" {
 }
 module "lambdas" {
   source = "../../modules/lambdas"
-  environment = "staging"
+  environment = "production"
   project_name = "clancy"
   vpc_subnet_ids = module.shared.ecs_private_subnet_ids
   vpc_security_group_ids = [module.shared.lb_security_group_id]
   agents_core_api_url = local.agents_core_lb_endpoint
   connect_hub_api_url = local.connect_hub_lb_endpoint
 
-  kinesis_stream_name = "clancy-main-staging"
+  kinesis_stream_name = "clancy-main-production"
   kinesis_stream_arn = module.events.kinesis_stream_arn
   lambdas_path = "${path.module}/../../../lambdas"
   openai_api_key_secret_arn = module.shared.openai_api_key_secret_arn
@@ -102,11 +111,11 @@ module "lambdas" {
     "https://*.vercel.app",
     "http://localhost:5173",  # Local UI development
     "http://localhost:3000",  # Alternative local port
-    "https://ui.staging.clancy.systems",  # Staging UI domain
-    "https://admin.staging.clancy.systems",  # Admin UI domain
+    "https://ui.production.clancy.systems",  # Staging UI domain
+    "https://admin.production.clancy.systems",  # Admin UI domain
   ]
   tags = {
-    Environment = "staging"
+    Environment = "production"
     Project = "clancy"
   }
 }
@@ -114,7 +123,7 @@ module "lambdas" {
 
 module "connect_hub" {
   source = "../../modules/connect_hub"
-  environment = "staging"
+  environment = "production"
   vpc_id = module.shared.vpc_id
   db_subnet_ids = module.shared.db_private_subnet_ids
   subnet_ids = module.shared.ecs_private_subnet_ids
@@ -129,11 +138,11 @@ module "connect_hub" {
   openai_api_key = module.shared.openai_api_key
   hosted_zone_id = data.aws_route53_zone.clancy_domain.id
   kinesis_stream_name = module.events.kinesis_stream_name
-  google_pubsub_topic_name = google_pubsub_topic.clancy_connect_hub_staging.id
+  google_pubsub_topic_name = google_pubsub_topic.clancy_connect_hub_production.id
 }
 module "agents_core" {
   source = "../../modules/agents_core"
-  environment = "staging"
+  environment = "production"
   vpc_id = module.shared.vpc_id
   db_subnet_ids = module.shared.db_private_subnet_ids
   subnet_ids = module.shared.ecs_private_subnet_ids
@@ -152,14 +161,14 @@ module "agents_core" {
 
 module "checkpointer" {
   source = "../../modules/checkpointer"
-  environment = "staging"
+  environment = "production"
   vpc_id = module.shared.vpc_id
   subnet_ids = module.shared.db_private_subnet_ids
 }
 
 module "events" {
   source = "../../modules/events"
-  environment = "staging"
+  environment = "production"
   graph_creator_executor_function_arn = module.lambdas.graph_creator_executor_function_arn
   main_agent_executor_function_arn = module.lambdas.main_agent_executor_function_arn
   agents_core_lb_endpoint = local.agents_core_lb_endpoint

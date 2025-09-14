@@ -26,6 +26,7 @@ resource "aws_db_instance" "agents_core_service_db" {
       password
     ]
   }
+  final_snapshot_identifier             = "agents-core-db-${var.environment}-final-snapshot"
   publicly_accessible                   = true
   allocated_storage                     = var.db_allocated_storage
   auto_minor_version_upgrade            = "true"

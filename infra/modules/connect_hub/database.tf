@@ -17,6 +17,7 @@ resource "aws_db_parameter_group" "connect_hub_db_parameter_group" {
   }
 }
 resource "aws_db_instance" "connect_hub_db" {
+  final_snapshot_identifier             = "connect-hub-db-${var.environment}-final-snapshot"
   publicly_accessible                   = true
   allocated_storage                     = var.db_allocated_storage
   auto_minor_version_upgrade            = "true"

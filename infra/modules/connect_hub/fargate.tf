@@ -1,3 +1,4 @@
+
 resource "aws_ecs_service" "connect_hub_service" {
 
   availability_zone_rebalancing = "ENABLED"

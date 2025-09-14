@@ -5,7 +5,7 @@ resource "null_resource" "build_lambdas" {
     package_json = filemd5("${local.lambdas_path}/package.json")
     # You could add more specific triggers for source files if needed
     tsconfig = filemd5("${local.lambdas_path}/tsconfig.json")
-    tsconfig = filemd5("${local.lambdas_path}/template.yaml")
+    template = filemd5("${local.lambdas_path}/template.yaml")
     graph_creator_executor = filemd5("${local.lambdas_path}/src/graph-creator-executor/handler.ts")
     main_agent_executor = filemd5("${local.lambdas_path}/src/main-agent-executor/handler.ts")
     document_ingest = filemd5("${local.lambdas_path}/src/document-ingest/handler.ts")
@@ -95,7 +95,6 @@ resource "aws_iam_role_policy" "kinesis_publish" {
 
 # VPC access policy (only created if VPC is enabled)
 resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
-  count      = local.vpc_enabled ? 1 : 0
   role       = aws_iam_role.lambda_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
@@ -143,6 +142,7 @@ resource "aws_lambda_function" "graph_creator_executor" {
 
   depends_on = [
     aws_iam_role_policy_attachment.lambda_basic_execution,
+    aws_iam_role_policy_attachment.lambda_vpc_access,
     aws_cloudwatch_log_group.graph_creator_executor,
   ]
 
@@ -175,6 +175,7 @@ resource "aws_lambda_function" "main_agent_executor" {
 
   depends_on = [
     aws_iam_role_policy_attachment.lambda_basic_execution,
+    aws_iam_role_policy_attachment.lambda_vpc_access,
     aws_cloudwatch_log_group.main_agent_executor,
   ]
 
@@ -283,7 +284,6 @@ resource "aws_iam_role_policy_attachment" "document_ingest_basic_execution" {
 
 # VPC access policy for document ingest Lambda (if VPC enabled)
 resource "aws_iam_role_policy_attachment" "document_ingest_vpc_access" {
-  count      = local.vpc_enabled ? 1 : 0
   role       = aws_iam_role.document_ingest_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
@@ -348,6 +348,7 @@ resource "aws_lambda_function" "document_ingest" {
 
   depends_on = [
     aws_iam_role_policy_attachment.document_ingest_basic_execution,
+    aws_iam_role_policy_attachment.document_ingest_vpc_access,
     aws_cloudwatch_log_group.document_ingest,
   ]
 
