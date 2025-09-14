@@ -27,3 +27,14 @@ resource "aws_security_group_rule" "agents_core_sg_rule_external" {
   cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = aws_security_group.agents_core_sg.id
 }
+
+resource "aws_security_group_rule" "agents_core_sg_rule_egress_all" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "all"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.agents_core_sg.id
+}
+
+

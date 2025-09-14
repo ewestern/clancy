@@ -1,7 +1,8 @@
 # Check if NVM is installed by looking for either the NVM script or directory
 NVM_INSTALLED := $(shell command -v nvm >/dev/null 2>&1 || [ -d "$$HOME/.nvm" ] && echo "yes" || echo "no")
+ENVIRONMENT := production
 DB_NAME := agents_core
-IMAGE_NAME := clancy/agents-core
+IMAGE_NAME := clancy/agents-core-$(ENVIRONMENT)
 REPO := 702853186114.dkr.ecr.us-east-1.amazonaws.com
 IMAGE_REPO := $(REPO)/$(IMAGE_NAME)
 PROFILE := clancy

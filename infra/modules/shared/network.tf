@@ -28,6 +28,14 @@ resource "aws_security_group_rule" "shared_sg_rule_external_https" {
   ipv6_cidr_blocks  = ["::/0"]
   security_group_id = aws_security_group.shared_sg.id
 }
+resource "aws_security_group_rule" "shared_sg_rule_egress_all" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "all"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.shared_sg.id
+}
 
 
 resource "aws_vpc" "vpc" {
@@ -195,6 +203,6 @@ resource "aws_route_table_association" "ecs_private" {
 resource "aws_route_table_association" "db_private" {
   for_each       = toset(var.db_azs)
   subnet_id      = aws_subnet.db_subnets[each.key].id
-  #route_table_id = aws_route_table.db_private.id
-  route_table_id = aws_route_table.public.id
+  route_table_id = aws_route_table.db_private.id
+  #route_table_id = aws_route_table.public.id
 }

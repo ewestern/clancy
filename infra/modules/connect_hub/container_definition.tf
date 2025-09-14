@@ -27,7 +27,7 @@ locals {
       environment = [
         {
           name  = "AWS_REGION"
-          value = data.aws_region.current.name
+          value = data.aws_region.current.region
         },
         {
           name  = "KINESIS_STREAM_NAME"
@@ -137,7 +137,7 @@ locals {
           mode                    = "non-blocking"
           "awslogs-create-group"  = "true"
           "max-buffer-size"       = "25m"
-          "awslogs-region"        = data.aws_region.current.name
+          "awslogs-region"        = data.aws_region.current.region
           "awslogs-stream-prefix" = "ecs"
           "awslogs-group"         = aws_cloudwatch_log_group.connect_hub_service_log_group.name
         }

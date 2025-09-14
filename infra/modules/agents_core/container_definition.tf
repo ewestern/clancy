@@ -128,7 +128,7 @@ locals {
           mode                    = "non-blocking"
           "awslogs-create-group"  = "true"
           "max-buffer-size"       = "25m"
-          "awslogs-region"        = data.aws_region.current.name
+          "awslogs-region"        = data.aws_region.current.region
           "awslogs-stream-prefix" = "ecs"
           "awslogs-group"         = aws_cloudwatch_log_group.agents_core_service_log_group.name
         }

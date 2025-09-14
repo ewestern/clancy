@@ -167,6 +167,27 @@ resource "aws_iam_role_policy" "execution_role_logs_policy" {
   })
 }
 
+resource "aws_iam_role_policy" "execution_role_ecr_policy" {
+  name = "agents-core-execution-ecr-policy-${var.environment}"
+  role = aws_iam_role.execution_role.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # Task role policy attachments  
 resource "aws_iam_role_policy_attachment" "base_ecs_permissions" {
   role       = aws_iam_role.task_role.name
